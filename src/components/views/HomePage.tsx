@@ -2,29 +2,29 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
-import { Button } from "@/components/ui/Button";
 import { FadeInSection } from "@/components/ui/FadeInSection";
 
-/** Replace with your WhatsApp number (country code, no + or spaces). */
-const WHATSAPP_HREF = "https://wa.me/919999999999";
+/** WhatsApp (country code, no + or spaces). */
+const WHATSAPP_HREF = "https://wa.me/919946930723";
 
 /** Shown in landing trust line; swap for a real count from your data when ready. */
 const LANDING_TRUSTED_STUDENT_COUNT = "100+";
 
-/** Unsplash — happy learning, teachers, students (high-quality editorial). */
-const IMG_HERO =
-  "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=2400&q=85";
-const IMG_HERO_FRAME =
-  "https://images.unsplash.com/photo-1577896851237-aaefaca3aec0?auto=format&fit=crop&w=1200&q=85";
 const IMG_SERVICES_SIDE =
   "https://images.unsplash.com/photo-1529390079861-591de354faf5?auto=format&fit=crop&w=1000&q=85";
 const IMG_WHY_BG =
   "https://images.unsplash.com/photo-1588072432836-100d6cfd522e?auto=format&fit=crop&w=2000&q=80";
-const IMG_PROGRAM_12 =
-  "https://images.unsplash.com/photo-1488521787991-ed7bbaae7732?auto=format&fit=crop&w=1400&q=85";
-const IMG_PROGRAM_25 =
-  "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1400&q=85";
+
+export type LandingProgram = {
+  id: string;
+  title: string;
+  subtitle: string;
+  duration: number;
+  image_url: string;
+  description: string;
+};
 
 function WhatsAppIcon({ className = "h-6 w-6" }: { className?: string }) {
   return (
@@ -70,70 +70,58 @@ function CheckCircleIcon({ className }: { className?: string }) {
 
 export function HomePage() {
   const { t } = useLanguage();
+  const [programs, setPrograms] = useState<LandingProgram[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/programs")
+      .then((res) => res.json())
+      .then((json: { programs?: LandingProgram[] }) => {
+        if (!cancelled) setPrograms(json.programs ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setPrograms([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <>
-      <section className="relative min-h-[min(92svh,40rem)] w-full overflow-hidden sm:min-h-[38rem]">
-        <Image
-          src={IMG_HERO}
-          alt=""
-          fill
-          priority
-          className="object-cover object-[center_30%]"
-          sizes="100vw"
-        />
+      <section className="relative w-full overflow-hidden bg-gradient-to-br from-[#0B5ED7] via-[#1565C8] to-[#5DB3F5]">
         <div
-          className="absolute inset-0 bg-gradient-to-br from-[#0B5ED7]/[0.72] via-[#1565C0]/[0.68] to-[#38BDF8]/[0.55]"
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[length:48px_48px]"
           aria-hidden
         />
         <div
-          className="absolute inset-0 bg-gradient-to-t from-[#0B5ED7]/50 via-transparent to-[#021a3a]/20"
+          className="pointer-events-none absolute -left-24 top-0 h-72 w-72 rounded-full bg-white/10 blur-3xl"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute bottom-0 right-0 h-80 w-80 rounded-full bg-white/10 blur-3xl"
           aria-hidden
         />
 
-        <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center px-4 py-14 text-center sm:px-6 sm:py-18 md:py-20">
-          <h1 className="max-w-4xl text-balance text-4xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-5xl md:text-6xl">
+        <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center px-6 py-20 text-center sm:py-28 md:py-32">
+          <h1 className="max-w-3xl text-balance text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl">
             {t("landing_title")}
           </h1>
-          <p className="mt-6 max-w-2xl text-balance text-lg font-semibold leading-relaxed text-white/95 sm:mt-5 sm:text-2xl">
+          <p className="mt-8 max-w-xl text-balance text-lg font-medium leading-relaxed text-white/90 sm:mt-10 sm:text-xl md:text-2xl">
             {t("landing_subtitle")}
           </p>
-
-          <div className="mt-10 flex w-full max-w-md flex-col items-stretch gap-4 sm:mt-12 sm:max-w-lg">
-            <Button
-              href="/login"
-              icon={<span aria-hidden>👤</span>}
-              className="min-h-16 w-full text-lg shadow-xl shadow-[#0B5ED7]/35 sm:text-xl"
-            >
-              {t("join_class")}
-            </Button>
-            <Button
-              href="/login"
-              variant="outline"
-              icon={<span aria-hidden>→</span>}
-              className="min-h-16 w-full !border-2 !border-white/90 !bg-white/10 !text-white !shadow-lg !shadow-black/20 backdrop-blur-sm hover:!border-white hover:!bg-white/20 hover:!text-white active:!bg-white/15 text-lg sm:text-xl focus-visible:!outline-white"
-            >
-              {t("login")}
-            </Button>
-          </div>
-
-          <div className="relative mt-12 w-full max-w-lg sm:mt-14">
-            <div className="relative aspect-[5/4] overflow-hidden rounded-3xl shadow-2xl shadow-black/25 ring-4 ring-white/35 ring-offset-4 ring-offset-transparent transition-transform duration-300 motion-safe:hover:scale-[1.01]">
-              <Image
-                src={IMG_HERO_FRAME}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="(max-width: 640px) 100vw, 32rem"
-              />
-              <div
-                className="absolute inset-0 bg-gradient-to-t from-[#0B5ED7]/25 to-transparent"
-                aria-hidden
-              />
-            </div>
-          </div>
         </div>
       </section>
+
+      <a
+        href={WHATSAPP_HREF}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] p-4 text-white shadow-lg transition-transform duration-200 hover:bg-[#20BD5A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#25D366] motion-safe:hover:scale-110 sm:h-16 sm:w-16"
+        aria-label={t("footer_whatsapp")}
+      >
+        <WhatsAppIcon className="h-7 w-7 sm:h-8 sm:w-8" />
+      </a>
 
       <div className="mx-auto flex w-full max-w-5xl flex-col px-4 py-12 sm:px-6 sm:py-14">
         <p className="mx-auto max-w-2xl text-center text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500 sm:text-sm sm:tracking-[0.18em]">
@@ -175,21 +163,27 @@ export function HomePage() {
                     aria-hidden
                   />
                   <div
-                    className="group relative overflow-hidden rounded-2xl shadow-2xl shadow-neutral-900/20 transition-[transform,box-shadow] duration-300 ease-out motion-safe:hover:scale-[1.03] motion-safe:hover:shadow-[0_28px_60px_-12px_rgba(15,23,42,0.35)]"
+                    className="group relative h-[min(28rem,70vw)] max-h-[400px] w-full overflow-hidden rounded-2xl shadow-2xl shadow-neutral-900/20 transition-[transform,box-shadow] duration-300 ease-out sm:h-[400px] motion-safe:hover:scale-[1.03] motion-safe:hover:shadow-[0_28px_60px_-12px_rgba(15,23,42,0.35)]"
                   >
-                    <div className="relative aspect-[4/5] w-full md:aspect-[3/4]">
-                      <Image
-                        src="/md.jpg"
-                        alt={t("md_director_name")}
-                        fill
-                        className="h-full w-full object-cover"
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                      />
-                      <div
-                        className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"
-                        aria-hidden
-                      />
-                    </div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/md.jpg"
+                      alt="Managing Director - Motiva Edus"
+                      className="h-full w-full object-cover rounded-2xl shadow-lg"
+                      onError={(e) => {
+                        console.warn(
+                          "[Motiva Edus] Managing Director image failed to load (/md.jpg). Using fallback.",
+                        );
+                        const el = e.currentTarget;
+                        if (!el.src.endsWith("/fallback.jpg")) {
+                          el.src = "/fallback.jpg";
+                        }
+                      }}
+                    />
+                    <div
+                      className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"
+                      aria-hidden
+                    />
                   </div>
                   <p className="mt-4 text-center text-xl font-semibold text-orange-500">
                     {t("md_director_name")}
@@ -309,7 +303,10 @@ export function HomePage() {
         </FadeInSection>
 
         <FadeInSection>
-          <section className="relative mx-auto mt-14 max-w-3xl py-16 sm:mt-16 sm:py-20 md:py-24">
+          <section
+            id="programs"
+            className="relative mx-auto mt-14 max-w-3xl scroll-mt-24 py-16 sm:mt-16 sm:py-20 sm:scroll-mt-28 md:py-24"
+          >
             <div
               className="pointer-events-none absolute inset-0 -z-10 rounded-[2rem] bg-gradient-to-br from-[#E0F2FE]/80 via-white to-[#FFEDD5]/50"
               aria-hidden
@@ -317,67 +314,80 @@ export function HomePage() {
             <h2 className="mb-12 text-center text-sm font-bold uppercase tracking-[0.2em] text-neutral-600 sm:text-start">
               {t("programs_title")}
             </h2>
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-6">
-              <Link
-                href="/login"
-                className="group relative flex min-h-[13rem] touch-manipulation flex-col items-stretch justify-center overflow-hidden rounded-3xl px-8 py-12 text-center shadow-xl shadow-accent/20 transition-all duration-200 ease-out active:scale-[0.99] sm:min-h-[12rem] sm:py-10 sm:text-left md:active:scale-100 motion-safe:hover:-translate-y-1.5 motion-safe:hover:scale-[1.02] motion-safe:hover:shadow-2xl"
-              >
-                <Image
-                  src={IMG_PROGRAM_12}
-                  alt=""
-                  fill
-                  className="object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-110"
-                  sizes="(max-width: 640px) 100vw, 50vw"
-                />
-                <div
-                  className="absolute inset-0 bg-gradient-to-b from-accent/88 via-accent/72 to-[#FDBA74]/75"
-                  aria-hidden
-                />
-                <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
-                <div className="pointer-events-none absolute -right-20 bottom-[-100px] h-64 w-64 rounded-full bg-white/15 blur-3xl" />
-                <div className="relative z-10 space-y-4 text-center sm:text-left">
-                  <div className="text-6xl font-extrabold tracking-tight text-white drop-shadow-md">
-                    12
-                  </div>
-                  <div className="text-2xl font-extrabold text-white drop-shadow-sm">
-                    {t("program_12_desc")}
-                  </div>
-                  <div className="text-sm font-semibold text-white/95">
-                    {t("program_12_title")}
-                  </div>
-                </div>
-              </Link>
-
-              <Link
-                href="/login"
-                className="group relative flex min-h-[13rem] touch-manipulation flex-col items-stretch justify-center overflow-hidden rounded-3xl px-8 py-12 text-center shadow-xl shadow-primary/20 transition-all duration-200 ease-out active:scale-[0.99] sm:min-h-[12rem] sm:py-10 sm:text-left md:active:scale-100 motion-safe:hover:-translate-y-1.5 motion-safe:hover:scale-[1.02] motion-safe:hover:shadow-2xl"
-              >
-                <Image
-                  src={IMG_PROGRAM_25}
-                  alt=""
-                  fill
-                  className="object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-110"
-                  sizes="(max-width: 640px) 100vw, 50vw"
-                />
-                <div
-                  className="absolute inset-0 bg-gradient-to-b from-primary/88 via-primary/68 to-[#6EC1FF]/70"
-                  aria-hidden
-                />
-                <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
-                <div className="pointer-events-none absolute -right-20 bottom-[-100px] h-64 w-64 rounded-full bg-white/15 blur-3xl" />
-                <div className="relative z-10 space-y-4 text-center sm:text-left">
-                  <div className="text-6xl font-extrabold tracking-tight text-white drop-shadow-md">
-                    25
-                  </div>
-                  <div className="text-2xl font-extrabold text-white drop-shadow-sm">
-                    {t("program_25_desc")}
-                  </div>
-                  <div className="text-sm font-semibold text-white/95">
-                    {t("program_25_title")}
-                  </div>
-                </div>
-              </Link>
-            </div>
+            {programs === null ? (
+              <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-6">
+                <p className="col-span-full text-center text-lg font-medium text-neutral-500 sm:col-span-2">
+                  {t("landing_programs_loading")}
+                </p>
+                <div className="h-52 animate-pulse rounded-3xl bg-neutral-200/90 sm:h-64" />
+                <div className="h-52 animate-pulse rounded-3xl bg-neutral-200/90 sm:h-64" />
+              </div>
+            ) : programs.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-neutral-300 bg-white/80 py-14 text-center text-lg font-medium text-neutral-500">
+                {t("landing_programs_empty")}
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-6">
+                {programs.map((p) => {
+                  const tint =
+                    p.duration === 25
+                      ? "from-primary/50 via-primary/20 to-transparent"
+                      : "from-accent/50 via-accent/20 to-transparent";
+                  return (
+                    <Link
+                      key={p.id}
+                      href="/login"
+                      className="group relative flex min-h-[13rem] touch-manipulation flex-col items-stretch justify-end overflow-hidden rounded-3xl px-8 py-12 text-center shadow-xl shadow-neutral-900/20 transition-all duration-200 ease-out active:scale-[0.99] sm:min-h-[14rem] sm:py-10 sm:text-left md:active:scale-100 motion-safe:hover:-translate-y-1.5 motion-safe:hover:scale-[1.02] motion-safe:hover:shadow-2xl"
+                    >
+                      {p.image_url ? (
+                        <Image
+                          src={p.image_url}
+                          alt=""
+                          fill
+                          unoptimized
+                          className="object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-110"
+                          sizes="(max-width: 640px) 100vw, 50vw"
+                        />
+                      ) : (
+                        <div
+                          className="absolute inset-0 bg-gradient-to-br from-neutral-700 to-neutral-900"
+                          aria-hidden
+                        />
+                      )}
+                      <div
+                        className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/25"
+                        aria-hidden
+                      />
+                      <div
+                        className={`absolute inset-0 bg-gradient-to-b ${tint}`}
+                        aria-hidden
+                      />
+                      <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+                      <div className="pointer-events-none absolute -right-20 bottom-[-100px] h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+                      <div className="relative z-10 space-y-3 text-center sm:text-left">
+                        <div className="flex flex-wrap items-baseline justify-center gap-2 sm:justify-start">
+                          <span className="rounded-full bg-white/20 px-3 py-1 text-sm font-bold text-white backdrop-blur-sm">
+                            {p.duration}{" "}
+                            {t("admin_classes_days_short")}
+                          </span>
+                        </div>
+                        <div className="text-3xl font-extrabold leading-tight tracking-tight text-white drop-shadow-md sm:text-4xl">
+                          {p.title}
+                        </div>
+                        <div className="text-xl font-bold text-white/95 drop-shadow-sm sm:text-2xl">
+                          {p.subtitle}
+                        </div>
+                        {p.description ? (
+                          <p className="line-clamp-2 text-sm font-medium text-white/80">
+                            {p.description}
+                          </p>
+                        ) : null}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </section>
         </FadeInSection>
 
