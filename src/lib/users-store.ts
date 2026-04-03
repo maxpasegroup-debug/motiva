@@ -31,7 +31,12 @@ function isUserRecord(x: unknown): x is UserRecord {
   ) {
     return false;
   }
-  return o.role === "admin" || o.role === "teacher" || o.role === "student";
+  return (
+    o.role === "admin" ||
+    o.role === "teacher" ||
+    o.role === "student" ||
+    o.role === "parent"
+  );
 }
 
 function readRawUsers(): UserRecord[] {

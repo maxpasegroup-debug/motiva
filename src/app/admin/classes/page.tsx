@@ -1,10 +1,5 @@
-import type { Metadata } from "next";
-import { AdminClassesPage } from "@/components/admin/AdminClassesPage";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Classes — Motiva Edus",
-};
-
-export default function Page() {
-  return <AdminClassesPage />;
+export default function AdminClassesRedirectPage() {
+  redirect("/admin/batches");
 }

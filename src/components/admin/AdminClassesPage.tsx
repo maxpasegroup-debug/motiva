@@ -145,7 +145,7 @@ export function AdminClassesPage() {
   return (
     <div className="space-y-10">
       <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-        {t("admin_nav_classes")}
+        {t("admin_nav_batches")}
       </h1>
       <p className="-mt-4 text-lg text-neutral-600">{t("admin_classes_batch_hint")}</p>
 

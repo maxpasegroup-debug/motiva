@@ -25,7 +25,10 @@ export async function GET(req: NextRequest) {
   }
   const roleQuery = req.nextUrl.searchParams.get("role");
   const role = roleQuery as Role | null;
-  if (!role || (role !== "teacher" && role !== "student")) {
+  if (
+    !role ||
+    (role !== "teacher" && role !== "student" && role !== "parent")
+  ) {
     return NextResponse.json({ error: "Invalid role" }, { status: 400 });
   }
 

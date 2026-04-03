@@ -10,6 +10,7 @@ const ROLE_LABEL_KEYS: Record<Role, TranslationKey> = {
   admin: "role_admin",
   teacher: "role_teacher",
   student: "role_student",
+  parent: "role_parent",
 };
 
 export function RoleSwitcher() {

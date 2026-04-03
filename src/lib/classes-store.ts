@@ -140,6 +140,10 @@ export function listClasses(): ClassRecord[] {
   }));
 }
 
+export function listClassesForStudent(studentId: string): ClassRecord[] {
+  return listClasses().filter((c) => c.studentIds.includes(studentId));
+}
+
 export function getClassById(id: string): ClassRecord | null {
   return listClasses().find((c) => c.id === id) ?? null;
 }

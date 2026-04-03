@@ -8,7 +8,8 @@ export function AppShell() {
   if (
     pathname?.startsWith("/dashboard") ||
     pathname?.startsWith("/admin") ||
-    pathname?.startsWith("/teacher")
+    pathname?.startsWith("/teacher") ||
+    pathname?.startsWith("/parent")
   ) {
     return null;
   }

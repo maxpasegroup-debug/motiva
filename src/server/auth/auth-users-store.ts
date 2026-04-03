@@ -48,7 +48,10 @@ export async function readAuthUsers(): Promise<AuthUser[]> {
       typeof o.name === "string" &&
       typeof o.email === "string" &&
       typeof o.passwordHash === "string" &&
-      (o.role === "admin" || o.role === "teacher" || o.role === "student")
+      (o.role === "admin" ||
+        o.role === "teacher" ||
+        o.role === "student" ||
+        o.role === "parent")
     );
   });
 }
@@ -91,7 +94,12 @@ export async function ensureSeedAdmin() {
 }
 
 export function isCreatableRole(role: Role) {
-  return role === "teacher" || role === "student" || role === "admin";
+  return (
+    role === "teacher" ||
+    role === "student" ||
+    role === "admin" ||
+    role === "parent"
+  );
 }
 
 export async function createUserAsAdmin(input: {

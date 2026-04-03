@@ -50,7 +50,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Bad request" }, { status: 400 });
   }
 
-  if (role !== "teacher" && role !== "student") {
+  if (
+    role !== "teacher" &&
+    role !== "student" &&
+    role !== "parent"
+  ) {
     return NextResponse.json({ error: "Invalid role" }, { status: 400 });
   }
 

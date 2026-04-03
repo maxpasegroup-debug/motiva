@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
+import { countPendingAdmissions } from "@/lib/admissions-store";
 import { listClasses } from "@/lib/classes-store";
 import type { TranslationKey } from "@/lib/i18n";
-import { getStudentPaymentStatus } from "@/lib/student-payments-store";
+import { totalPaidAmount } from "@/lib/payments-ledger-store";
 import { listStudents } from "@/lib/students-store";
 import { listTeachers } from "@/lib/teachers-store";
 
@@ -12,18 +13,17 @@ type DashboardStats = {
   students: number;
   teachers: number;
   classes: number;
-  paidStudents: number;
+  pendingAdmissions: number;
+  paymentsIn: number;
 };
 
 function computeStats(): DashboardStats {
-  const students = listStudents();
   return {
-    students: students.length,
+    students: listStudents().length,
     teachers: listTeachers().length,
     classes: listClasses().length,
-    paidStudents: students.filter(
-      (s) => getStudentPaymentStatus(s.id) === "paid",
-    ).length,
+    pendingAdmissions: countPendingAdmissions(),
+    paymentsIn: totalPaidAmount(),
   };
 }
 
@@ -32,6 +32,7 @@ const STAT_CARDS: {
   labelKey: TranslationKey;
   emoji: string;
   cardClass: string;
+  format?: "money";
 }[] = [
   {
     key: "students",
@@ -41,25 +42,33 @@ const STAT_CARDS: {
       "bg-primary text-white shadow-xl shadow-primary/30 ring-1 ring-white/10",
   },
   {
-    key: "teachers",
-    labelKey: "admin_stat_teachers",
-    emoji: "👥",
-    cardClass:
-      "bg-accent text-white shadow-xl shadow-accent/30 ring-1 ring-white/10",
-  },
-  {
     key: "classes",
     labelKey: "admin_stat_classes",
-    emoji: "📋",
+    emoji: "🎯",
     cardClass:
       "bg-neutral-100 text-foreground shadow-xl shadow-neutral-900/5 ring-1 ring-neutral-200/70",
   },
   {
-    key: "paidStudents",
-    labelKey: "admin_stat_paid_students",
-    emoji: "✅",
+    key: "teachers",
+    labelKey: "admin_stat_teachers",
+    emoji: "👨‍🏫",
     cardClass:
       "bg-accent text-white shadow-xl shadow-accent/30 ring-1 ring-white/10",
+  },
+  {
+    key: "pendingAdmissions",
+    labelKey: "admin_stat_pending_admissions",
+    emoji: "⏳",
+    cardClass:
+      "bg-primary text-white shadow-xl shadow-primary/25 ring-1 ring-white/10",
+  },
+  {
+    key: "paymentsIn",
+    labelKey: "admin_stat_payments_in",
+    emoji: "💰",
+    cardClass:
+      "bg-accent text-white shadow-xl shadow-accent/30 ring-1 ring-white/10",
+    format: "money",
   },
 ];
 
@@ -69,7 +78,8 @@ export function AdminDashboardPage() {
     students: 0,
     teachers: 0,
     classes: 0,
-    paidStudents: 0,
+    pendingAdmissions: 0,
+    paymentsIn: 0,
   }));
 
   const refresh = useCallback(() => {
@@ -81,16 +91,16 @@ export function AdminDashboardPage() {
   }, [refresh]);
 
   useEffect(() => {
-    const onUsers = () => refresh();
-    const onPayments = () => refresh();
-    const onClasses = () => refresh();
-    window.addEventListener("motiva-users-updated", onUsers);
-    window.addEventListener("motiva-student-payments-updated", onPayments);
-    window.addEventListener("motiva-classes-updated", onClasses);
+    const onAny = () => refresh();
+    window.addEventListener("motiva-users-updated", onAny);
+    window.addEventListener("motiva-classes-updated", onAny);
+    window.addEventListener("motiva-admissions-updated", onAny);
+    window.addEventListener("motiva-payments-ledger-updated", onAny);
     return () => {
-      window.removeEventListener("motiva-users-updated", onUsers);
-      window.removeEventListener("motiva-student-payments-updated", onPayments);
-      window.removeEventListener("motiva-classes-updated", onClasses);
+      window.removeEventListener("motiva-users-updated", onAny);
+      window.removeEventListener("motiva-classes-updated", onAny);
+      window.removeEventListener("motiva-admissions-updated", onAny);
+      window.removeEventListener("motiva-payments-ledger-updated", onAny);
     };
   }, [refresh]);
 
@@ -100,8 +110,8 @@ export function AdminDashboardPage() {
         {t("admin_nav_dashboard")}
       </h1>
 
-      <div className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2">
-        {STAT_CARDS.map(({ key, labelKey, emoji, cardClass }) => (
+      <div className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
+        {STAT_CARDS.map(({ key, labelKey, emoji, cardClass, format }) => (
           <div
             key={key}
             className={`flex flex-col rounded-3xl p-8 sm:p-10 ${cardClass}`}
@@ -117,8 +127,10 @@ export function AdminDashboardPage() {
                 {emoji}
               </span>
             </div>
-            <p className="mt-8 text-5xl font-bold tabular-nums tracking-tight sm:mt-10 sm:text-6xl">
-              {stats[key]}
+            <p className="mt-8 text-4xl font-bold tabular-nums tracking-tight sm:mt-10 sm:text-5xl">
+              {format === "money"
+                ? `₹${stats[key].toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
+                : stats[key]}
             </p>
           </div>
         ))}

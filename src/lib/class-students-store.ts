@@ -50,6 +50,12 @@ export function getStudentIdsForClass(classId: string): string[] {
   return Array.from(ids);
 }
 
+export function addStudentToClass(classId: string, studentId: string) {
+  const cur = getStudentIdsForClass(classId);
+  if (cur.includes(studentId)) return;
+  setClassStudentIds(classId, [...cur, studentId]);
+}
+
 /** Replace roster for classId; removes these students from every other class. */
 export function setClassStudentIds(classId: string, nextIds: string[]) {
   const idSet = new Set(nextIds);

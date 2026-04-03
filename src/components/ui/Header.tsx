@@ -4,43 +4,37 @@ import Link from "next/link";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
 
-function BookIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-    </svg>
-  );
-}
-
 export function Header() {
   const { t } = useLanguage();
 
   return (
-    <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/95 shadow-md shadow-neutral-900/8 backdrop-blur">
-      <div className="mx-auto flex min-h-[4.25rem] max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:min-h-[4.75rem] sm:px-6 sm:py-4">
+    <header className="sticky top-0 z-50 border-b border-neutral-200/90 bg-white/95 shadow-md shadow-neutral-900/[0.07] backdrop-blur-md">
+      <div className="mx-auto flex min-h-[4.25rem] max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:min-h-[4.75rem] sm:gap-4 sm:px-6 sm:py-4">
         <Link
           href="/"
-          className="flex min-w-0 items-center gap-3 text-primary transition-opacity hover:opacity-85"
+          className="group flex min-w-0 items-center gap-3"
+          aria-label={t("brand")}
         >
-          <span className="text-accent [&>svg]:h-9 [&>svg]:w-9 sm:[&>svg]:h-10 sm:[&>svg]:w-10">
-            <BookIcon />
-          </span>
-          <span className="truncate text-xl font-bold tracking-tight sm:text-2xl">
+          <img
+            src="/logo.png"
+            alt=""
+            className="h-8 w-auto shrink-0 object-contain transition duration-200 ease-out sm:h-10 md:h-12 motion-safe:group-hover:scale-105"
+            decoding="async"
+          />
+          <span className="truncate text-lg font-bold tracking-tight text-blue-700 sm:text-xl">
             {t("brand")}
           </span>
         </Link>
 
-        <LanguageToggle />
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <Link
+            href="/login"
+            className="inline-flex min-h-11 touch-manipulation items-center justify-center rounded-xl bg-gradient-to-b from-[#F59E0B] to-accent px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-accent/25 transition-[transform,box-shadow,filter] duration-200 ease-out hover:shadow-lg hover:shadow-accent/30 motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.98] sm:min-h-12 sm:px-5 sm:text-base"
+          >
+            {t("login")}
+          </Link>
+          <LanguageToggle />
+        </div>
       </div>
     </header>
   );

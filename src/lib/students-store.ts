@@ -5,6 +5,8 @@ import {
 } from "@/lib/users-store";
 import { removeStudentFromAllClasses } from "@/lib/class-students-store";
 import { deleteStudentPaymentStatus } from "@/lib/student-payments-store";
+import { deleteStudentProfile } from "@/lib/student-profiles-store";
+import { deletePaymentsForStudent } from "@/lib/payments-ledger-store";
 
 export type StudentRecord = {
   id: string;
@@ -28,5 +30,7 @@ export function addStudent(name: string, email: string): StudentRecord {
 export function deleteStudent(id: string) {
   removeStudentFromAllClasses(id);
   deleteStudentPaymentStatus(id);
+  deleteStudentProfile(id);
+  deletePaymentsForStudent(id);
   deleteUser(id);
 }

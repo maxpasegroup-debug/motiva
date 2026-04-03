@@ -43,7 +43,14 @@ export function getSession(): UserSession | null {
   if (!payload) return null;
 
   const role = payload.role as Role | undefined;
-  if (role !== "admin" && role !== "teacher" && role !== "student") return null;
+  if (
+    role !== "admin" &&
+    role !== "teacher" &&
+    role !== "student" &&
+    role !== "parent"
+  ) {
+    return null;
+  }
 
   if (
     typeof payload.sub !== "string" ||

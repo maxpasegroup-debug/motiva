@@ -12,10 +12,15 @@ const NAV: {
   icon: string;
 }[] = [
   { href: "/admin/dashboard", labelKey: "admin_nav_dashboard", icon: "📊" },
-  { href: "/admin/teachers", labelKey: "admin_nav_teachers", icon: "👥" },
+  { href: "/admin/admissions", labelKey: "admin_nav_admissions", icon: "📥" },
   { href: "/admin/students", labelKey: "admin_nav_students", icon: "🎓" },
-  { href: "/admin/classes", labelKey: "admin_nav_classes", icon: "📋" },
+  { href: "/admin/parents", labelKey: "admin_nav_parents", icon: "👨‍👩‍👧" },
+  { href: "/admin/teachers", labelKey: "admin_nav_teachers", icon: "👨‍🏫" },
+  { href: "/admin/batches", labelKey: "admin_nav_batches", icon: "🏫" },
   { href: "/admin/courses", labelKey: "admin_nav_courses", icon: "📚" },
+  { href: "/admin/payments", labelKey: "admin_nav_payments", icon: "💳" },
+  { href: "/admin/reports", labelKey: "admin_nav_reports", icon: "📊" },
+  { href: "/admin/settings", labelKey: "admin_nav_settings", icon: "⚙️" },
 ];
 
 export function AdminSidebar() {
@@ -27,7 +32,8 @@ export function AdminSidebar() {
     <aside className="w-full shrink-0 border-b border-neutral-200 bg-white md:w-60 md:border-b-0 md:border-r lg:w-64">
       <nav className="flex flex-col gap-2 p-4 md:sticky md:top-0 md:max-h-screen md:overflow-y-auto md:py-6 md:pl-4 md:pr-3 lg:pl-6">
         {NAV.map(({ href, labelKey, icon }) => {
-          const active = pathname === href;
+          const active =
+            pathname === href || pathname?.startsWith(`${href}/`);
           return (
             <Link
               key={href}

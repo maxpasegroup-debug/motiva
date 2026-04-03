@@ -30,7 +30,7 @@ export function LoginPage() {
       }
       const json = (await res.json()) as {
         token: string;
-        user: { role: "admin" | "teacher" | "student" };
+        user: { role: "admin" | "teacher" | "student" | "parent" };
       };
       saveSessionToken(json.token);
       router.push(getRoleHome(json.user.role));
