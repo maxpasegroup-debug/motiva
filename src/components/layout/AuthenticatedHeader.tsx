@@ -36,9 +36,9 @@ export function AuthenticatedHeader() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto max-w-3xl space-y-3 px-4 py-4 sm:px-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+    <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/95 shadow-md shadow-neutral-900/8 backdrop-blur">
+      <div className="mx-auto max-w-3xl space-y-3 px-4 py-4 sm:px-6 sm:py-5">
+        <div className="flex min-h-[3.5rem] flex-wrap items-center justify-between gap-3 sm:min-h-[3.75rem]">
           <div className="min-w-0">
             <p className="truncate text-lg font-semibold text-foreground sm:text-xl">
               {t("welcome")}

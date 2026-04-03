@@ -240,7 +240,10 @@ export function AdminCoursesPage() {
       ) : null}
 
       {courses.length === 0 ? (
-        <Card className="border-2 border-dashed border-neutral-200 p-8 text-center text-neutral-500 shadow-none">
+        <Card
+          interactive={false}
+          className="border-2 border-dashed border-neutral-200 p-8 text-center text-neutral-500 shadow-none"
+        >
           {t("admin_no_courses")}
         </Card>
       ) : null}

@@ -52,14 +52,14 @@ const STAT_CARDS: {
     labelKey: "admin_stat_classes",
     emoji: "📋",
     cardClass:
-      "bg-emerald-600 text-white shadow-xl shadow-emerald-600/30 ring-1 ring-white/10",
+      "bg-neutral-100 text-foreground shadow-xl shadow-neutral-900/5 ring-1 ring-neutral-200/70",
   },
   {
     key: "paidStudents",
     labelKey: "admin_stat_paid_students",
     emoji: "✅",
     cardClass:
-      "bg-amber-600 text-white shadow-xl shadow-amber-600/30 ring-1 ring-white/10",
+      "bg-accent text-white shadow-xl shadow-accent/30 ring-1 ring-white/10",
   },
 ];
 

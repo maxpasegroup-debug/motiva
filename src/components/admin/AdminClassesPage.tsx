@@ -23,8 +23,8 @@ const DURATION_PRESETS: { days: ClassDuration; emoji: string }[] = [
 const CARD_THEMES = [
   "border-primary/30 bg-primary/[0.07] shadow-primary/10",
   "border-accent/35 bg-accent/[0.08] shadow-accent/10",
-  "border-emerald-500/35 bg-emerald-500/[0.07] shadow-emerald-500/10",
-  "border-violet-500/35 bg-violet-500/[0.07] shadow-violet-500/10",
+  "border-neutral-200 bg-neutral-100 shadow-neutral-200/60",
+  "border-primary/20 bg-primary/[0.04] shadow-primary/8",
 ];
 
 function teacherName(teachers: TeacherRecord[], id: string) {
@@ -273,7 +273,7 @@ export function AdminClassesPage() {
               </label>
 
               {assignClassId && studentsForAssign.length === 0 ? (
-                <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <p className="rounded-xl bg-accent/10 px-4 py-3 text-sm text-accent">
                   {t("admin_classes_no_students_for_teacher")}
                 </p>
               ) : null}
@@ -313,7 +313,7 @@ export function AdminClassesPage() {
               ) : null}
 
               {assignSaved ? (
-                <p className="text-center text-sm font-medium text-emerald-700">
+                <p className="text-center text-sm font-medium text-primary">
                   {t("admin_classes_assign_saved")}
                 </p>
               ) : null}
@@ -327,7 +327,10 @@ export function AdminClassesPage() {
           {t("admin_classes_list_title")}
         </h2>
         {classes.length === 0 ? (
-          <Card className="border-2 border-dashed border-neutral-200 p-12 text-center text-neutral-500 shadow-none">
+          <Card
+            interactive={false}
+            className="border-2 border-dashed border-neutral-200 p-12 text-center text-neutral-500 shadow-none"
+          >
             {t("admin_classes_no_classes")}
           </Card>
         ) : (
@@ -348,7 +351,7 @@ export function AdminClassesPage() {
                       if (assignClassId === c.id) setAssignClassId("");
                       refresh();
                     }}
-                    className="absolute right-3 top-3 rounded-lg p-2 text-neutral-500 transition-colors hover:bg-white/50 hover:text-red-600"
+                    className="absolute right-3 top-3 rounded-lg p-2 text-neutral-500 transition-colors hover:bg-white/50 hover:text-accent"
                     aria-label={t("admin_delete_class")}
                   >
                     <TrashIcon />

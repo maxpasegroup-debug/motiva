@@ -335,7 +335,7 @@ export function AdminStudentsPage() {
                     variant="outline"
                     icon={<TrashIcon />}
                     onClick={() => handleDelete(student.id)}
-                    className="shrink-0 border-2 border-red-200 text-red-700 hover:border-red-300 hover:bg-red-50 focus-visible:outline-red-500 sm:max-w-xs sm:w-full"
+                    className="shrink-0 border-2 border-accent/30 text-accent hover:border-accent/50 hover:bg-accent/10 focus-visible:outline-accent/50 sm:max-w-xs sm:w-full"
                     aria-label={`${t("admin_delete")}: ${student.name}`}
                   >
                     {t("admin_delete")}

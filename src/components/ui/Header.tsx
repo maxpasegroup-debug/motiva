@@ -26,16 +26,16 @@ export function Header() {
   const { t } = useLanguage();
 
   return (
-    <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+    <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/95 shadow-md shadow-neutral-900/8 backdrop-blur">
+      <div className="mx-auto flex min-h-[4.25rem] max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:min-h-[4.75rem] sm:px-6 sm:py-4">
         <Link
           href="/"
-          className="flex min-w-0 items-center gap-2 text-primary transition-opacity hover:opacity-80"
+          className="flex min-w-0 items-center gap-3 text-primary transition-opacity hover:opacity-85"
         >
-          <span className="text-accent [&>svg]:h-8 [&>svg]:w-8">
+          <span className="text-accent [&>svg]:h-9 [&>svg]:w-9 sm:[&>svg]:h-10 sm:[&>svg]:w-10">
             <BookIcon />
           </span>
-          <span className="truncate text-lg font-bold tracking-tight sm:text-xl">
+          <span className="truncate text-xl font-bold tracking-tight sm:text-2xl">
             {t("brand")}
           </span>
         </Link>

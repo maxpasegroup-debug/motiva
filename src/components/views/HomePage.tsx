@@ -3,110 +3,13 @@
 import Link from "next/link";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { FadeInSection } from "@/components/ui/FadeInSection";
 
 /** Replace with your WhatsApp number (country code, no + or spaces). */
 const WHATSAPP_HREF = "https://wa.me/919999999999";
 
-function LogInIcon({ className = "h-6 w-6" }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden
-    >
-      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-      <polyline points="10 17 15 12 10 7" />
-      <line x1="15" x2="3" y1="12" y2="12" />
-    </svg>
-  );
-}
-
-function UserRoundIcon({ className = "h-8 w-8" }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden
-    >
-      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
-
-function UsersIcon({ className = "h-8 w-8" }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden
-    >
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
-
-function PlayCircleIcon({ className = "h-8 w-8" }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden
-    >
-      <circle cx="12" cy="12" r="10" />
-      <polygon points="10 8 16 12 10 16 10 8" />
-    </svg>
-  );
-}
-
-function CalendarIcon({ className = "h-10 w-10" }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden
-    >
-      <path d="M8 2v4" />
-      <path d="M16 2v4" />
-      <rect width="18" height="18" x="3" y="4" rx="2" />
-      <path d="M3 10h18" />
-    </svg>
-  );
-}
+/** Shown in landing trust line; swap for a real count from your data when ready. */
+const LANDING_TRUSTED_STUDENT_COUNT = "100+";
 
 function WhatsAppIcon({ className = "h-6 w-6" }: { className?: string }) {
   return (
@@ -126,121 +29,316 @@ export function HomePage() {
   const { t } = useLanguage();
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col px-4 py-8 text-center sm:px-6 sm:py-10">
-      <section className="mx-auto flex w-full max-w-xl flex-col items-center gap-8 pb-16 pt-4 sm:pb-20 sm:pt-6">
-        <div className="space-y-4">
-          <h1 className="text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-            {t("landing_title")}
-          </h1>
-          <p className="text-balance text-lg text-neutral-600 sm:text-xl">
-            {t("landing_subtitle")}
-          </p>
+    <div className="mx-auto flex w-full max-w-5xl flex-col px-4 py-10 text-center sm:px-6 sm:py-12">
+      <section className="relative mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border border-neutral-200 bg-gradient-to-b from-[#0B5ED7] via-[#6EC1FF] to-white">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -left-28 -top-24 h-72 w-72 rounded-full bg-white/20 blur-3xl" />
+          <div className="absolute -right-24 top-20 h-80 w-80 rounded-full bg-primary/15 blur-3xl" />
+          <div className="absolute bottom-[-120px] left-1/2 h-[26rem] w-[34rem] -translate-x-1/2 rounded-[100%] bg-[#0B5ED7]/10 blur-3xl" />
         </div>
-        <div className="flex w-full max-w-md flex-col gap-4 sm:flex-row sm:justify-center">
-          <Button
-            href="/login"
-            icon={<UserRoundIcon className="h-6 w-6" />}
-            className="sm:min-w-[12rem]"
-          >
-            {t("join_class")}
-          </Button>
-          <Button
-            href="/login"
-            variant="outline"
-            icon={<LogInIcon />}
-            className="sm:min-w-[12rem]"
-          >
-            {t("login")}
-          </Button>
+
+        <div className="relative flex flex-col items-center gap-12 px-5 py-12 sm:px-6 sm:py-16 md:flex-row md:items-center md:justify-between md:gap-14">
+          <div className="w-full max-w-xl text-center md:text-left">
+            <h1 className="text-balance text-4xl font-extrabold tracking-tight text-white sm:text-6xl">
+              {t("landing_title")}
+            </h1>
+            <p className="mt-6 text-balance text-lg font-semibold text-white/90 sm:mt-5 sm:text-2xl">
+              {t("landing_subtitle")}
+            </p>
+
+            <div className="mt-10 flex w-full flex-col gap-4 md:mt-8 md:flex-row md:items-center">
+              <Button
+                href="/login"
+                icon={<span aria-hidden>👤</span>}
+                className="w-full text-lg md:w-auto md:min-w-[12.5rem]"
+              >
+                {t("join_class")}
+              </Button>
+              <Button
+                href="/login"
+                variant="outline"
+                icon={<span aria-hidden>→</span>}
+                className="w-full text-lg md:w-auto md:min-w-[12.5rem]"
+              >
+                {t("login")}
+              </Button>
+            </div>
+          </div>
+
+          <div className="w-full max-w-md md:max-w-[22rem]">
+            <div className="relative rounded-3xl bg-white/70 p-6 shadow-lg ring-1 ring-white/60">
+              <svg
+                viewBox="0 0 420 360"
+                className="h-[18rem] w-full"
+                role="img"
+                aria-label="Student learning with teacher guidance"
+              >
+                <defs>
+                  <linearGradient
+                    id="g1"
+                    x1="0"
+                    y1="0"
+                    x2="1"
+                    y2="1"
+                  >
+                    <stop offset="0" stopColor="#0B5ED7" stopOpacity="0.25" />
+                    <stop offset="1" stopColor="#6EC1FF" stopOpacity="0.05" />
+                  </linearGradient>
+                </defs>
+
+                <rect
+                  x="24"
+                  y="30"
+                  width="372"
+                  height="300"
+                  rx="28"
+                  fill="url(#g1)"
+                />
+
+                {/* Board */}
+                <rect
+                  x="250"
+                  y="58"
+                  width="120"
+                  height="160"
+                  rx="18"
+                  fill="#ffffff"
+                  opacity="0.9"
+                />
+                <path
+                  d="M270 100 C290 80, 325 80, 347 100"
+                  stroke="#0B5ED7"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  fill="none"
+                  opacity="0.35"
+                />
+
+                {/* Teacher */}
+                <circle cx="290" cy="175" r="22" fill="#0B5ED7" opacity="0.25" />
+                <path
+                  d="M275 206 Q290 190 305 206 L316 270 Q290 287 264 270 Z"
+                  fill="#0B5ED7"
+                  opacity="0.35"
+                />
+                {/* Teacher arm pointing */}
+                <path
+                  d="M296 220 L350 120"
+                  stroke="#0B5ED7"
+                  strokeWidth="7"
+                  strokeLinecap="round"
+                  opacity="0.55"
+                />
+                <circle cx="350" cy="120" r="9" fill="#0B5ED7" opacity="0.65" />
+
+                {/* Student */}
+                <circle cx="165" cy="185" r="20" fill="#0B5ED7" opacity="0.2" />
+                <path
+                  d="M145 215 Q165 200 185 215 L198 275 Q165 298 132 275 Z"
+                  fill="#0B5ED7"
+                  opacity="0.28"
+                />
+
+                {/* Book */}
+                <path
+                  d="M118 254 Q150 238 182 254 V288 Q150 272 118 288 Z"
+                  fill="#ffffff"
+                  opacity="0.9"
+                />
+                <path
+                  d="M135 265 Q150 258 165 265"
+                  stroke="#0B5ED7"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  opacity="0.35"
+                  fill="none"
+                />
+
+                {/* Little sparkles */}
+                <g opacity="0.45" fill="#0B5ED7">
+                  <circle cx="210" cy="90" r="4" />
+                  <circle cx="238" cy="115" r="3" />
+                  <circle cx="186" cy="120" r="3" />
+                  <circle cx="220" cy="145" r="2.5" />
+                </g>
+              </svg>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-4xl py-14 sm:py-16">
-        <h2 className="mb-10 text-sm font-semibold uppercase tracking-widest text-neutral-500">
+      <p className="mx-auto mt-8 max-w-2xl text-center text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500 sm:mt-10 sm:text-sm sm:tracking-[0.18em]">
+        {t("landing_trust_line").replace(
+          "{count}",
+          LANDING_TRUSTED_STUDENT_COUNT,
+        )}
+      </p>
+
+      <FadeInSection>
+        <section className="mx-auto w-full max-w-4xl py-16 sm:py-20">
+        <h2 className="mb-12 text-center text-sm font-semibold uppercase tracking-widest text-neutral-500 sm:text-start">
           {t("services_title")}
         </h2>
-        <div className="grid gap-5 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 sm:gap-6">
           {(
             [
               {
-                icon: (
-                  <UserRoundIcon className="mx-auto h-10 w-10 text-primary" />
-                ),
+                emoji: "🎯",
                 titleKey: "service_one_to_one" as const,
                 descKey: "service_one_to_one_desc" as const,
+                circleClass: "bg-primary/12 ring-2 ring-primary/15",
               },
               {
-                icon: (
-                  <UsersIcon className="mx-auto h-10 w-10 text-primary" />
-                ),
+                emoji: "👥",
                 titleKey: "service_group" as const,
                 descKey: "service_group_desc" as const,
+                circleClass: "bg-primary/12 ring-2 ring-primary/15",
               },
               {
-                icon: (
-                  <PlayCircleIcon className="mx-auto h-10 w-10 text-accent" />
-                ),
+                emoji: "🎥",
                 titleKey: "service_recorded" as const,
                 descKey: "service_recorded_desc" as const,
+                circleClass: "bg-accent/12 ring-2 ring-accent/25",
               },
             ] as const
-          ).map(({ icon, titleKey, descKey }) => (
-            <Card
+          ).map(({ emoji, titleKey, descKey, circleClass }) => (
+            <div
               key={titleKey}
-              className="flex flex-col items-center gap-4 text-center"
+              className="flex flex-col items-center gap-6 rounded-xl border border-neutral-100 bg-white px-6 py-10 text-center shadow-lg shadow-neutral-900/8 transition-all duration-200 ease-out sm:gap-5 sm:px-8 sm:py-8 motion-safe:hover:-translate-y-1.5 motion-safe:hover:scale-[1.02] motion-safe:hover:shadow-xl motion-safe:hover:shadow-neutral-900/12"
             >
-              {icon}
-              <h3 className="text-lg font-semibold text-foreground">
+              <div
+                className={`flex h-16 w-16 items-center justify-center rounded-full text-3xl leading-none ${circleClass}`}
+                aria-hidden
+              >
+                {emoji}
+              </div>
+              <h3 className="text-lg font-bold text-foreground sm:text-xl">
                 {t(titleKey)}
               </h3>
-              <p className="text-sm leading-relaxed text-neutral-600">
+              <p className="text-sm leading-relaxed text-neutral-600 sm:text-base">
                 {t(descKey)}
               </p>
-            </Card>
+            </div>
           ))}
         </div>
       </section>
+      </FadeInSection>
 
-      <section className="mx-auto w-full max-w-3xl py-14 sm:py-16">
-        <h2 className="mb-10 text-sm font-semibold uppercase tracking-widest text-neutral-500">
-          {t("programs_title")}
+      <FadeInSection>
+        <section className="mx-auto w-full max-w-4xl py-16 sm:py-20">
+        <h2 className="mb-12 text-center text-sm font-semibold uppercase tracking-widest text-neutral-500">
+          {t("why_motiva_title")}
         </h2>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Card className="border-2 border-primary/25 bg-primary/[0.03] py-10 sm:min-h-[200px] sm:py-12">
-            <CalendarIcon className="mx-auto h-10 w-10 text-primary" />
-            <h3 className="mt-5 text-2xl font-bold text-foreground sm:text-3xl">
-              {t("program_12_title")}
-            </h3>
-            <p className="mt-3 text-sm text-neutral-600 sm:text-base">
-              {t("program_12_desc")}
-            </p>
-          </Card>
-          <Card className="border-2 border-accent/30 bg-accent/[0.04] py-10 sm:min-h-[200px] sm:py-12">
-            <CalendarIcon className="mx-auto h-10 w-10 text-accent" />
-            <h3 className="mt-5 text-2xl font-bold text-foreground sm:text-3xl">
-              {t("program_25_title")}
-            </h3>
-            <p className="mt-3 text-sm text-neutral-600 sm:text-base">
-              {t("program_25_desc")}
-            </p>
-          </Card>
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 sm:gap-6">
+          {(
+            [
+              {
+                emoji: "📘",
+                titleKey: "why_motiva_simple" as const,
+                shortKey: "why_motiva_simple_short" as const,
+                circleClass: "bg-primary/10 ring-2 ring-primary/15",
+              },
+              {
+                emoji: "🤝",
+                titleKey: "why_motiva_guidance" as const,
+                shortKey: "why_motiva_guidance_short" as const,
+                circleClass: "bg-primary/10 ring-2 ring-primary/15",
+              },
+              {
+                emoji: "📈",
+                titleKey: "why_motiva_progress" as const,
+                shortKey: "why_motiva_progress_short" as const,
+                circleClass: "bg-accent/10 ring-2 ring-accent/20",
+              },
+            ] as const
+          ).map(({ emoji, titleKey, shortKey, circleClass }) => (
+            <div
+              key={titleKey}
+              className="flex flex-col items-center gap-5 rounded-2xl border border-neutral-100 bg-white/90 px-6 py-10 text-center shadow-md shadow-neutral-900/5 transition-all duration-200 ease-out sm:gap-4 sm:py-8 motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg motion-safe:hover:shadow-neutral-900/10"
+            >
+              <div
+                className={`flex h-14 w-14 items-center justify-center rounded-full text-2xl leading-none ${circleClass}`}
+                aria-hidden
+              >
+                {emoji}
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-foreground">
+                  {t(titleKey)}
+                </h3>
+                <p className="text-sm leading-snug text-neutral-600">
+                  {t(shortKey)}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
+      </FadeInSection>
 
-      <footer className="mt-6 border-t border-neutral-200 pt-14 pb-8">
+      <FadeInSection>
+        <section className="mx-auto w-full max-w-3xl py-16 sm:py-20">
+        <h2 className="mb-12 text-center text-sm font-semibold uppercase tracking-widest text-neutral-500 sm:text-start">
+          {t("programs_title")}
+        </h2>
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-6">
+          <Link
+            href="/login"
+            className="group relative flex min-h-[11rem] touch-manipulation flex-col items-stretch justify-center overflow-hidden rounded-3xl bg-gradient-to-b from-accent via-accent/70 to-accent/10 px-8 py-12 text-center shadow-lg shadow-accent/15 transition-all duration-200 active:scale-[0.99] sm:min-h-0 sm:py-10 sm:text-left md:active:scale-100 hover:-translate-y-1.5 hover:shadow-xl"
+          >
+            <div className="pointer-events-none absolute -left-28 -top-28 h-72 w-72 rounded-full bg-white/25 blur-3xl" />
+            <div className="pointer-events-none absolute -right-24 bottom-[-120px] h-72 w-72 rounded-full bg-white/15 blur-3xl" />
+            <div className="relative space-y-4 text-center sm:text-left">
+              <div className="text-6xl font-extrabold tracking-tight text-white">
+                12
+              </div>
+              <div className="text-2xl font-extrabold text-white">
+                {t("program_12_desc")}
+              </div>
+              <div className="text-sm font-semibold text-white/90">
+                {t("program_12_title")}
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            href="/login"
+            className="group relative flex min-h-[11rem] touch-manipulation flex-col items-stretch justify-center overflow-hidden rounded-3xl bg-gradient-to-b from-primary via-primary/60 to-primary/10 px-8 py-12 text-center shadow-lg shadow-primary/15 transition-all duration-200 ease-out active:scale-[0.99] sm:min-h-0 sm:py-10 sm:text-left md:active:scale-100 motion-safe:hover:-translate-y-1.5 motion-safe:hover:scale-[1.02] motion-safe:hover:shadow-xl"
+          >
+            <div className="pointer-events-none absolute -left-28 -top-28 h-72 w-72 rounded-full bg-white/25 blur-3xl" />
+            <div className="pointer-events-none absolute -right-24 bottom-[-120px] h-72 w-72 rounded-full bg-white/15 blur-3xl" />
+            <div className="relative space-y-4 text-center sm:text-left">
+              <div className="text-6xl font-extrabold tracking-tight text-white">
+                25
+              </div>
+              <div className="text-2xl font-extrabold text-white">
+                {t("program_25_desc")}
+              </div>
+              <div className="text-sm font-semibold text-white/90">
+                {t("program_25_title")}
+              </div>
+            </div>
+          </Link>
+        </div>
+      </section>
+      </FadeInSection>
+
+      <FadeInSection>
+        <footer className="mt-10 border-t border-neutral-200 pt-16 pb-12">
         <Link
           href={WHATSAPP_HREF}
           target="_blank"
           rel="noopener noreferrer"
-          className="mx-auto flex min-h-14 w-full max-w-md items-center justify-center gap-3 rounded-xl bg-[#25D366] px-6 text-base font-semibold text-white shadow-sm transition-colors hover:bg-[#20BD5A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#25D366]"
+          className="mx-auto flex min-h-[3.25rem] w-full max-w-md touch-manipulation items-center justify-center gap-3 rounded-xl bg-[#25D366] px-6 text-center text-base font-semibold text-white shadow-sm transition-[transform,background-color,filter] duration-200 ease-out motion-safe:hover:scale-[1.02] hover:bg-[#20BD5A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#25D366] active:brightness-95 motion-safe:active:scale-[0.98]"
         >
           <WhatsAppIcon className="h-7 w-7 shrink-0" />
           {t("footer_whatsapp")}
         </Link>
-        <p className="mx-auto mt-8 max-w-md text-sm text-neutral-500">
+        <p className="mx-auto mt-10 max-w-md text-sm text-neutral-500">
           {t("footer_line")}
         </p>
       </footer>
+      </FadeInSection>
     </div>
   );
 }
