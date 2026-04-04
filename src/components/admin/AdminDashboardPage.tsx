@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { countPendingAdmissions } from "@/lib/admissions-store";
-import { listClasses } from "@/lib/classes-store";
 import type { TranslationKey } from "@/lib/i18n";
 import { totalPaidAmount } from "@/lib/payments-ledger-store";
 import { listStudents } from "@/lib/students-store";
+import { getAuthToken } from "@/lib/session";
 import { listTeachers } from "@/lib/teachers-store";
 
 type DashboardStats = {
@@ -17,14 +17,19 @@ type DashboardStats = {
   paymentsIn: number;
 };
 
-function computeStats(): DashboardStats {
-  return {
-    students: listStudents().length,
-    teachers: listTeachers().length,
-    classes: listClasses().length,
-    pendingAdmissions: countPendingAdmissions(),
-    paymentsIn: totalPaidAmount(),
-  };
+async function fetchBatchCount(): Promise<number> {
+  const token = getAuthToken();
+  if (!token) return 0;
+  try {
+    const res = await fetch("/api/admin/batches", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return 0;
+    const j = (await res.json()) as { batches?: unknown[] };
+    return j.batches?.length ?? 0;
+  } catch {
+    return 0;
+  }
 }
 
 const STAT_CARDS: {
@@ -82,16 +87,23 @@ export function AdminDashboardPage() {
     paymentsIn: 0,
   }));
 
-  const refresh = useCallback(() => {
-    setStats(computeStats());
+  const refresh = useCallback(async () => {
+    const classes = await fetchBatchCount();
+    setStats({
+      students: listStudents().length,
+      teachers: listTeachers().length,
+      classes,
+      pendingAdmissions: countPendingAdmissions(),
+      paymentsIn: totalPaidAmount(),
+    });
   }, []);
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, [refresh]);
 
   useEffect(() => {
-    const onAny = () => refresh();
+    const onAny = () => void refresh();
     window.addEventListener("motiva-users-updated", onAny);
     window.addEventListener("motiva-classes-updated", onAny);
     window.addEventListener("motiva-admissions-updated", onAny);

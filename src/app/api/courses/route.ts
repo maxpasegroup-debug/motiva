@@ -13,7 +13,10 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(req: NextRequest) {
   if (!getDatabaseUrl()) {
-    return NextResponse.json({ courses: [] });
+    return NextResponse.json(
+      { error: "Database not configured", courses: [] },
+      { status: 503 },
+    );
   }
 
   let publishedOnly = true;

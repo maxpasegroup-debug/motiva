@@ -4,53 +4,85 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
-import { ClassDayProgress } from "@/components/class/ClassDayProgress";
 import { Card } from "@/components/ui/Card";
-import { getClassById, type ClassRecord } from "@/lib/classes-store";
-import { getSession } from "@/lib/session";
-import { listStudents } from "@/lib/students-store";
+import { getAuthToken } from "@/lib/session";
 
 type Props = { classId: string };
+
+type BatchPayload = {
+  id: string;
+  name: string;
+  duration: 12 | 25;
+};
+
+type DayRow = {
+  day_number: number;
+  unlocked: boolean;
+  past: boolean;
+  attendance: "present" | "absent" | null;
+};
 
 export function StudentClassPage({ classId }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
-  const [cls, setCls] = useState<ClassRecord | null | undefined>(undefined);
+  const [batch, setBatch] = useState<BatchPayload | null>(null);
+  const [currentDay, setCurrentDay] = useState(1);
+  const [days, setDays] = useState<DayRow[]>([]);
   const [allowed, setAllowed] = useState(false);
-  const [usersTick, setUsersTick] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const refresh = useCallback(() => {
-    const session = getSession();
-    const student = listStudents().find((s) => s.id === session?.userId);
-    const found = getClassById(classId) ?? null;
-    setCls(found);
-    if (!found || !student || !found.studentIds.includes(student.id)) {
+  const refresh = useCallback(async () => {
+    const token = getAuthToken();
+    if (!token) {
+      setBatch(null);
       setAllowed(false);
+      setLoading(false);
       return;
     }
-    setAllowed(true);
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/student/batches/${classId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        setBatch(null);
+        setAllowed(false);
+        return;
+      }
+      const json = (await res.json()) as {
+        success?: boolean;
+        batch?: BatchPayload;
+        current_day?: number;
+        days?: DayRow[];
+      };
+      if (json.success && json.batch) {
+        setBatch(json.batch);
+        setCurrentDay(json.current_day ?? 1);
+        setDays(json.days ?? []);
+        setAllowed(true);
+      } else {
+        setBatch(null);
+        setAllowed(false);
+      }
+    } catch {
+      setBatch(null);
+      setAllowed(false);
+    } finally {
+      setLoading(false);
+    }
   }, [classId]);
 
   useEffect(() => {
-    function onUsersUpdated() {
-      setUsersTick((x) => x + 1);
-    }
-    window.addEventListener("motiva-users-updated", onUsersUpdated);
-    return () =>
-      window.removeEventListener("motiva-users-updated", onUsersUpdated);
-  }, []);
+    void refresh();
+  }, [refresh]);
 
   useEffect(() => {
-    refresh();
-  }, [refresh, usersTick]);
-
-  useEffect(() => {
-    if (!getSession()) {
+    if (!getAuthToken()) {
       router.replace("/login");
     }
   }, [router]);
 
-  if (cls === undefined) {
+  if (loading) {
     return (
       <div className="py-12 text-center text-neutral-400" aria-busy="true">
         …
@@ -58,7 +90,7 @@ export function StudentClassPage({ classId }: Props) {
     );
   }
 
-  if (cls === null || !allowed) {
+  if (!batch || !allowed) {
     return (
       <Card className="p-8 text-center shadow-md">
         <p className="text-neutral-600">{t("class_no_access")}</p>
@@ -82,18 +114,43 @@ export function StudentClassPage({ classId }: Props) {
           ← {t("class_back_student")}
         </Link>
         <h1 className="mt-4 text-2xl font-bold text-foreground sm:text-3xl">
-          {cls.name}
+          {batch.name}
         </h1>
+        <p className="mt-2 text-sm text-neutral-600">
+          {t("student_batch_current_day").replace("{n}", String(currentDay))}
+        </p>
       </div>
 
       <Card className="p-6 shadow-lg sm:p-8">
-        <h2 className="mb-2 text-lg font-semibold text-neutral-800">
-          {t("class_progress_heading")}
+        <h2 className="mb-4 text-lg font-semibold text-neutral-800">
+          {t("student_day_progress_title")}
         </h2>
-        <p className="mb-6 text-sm text-neutral-500">
-          {t("class_student_unlocked_hint")}
-        </p>
-        <ClassDayProgress classRecord={cls} />
+        <ul className="space-y-3">
+          {days.map((d) => {
+            let stateIcon: string;
+            if (!d.unlocked) stateIcon = "🔒";
+            else if (d.past) stateIcon = "✅";
+            else stateIcon = "🔓";
+            let att = "";
+            if (d.unlocked && d.attendance === "present") att = " ✔";
+            else if (d.unlocked && d.attendance === "absent") att = " ❌";
+            else if (d.unlocked && d.attendance === null) att = " · —";
+            return (
+              <li
+                key={d.day_number}
+                className="flex min-h-14 items-center justify-between rounded-xl border border-neutral-200 bg-white px-4 py-3 shadow-sm"
+              >
+                <span className="font-semibold text-foreground">
+                  {t("class_day")} {d.day_number}
+                </span>
+                <span className="text-lg tabular-nums" aria-hidden>
+                  {stateIcon}
+                  {att}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
       </Card>
     </div>
   );

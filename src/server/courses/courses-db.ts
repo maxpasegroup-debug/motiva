@@ -47,6 +47,11 @@ function ensureTables(): Promise<void> {
   return tableReady;
 }
 
+/** Ensures `courses` and `lessons` exist (e.g. before `course_progress`). */
+export function ensureCourseTables(): Promise<void> {
+  return ensureTables();
+}
+
 /** DB row: `courses` */
 export type CourseRow = {
   id: string;

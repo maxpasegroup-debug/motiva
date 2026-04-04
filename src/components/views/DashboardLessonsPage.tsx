@@ -1,33 +1,62 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { getSession } from "@/lib/session";
-import { listClasses, type ClassRecord } from "@/lib/classes-store";
-import { listStudents } from "@/lib/students-store";
+import { getAuthToken } from "@/lib/session";
+
+type EnrollmentJson = {
+  success?: boolean;
+  enrolled?: boolean;
+  batch?: {
+    id: string;
+    name: string;
+    duration: number;
+  };
+  course?: {
+    id: string;
+    title: string;
+    is_published: boolean;
+    total_lessons: number;
+  } | null;
+};
 
 export function DashboardLessonsPage() {
   const { t } = useLanguage();
+  const [data, setData] = useState<EnrollmentJson | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const [myClasses, setMyClasses] = useState<ClassRecord[]>([]);
-
-  useEffect(() => {
-    const session = getSession();
-    const student = listStudents().find((s) => s.id === session?.userId);
-    if (!student) {
-      setMyClasses([]);
+  const load = useCallback(async () => {
+    const token = getAuthToken();
+    if (!token) {
+      setData({ success: true, enrolled: false });
       return;
     }
+    setError(null);
+    try {
+      const res = await fetch("/api/student/enrollment", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = (await res.json().catch(() => ({}))) as EnrollmentJson & {
+        error?: string;
+      };
+      if (!res.ok) {
+        setError(json.error ?? t("course_dashboard_load_error"));
+        setData(null);
+        return;
+      }
+      setData(json);
+    } catch {
+      setError(t("course_dashboard_load_error"));
+      setData(null);
+    }
+  }, [t]);
 
-    setMyClasses(listClasses().filter((c) => c.studentIds.includes(student.id)));
-  }, []);
-
-  const sorted = useMemo(() => {
-    return [...myClasses].sort((a, b) => a.name.localeCompare(b.name));
-  }, [myClasses]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   return (
     <div className="mx-auto max-w-lg space-y-8">
@@ -44,47 +73,49 @@ export function DashboardLessonsPage() {
         <p className="mt-2 text-sm text-neutral-600">{t("lessons_description")}</p>
       </div>
 
-      {sorted.length === 0 ? (
+      {error ? (
+        <p className="text-sm text-accent">{error}</p>
+      ) : null}
+
+      {data === null ? (
+        <Card className="p-8 text-center shadow-md">
+          <p className="text-neutral-600">{t("course_player_loading")}</p>
+        </Card>
+      ) : !data.enrolled || !data.batch ? (
         <Card className="p-8 text-center shadow-md">
           <p className="text-neutral-600">{t("lessons_empty")}</p>
-          <Link
-            href="/dashboard/join"
-            className="mt-4 inline-block font-semibold text-primary underline-offset-4 hover:underline"
-          >
-            {t("join_class")}
-          </Link>
+          <p className="mt-2 text-sm text-neutral-500">
+            {t("course_dashboard_empty")}
+          </p>
         </Card>
       ) : (
-        <ul className="space-y-4">
-          {sorted.map((c) => (
-            <li key={c.id}>
-              <Card className="p-6 shadow-md">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="truncate text-lg font-bold text-foreground">
-                      {c.name}
-                    </p>
-                    <p className="mt-1 text-sm text-neutral-600">
-                      {c.completedDays} ✅ done · {c.unlockedDay} 🔓 unlocked ·{" "}
-                      {c.duration - c.unlockedDay} 🔒 locked
-                    </p>
-                  </div>
-
-                  <div className="shrink-0">
-                    <Button
-                      href={`/dashboard/class/${c.id}`}
-                      className="min-h-14"
-                    >
-                      {t("lessons_continue")}
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            </li>
-          ))}
-        </ul>
+        <Card className="p-6 shadow-md">
+          <p className="text-lg font-bold text-foreground">{data.batch.name}</p>
+          {data.course ? (
+            <p className="mt-2 text-neutral-600">{data.course.title}</p>
+          ) : null}
+          <p className="mt-2 text-sm text-neutral-500">
+            {data.batch.duration} {t("admin_classes_days_short")}
+          </p>
+          <div className="mt-6 flex flex-col gap-3">
+            <Button
+              href={`/dashboard/class/${data.batch.id}`}
+              className="min-h-14 w-full"
+            >
+              {t("class_tap_progress")}
+            </Button>
+            {data.course?.is_published ? (
+              <Button
+                href={`/course/${data.course.id}`}
+                variant="outline"
+                className="min-h-14 w-full"
+              >
+                {t("course_dashboard_continue_learning")}
+              </Button>
+            ) : null}
+          </div>
+        </Card>
       )}
     </div>
   );
 }
-

@@ -11,14 +11,11 @@ import {
   type AdmissionRequest,
   type AdmissionStatus,
 } from "@/lib/admissions-store";
-import { addStudentToClass } from "@/lib/class-students-store";
-import { listClasses, type ClassRecord } from "@/lib/classes-store";
-import { listCourses } from "@/lib/courses-store";
 import { getAuthToken } from "@/lib/session";
+import { listTeachers } from "@/lib/teachers-store";
 import { addPaymentEntry } from "@/lib/payments-ledger-store";
 import { setStudentPaymentStatus } from "@/lib/student-payments-store";
 import { upsertStudentProfile } from "@/lib/student-profiles-store";
-import { listTeachers } from "@/lib/teachers-store";
 import type { UserRecord } from "@/lib/users-store";
 import { upsertUserPublic } from "@/lib/users-store";
 
@@ -68,8 +65,17 @@ export function AdminAdmissionsPage() {
   const [phone, setPhone] = useState("");
   const [interest, setInterest] = useState("");
   const [approveFor, setApproveFor] = useState<AdmissionListRow | null>(null);
-  const [courseId, setCourseId] = useState("");
-  const [classId, setClassId] = useState("");
+  const [batchId, setBatchId] = useState("");
+  const [adminBatches, setAdminBatches] = useState<
+    {
+      id: string;
+      name: string;
+      course_id: string;
+      course_title: string;
+      teacher_id: string;
+      duration: number;
+    }[]
+  >([]);
   const [fee, setFee] = useState("5000");
   const [feePaid, setFeePaid] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -121,13 +127,59 @@ export function AdminAdmissionsPage() {
     return () => window.removeEventListener("motiva-admissions-updated", ev);
   }, [refreshAll]);
 
-  const courses = listCourses();
-  const classes = listClasses();
-  const teachers = listTeachers();
+  useEffect(() => {
+    async function loadBatches() {
+      const token = getAuthToken();
+      if (!token) {
+        setAdminBatches([]);
+        return;
+      }
+      const res = await fetch("/api/admin/batches", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        setAdminBatches([]);
+        return;
+      }
+      const json = (await res.json()) as {
+        batches?: {
+          id: string;
+          name: string;
+          course_id: string;
+          course_title: string;
+          teacher_id: string;
+          duration: number;
+        }[];
+      };
+      setAdminBatches(json.batches ?? []);
+    }
+    void loadBatches();
+  }, [approveFor]);
 
-  const selectedClass: ClassRecord | undefined = classes.find(
-    (c) => c.id === classId,
-  );
+  const selectedBatch = adminBatches.find((b) => b.id === batchId);
+
+  async function addStudentToServerBatch(
+    bId: string,
+    studentUserId: string,
+  ): Promise<void> {
+    const token = getAuthToken();
+    if (!token) throw new Error("Unauthorized");
+    const gr = await fetch(`/api/admin/batches/${bId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!gr.ok) throw new Error("Could not load batch");
+    const gj = (await gr.json()) as { student_ids?: string[] };
+    const ids = gj.student_ids ?? [];
+    const res = await fetch(`/api/admin/batches/${bId}/students`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ student_ids: [...ids, studentUserId] }),
+    });
+    if (!res.ok) throw new Error("Could not assign student to batch");
+  }
 
   function telHref(raw: string) {
     const d = raw.replace(/\D/g, "");
@@ -183,17 +235,15 @@ export function AdminAdmissionsPage() {
   async function finishApprove(e: FormEvent) {
     e.preventDefault();
     if (!approveFor) return;
-    if (!courseId || !classId) {
-      setError(t("admin_teacher_pick_required"));
-      return;
-    }
-
-    const course = courses.find((c) => c.id === courseId);
-    const batch = classes.find((c) => c.id === classId);
-    if (!course || !batch) {
+    if (!batchId || !selectedBatch) {
       setError(t("admin_admissions_need_batch"));
       return;
     }
+
+    const course = {
+      id: selectedBatch.course_id,
+      name: selectedBatch.course_title,
+    };
 
     setBusy(true);
     setError(null);
@@ -236,7 +286,7 @@ export function AdminAdmissionsPage() {
           role: "parent",
         });
 
-        addStudentToClass(batch.id, body.student.id);
+        await addStudentToServerBatch(batchId, body.student.id);
 
         upsertStudentProfile({
           studentId: body.student.id,
@@ -266,8 +316,7 @@ export function AdminAdmissionsPage() {
           parentPassword: body.parent.password,
         });
         setApproveFor(null);
-        setCourseId("");
-        setClassId("");
+        setBatchId("");
         await refreshAll();
         return;
       }
@@ -291,7 +340,7 @@ export function AdminAdmissionsPage() {
         role: "parent",
       });
 
-      addStudentToClass(batch.id, studentUser.id);
+      await addStudentToServerBatch(batchId, studentUser.id);
 
       upsertStudentProfile({
         studentId: studentUser.id,
@@ -322,8 +371,7 @@ export function AdminAdmissionsPage() {
         parentPassword: parPass,
       });
       setApproveFor(null);
-      setCourseId("");
-      setClassId("");
+      setBatchId("");
       await refreshAll();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");
@@ -428,8 +476,7 @@ export function AdminAdmissionsPage() {
                           onClick={() => {
                             setError(null);
                             setApproveFor(r);
-                            setCourseId(courses[0]?.id ?? "");
-                            setClassId(classes[0]?.id ?? "");
+                            setBatchId(adminBatches[0]?.id ?? "");
                           }}
                           className="min-h-14 text-lg"
                         >
@@ -505,35 +552,22 @@ export function AdminAdmissionsPage() {
             <p className="mt-2 text-neutral-600">{approveFor.studentName}</p>
             <form onSubmit={finishApprove} className="mt-6 space-y-4">
               <label className="block text-left text-sm font-medium">
-                {t("admin_admissions_pick_course")}
-                <select
-                  value={courseId}
-                  onChange={(e) => setCourseId(e.target.value)}
-                  className="mt-2 min-h-14 w-full rounded-xl border border-neutral-300 px-4 text-lg"
-                >
-                  {courses.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block text-left text-sm font-medium">
                 {t("admin_admissions_pick_batch")}
                 <select
-                  value={classId}
-                  onChange={(e) => setClassId(e.target.value)}
+                  value={batchId}
+                  onChange={(e) => setBatchId(e.target.value)}
                   className="mt-2 min-h-14 w-full rounded-xl border border-neutral-300 px-4 text-lg"
                 >
-                  {classes.length === 0 ? (
+                  {adminBatches.length === 0 ? (
                     <option value="">{t("admin_admissions_need_batch")}</option>
                   ) : (
-                    classes.map((c) => {
+                    adminBatches.map((b) => {
                       const tn =
-                        teachers.find((x) => x.id === c.teacherId)?.name ?? "—";
+                        listTeachers().find((x) => x.id === b.teacher_id)?.name ??
+                        "—";
                       return (
-                        <option key={c.id} value={c.id}>
-                          {c.name} · {tn} · {c.duration}{" "}
+                        <option key={b.id} value={b.id}>
+                          {b.name} · {b.course_title} · {tn} · {b.duration}{" "}
                           {t("admin_classes_days_short")}
                         </option>
                       );
@@ -560,10 +594,13 @@ export function AdminAdmissionsPage() {
                 />
                 {t("admin_admissions_fee_paid")}
               </label>
-              {selectedClass && selectedClass.teacherId ? (
+              {selectedBatch ? (
                 <p className="text-sm text-neutral-500">
                   {t("admin_classes_card_teacher")}:{" "}
-                  {teachers.find((x) => x.id === selectedClass.teacherId)?.name}
+                  {listTeachers().find((x) => x.id === selectedBatch.teacher_id)
+                    ?.name ?? "—"}
+                  {" · "}
+                  {t("admin_admissions_pick_course")}: {selectedBatch.course_title}
                 </p>
               ) : null}
               {error ? (
@@ -572,7 +609,7 @@ export function AdminAdmissionsPage() {
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Button
                   type="submit"
-                  disabled={busy || classes.length === 0 || courses.length === 0}
+                  disabled={busy || adminBatches.length === 0}
                   className="min-h-14 flex-1 text-lg"
                 >
                   {busy ? "…" : t("admin_admissions_step2")}
@@ -583,6 +620,7 @@ export function AdminAdmissionsPage() {
                   onClick={() => {
                     setApproveFor(null);
                     setError(null);
+                    setBatchId("");
                   }}
                   className="min-h-14 flex-1 text-lg"
                 >

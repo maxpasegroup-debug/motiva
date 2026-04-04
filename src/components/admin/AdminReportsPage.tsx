@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { countPendingAdmissions } from "@/lib/admissions-store";
-import { listClasses } from "@/lib/classes-store";
 import { totalPaidAmount } from "@/lib/payments-ledger-store";
 import { listStudents } from "@/lib/students-store";
+import { getAuthToken } from "@/lib/session";
 
 export function AdminReportsPage() {
   const { t } = useLanguage();
@@ -16,18 +16,33 @@ export function AdminReportsPage() {
     paidIn: 0,
   });
 
-  const refresh = useCallback(() => {
+  const refresh = useCallback(async () => {
+    const token = getAuthToken();
+    let batches = 0;
+    if (token) {
+      try {
+        const res = await fetch("/api/admin/batches", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const j = (await res.json()) as { batches?: unknown[] };
+          batches = j.batches?.length ?? 0;
+        }
+      } catch {
+        /* keep 0 */
+      }
+    }
     setSnapshot({
       students: listStudents().length,
-      batches: listClasses().length,
+      batches,
       pending: countPendingAdmissions(),
       paidIn: totalPaidAmount(),
     });
   }, []);
 
   useEffect(() => {
-    refresh();
-    const ev = () => refresh();
+    void refresh();
+    const ev = () => void refresh();
     window.addEventListener("motiva-users-updated", ev);
     window.addEventListener("motiva-classes-updated", ev);
     window.addEventListener("motiva-admissions-updated", ev);

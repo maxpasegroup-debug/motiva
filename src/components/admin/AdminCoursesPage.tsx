@@ -141,6 +141,7 @@ export function AdminCoursesPage() {
       if (!res.ok) {
         setCourseCards(buildLocalCourseCards());
         setUsedApiCourseList(false);
+        refresh();
         return;
       }
       const j = (await res.json()) as {
@@ -164,10 +165,11 @@ export function AdminCoursesPage() {
     } catch {
       setCourseCards(buildLocalCourseCards());
       setUsedApiCourseList(false);
+      refresh();
     } finally {
       setCourseCardsLoading(false);
     }
-  }, []);
+  }, [refresh]);
 
   useEffect(() => {
     void loadCourseCards();
@@ -500,6 +502,134 @@ export function AdminCoursesPage() {
     return t("admin_course_lessons_blurb").replace("{{n}}", String(count));
   }
 
+  async function hydrateCourseFromServer(courseId: string) {
+    const token = getAuthToken();
+    if (!token) return;
+    const res = await fetch(`/api/admin/courses/${courseId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const j = (await res.json()) as {
+      course: {
+        id: string;
+        title: string;
+        description: string | null;
+        thumbnail_path: string | null;
+      };
+      lessons: Array<{
+        id: string;
+        title: string;
+        description: string | null;
+        video_url: string;
+        sort_order: number;
+      }>;
+    };
+    importPublishedCourseToLocalStore({
+      courseId: j.course.id,
+      title: j.course.title,
+      description: j.course.description,
+      thumbnail_path: j.course.thumbnail_path,
+      lessons: j.lessons,
+    });
+    refresh();
+  }
+
+  async function handleSelectCourseCard(c: ApiCourseCard) {
+    setError(null);
+    setSelectedId(c.id);
+    if (c.fromApi) {
+      await hydrateCourseFromServer(c.id);
+    } else {
+      refresh();
+    }
+  }
+
+  function openEditCourse(c: ApiCourseCard) {
+    setEditingCourse(c);
+    setEditTitle(c.title);
+    setEditDescription(c.description ?? "");
+    setEditThumbnailPath(c.thumbnail_path ?? "");
+    setEditPublished(c.is_published !== false);
+  }
+
+  function closeEditCourse() {
+    setEditingCourse(null);
+    setEditBusy(false);
+  }
+
+  async function handleSaveEditCourse(e: FormEvent) {
+    e.preventDefault();
+    if (!editingCourse) return;
+    const token = getAuthToken();
+    if (!token) {
+      setError(t("admin_session_required"));
+      return;
+    }
+    setEditBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/courses/${editingCourse.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: editTitle.trim(),
+          description: editDescription.trim() || null,
+          thumbnail_path: editThumbnailPath.trim() || null,
+          is_published: editPublished,
+        }),
+      });
+      const j = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setError(j.error ?? t("admin_course_publish_failed"));
+        return;
+      }
+      await hydrateCourseFromServer(editingCourse.id);
+      closeEditCourse();
+      await loadCourseCards();
+    } finally {
+      setEditBusy(false);
+    }
+  }
+
+  async function handleDeleteCourse(c: ApiCourseCard) {
+    if (!window.confirm(t("admin_course_delete_confirm"))) return;
+    if (!c.fromApi) {
+      deleteCourse(c.id);
+      refresh();
+      void loadCourseCards();
+      if (selectedId === c.id) setSelectedId("");
+      return;
+    }
+    const token = getAuthToken();
+    if (!token) {
+      setError(t("admin_session_required"));
+      return;
+    }
+    const res = await fetch(`/api/admin/courses/${c.id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const j = (await res.json().catch(() => ({}))) as { error?: string };
+      setError(j.error ?? t("admin_course_publish_failed"));
+      return;
+    }
+    deleteCourse(c.id);
+    if (selectedId === c.id) setSelectedId("");
+    refresh();
+    void loadCourseCards();
+  }
+
+  const courseSelectOptions = useMemo(() => {
+    if (courseCards.length > 0) {
+      return courseCards.map((c) => ({ id: c.id, name: c.title }));
+    }
+    return courses.map((c) => ({ id: c.id, name: c.name }));
+  }, [courseCards, courses]);
+
   return (
     <div className="space-y-10">
       {error && !createOpen ? (
@@ -533,53 +663,177 @@ export function AdminCoursesPage() {
         </button>
       </div>
 
-      {courses.length === 0 ? (
+      {courseCardsLoading ? (
+        <p className="rounded-2xl border border-dashed border-neutral-200 bg-white py-12 text-center text-neutral-500">
+          {t("admin_courses_loading")}
+        </p>
+      ) : courseCards.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-neutral-200 bg-white py-12 text-center text-neutral-500">
           {t("admin_courses_empty")}
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {courses.map((c) => {
-            const initial = c.name.trim().slice(0, 1).toUpperCase() || "?";
-            const desc =
-              c.description?.trim() || lessonsBlurb(c.lessons.length);
+          {courseCards.map((c) => {
+            const initial = c.title.trim().slice(0, 1).toUpperCase() || "?";
             return (
-              <button
+              <div
                 key={c.id}
-                type="button"
-                onClick={() => {
-                  setSelectedId(c.id);
-                  setError(null);
-                }}
-                className={`group w-full overflow-hidden rounded-2xl border border-neutral-200 bg-white text-left shadow-sm transition duration-200 motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                className={`overflow-hidden rounded-2xl border border-neutral-200 bg-white text-left shadow-sm transition duration-200 ${
                   selectedId === c.id ? "ring-2 ring-primary" : ""
                 }`}
               >
-                <div className="aspect-video w-full overflow-hidden bg-neutral-100">
-                  {c.thumbnailUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- admin data URLs / arbitrary URLs
-                    <img
-                      src={c.thumbnailUrl}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
+                <button
+                  type="button"
+                  onClick={() => void handleSelectCourseCard(c)}
+                  className="group block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary motion-safe:hover:bg-neutral-50/80"
+                >
+                  <div className="aspect-video w-full overflow-hidden bg-neutral-100">
+                    {c.thumbnail_path ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- URLs / data URLs
+                      <img
+                        src={c.thumbnail_path}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-700 text-4xl font-bold text-white">
+                        {initial}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-lg font-bold text-foreground">
+                      {c.title}
+                    </h3>
+                    <p className="mt-2 text-sm font-medium text-neutral-600">
+                      {lessonsBlurb(c.lesson_count)}
+                    </p>
+                    {usedApiCourseList && c.is_published === false ? (
+                      <p className="mt-1 text-xs font-semibold uppercase text-amber-700">
+                        {t("admin_course_draft_badge")}
+                      </p>
+                    ) : null}
+                  </div>
+                </button>
+                <div
+                  className="flex flex-wrap gap-2 border-t border-neutral-100 bg-neutral-50/90 px-3 py-3"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                >
+                  {c.fromApi ? (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="min-h-11 flex-1 text-sm sm:flex-none"
+                        onClick={() => openEditCourse(c)}
+                      >
+                        {t("admin_course_edit")}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="min-h-11 flex-1 text-sm sm:flex-none"
+                        onClick={() => void handleDeleteCourse(c)}
+                      >
+                        {t("admin_course_delete")}
+                      </Button>
+                    </>
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-700 text-4xl font-bold text-white">
-                      {initial}
-                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="min-h-11 text-sm"
+                      onClick={() => void handleDeleteCourse(c)}
+                    >
+                      {t("admin_course_delete")}
+                    </Button>
                   )}
                 </div>
-                <div className="p-4">
-                  <h3 className="text-lg font-bold text-foreground">{c.name}</h3>
-                  <p className="mt-2 line-clamp-2 text-sm text-neutral-600">
-                    {desc}
-                  </p>
-                </div>
-              </button>
+              </div>
             );
           })}
         </div>
       )}
+
+      {editingCourse ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
+          <Card className="w-full max-w-lg p-6 shadow-2xl sm:p-8">
+            <h2 className="text-xl font-bold text-foreground">
+              {t("admin_course_edit")}
+            </h2>
+            <form onSubmit={handleSaveEditCourse} className="mt-6 space-y-4">
+              <label className="block text-left text-sm font-medium text-neutral-700">
+                <span className="mb-2 block">{t("admin_course_title_label")}</span>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  required
+                  className="min-h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base outline-none ring-primary focus-visible:border-primary focus-visible:ring-2"
+                />
+              </label>
+              <label className="block text-left text-sm font-medium text-neutral-700">
+                <span className="mb-2 block">
+                  {t("admin_course_description_label")}
+                </span>
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-base outline-none ring-primary focus-visible:border-primary focus-visible:ring-2"
+                />
+              </label>
+              <label className="block text-left text-sm font-medium text-neutral-700">
+                <span className="mb-2 block">
+                  {t("admin_course_thumbnail_path_label")}
+                </span>
+                <input
+                  type="text"
+                  value={editThumbnailPath}
+                  onChange={(e) => setEditThumbnailPath(e.target.value)}
+                  placeholder="https://..."
+                  className="min-h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base outline-none ring-primary focus-visible:border-primary focus-visible:ring-2"
+                />
+              </label>
+              <label className="flex cursor-pointer items-center gap-3 text-left text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={editPublished}
+                  onChange={(e) => setEditPublished(e.target.checked)}
+                  className="h-5 w-5"
+                />
+                {t("admin_course_published_label")}
+              </label>
+              {error && editingCourse ? (
+                <p className="text-sm text-accent" role="alert">
+                  {error}
+                </p>
+              ) : null}
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Button
+                  type="submit"
+                  disabled={editBusy}
+                  className="min-h-12 flex-1"
+                >
+                  {editBusy ? "…" : t("admin_course_save")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setError(null);
+                    closeEditCourse();
+                  }}
+                  className="min-h-12 flex-1"
+                >
+                  {t("back")}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      ) : null}
 
       {createOpen ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
@@ -829,13 +1083,18 @@ export function AdminCoursesPage() {
             <select
               value={selectedId}
               onChange={(e) => {
-                setSelectedId(e.target.value);
+                const id = e.target.value;
+                setSelectedId(id);
                 setError(null);
+                const card = courseCards.find((x) => x.id === id);
+                if (card?.fromApi) {
+                  void hydrateCourseFromServer(id);
+                }
               }}
               className="min-h-14 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base outline-none ring-primary focus-visible:border-primary focus-visible:ring-2"
             >
               <option value="">{t("admin_course_select_placeholder")}</option>
-              {courses.map((c) => (
+              {courseSelectOptions.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>

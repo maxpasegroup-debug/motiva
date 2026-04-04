@@ -1,27 +1,32 @@
 "use client";
 
 import { useLanguage } from "@/components/providers/LanguageProvider";
-import type { ClassRecord } from "@/lib/classes-store";
 
-type Props = {
-  classRecord: ClassRecord;
+export type DayProgressSnapshot = {
+  duration: 12 | 25;
+  unlockedDay: number;
+  completedDays: number;
 };
 
-export function ClassDayProgress({ classRecord }: Props) {
+type Props = {
+  snapshot: DayProgressSnapshot;
+};
+
+export function ClassDayProgress({ snapshot }: Props) {
   const { t } = useLanguage();
 
   // Show the full timeline for both teacher and student:
   // ✅ completed, 🔓 unlocked (watchable), 🔒 locked.
   const dayNumbers = Array.from(
-    { length: classRecord.duration },
+    { length: snapshot.duration },
     (_, i) => i + 1,
   );
 
   return (
     <ul className="space-y-4">
       {dayNumbers.map((day) => {
-        const done = day <= classRecord.completedDays;
-        const locked = day > classRecord.unlockedDay;
+        const done = day <= snapshot.completedDays;
+        const locked = day > snapshot.unlockedDay;
 
         let icon: string;
         if (done) icon = "✅";
