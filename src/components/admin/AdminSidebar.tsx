@@ -55,7 +55,11 @@ export function AdminSidebar() {
 
         <button
           type="button"
-          onClick={() => {
+          onClick={async () => {
+            await fetch("/api/admin/logout", {
+              method: "POST",
+              credentials: "include",
+            });
             clearSession();
             router.push("/");
           }}

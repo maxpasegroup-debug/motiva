@@ -19,9 +19,32 @@ export function LoginPage() {
   async function handleLogin() {
     setError(null);
     try {
+      const adminRes = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (adminRes.ok) {
+        const json = (await adminRes.json()) as {
+          token: string;
+          admin: { role: "admin" | "teacher" | "student" | "parent" };
+        };
+        saveSessionToken(json.token);
+        router.push(getRoleHome(json.admin.role));
+        return;
+      }
+
+      if (adminRes.status !== 503 && adminRes.status !== 401) {
+        setError("Invalid login details");
+        return;
+      }
+
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
       if (!res.ok) {

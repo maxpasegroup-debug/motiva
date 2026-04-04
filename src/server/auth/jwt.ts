@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
+import { getJwtSecret } from "@/lib/jwt-env";
 import type { Role } from "@/lib/roles";
-import type { AuthUser } from "@/server/auth/auth-users-store";
 
 export type JwtPayload = {
   sub: string; // user id
@@ -11,11 +11,14 @@ export type JwtPayload = {
   iat?: number;
 };
 
-function getJwtSecret() {
-  return process.env.JWT_SECRET ?? "dev-jwt-secret";
-}
+export type JwtSignUser = {
+  id: string;
+  role: Role;
+  email: string;
+  name: string;
+};
 
-export function signJwt(user: AuthUser) {
+export function signJwt(user: JwtSignUser) {
   const secret = getJwtSecret();
   const payload: Omit<JwtPayload, "exp" | "iat"> = {
     sub: user.id,

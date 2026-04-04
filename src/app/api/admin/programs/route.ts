@@ -1,50 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureSeedAdmin } from "@/server/auth/auth-users-store";
-import { verifyJwt } from "@/server/auth/jwt";
+import { requireAdminApi } from "@/server/auth/require-admin";
 import { createProgram, readPrograms } from "@/server/programs/programs-store";
 
-function getBearerToken(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  if (!auth) return null;
-  const parts = auth.split(" ");
-  if (parts.length !== 2) return null;
-  if (parts[0] !== "Bearer") return null;
-  return parts[1];
-}
-
 export async function GET(req: NextRequest) {
-  await ensureSeedAdmin();
-  const token = getBearerToken(req);
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  try {
-    const payload = verifyJwt(token);
-    if (payload.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAdminApi(req);
+  if (!auth.ok) return auth.response;
 
   const programs = await readPrograms();
   return NextResponse.json({ programs });
 }
 
 export async function POST(req: NextRequest) {
-  await ensureSeedAdmin();
-  const token = getBearerToken(req);
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  try {
-    const payload = verifyJwt(token);
-    if (payload.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAdminApi(req);
+  if (!auth.ok) return auth.response;
 
   const body = (await req.json()) as unknown;
   if (!body || typeof body !== "object") {

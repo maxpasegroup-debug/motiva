@@ -1,18 +1,23 @@
 import bcrypt from "bcrypt";
 import { NextRequest, NextResponse } from "next/server";
 import {
+  adminJwtClaims,
   ensureSeedAdminDb,
+  findAdminByEmail,
   isDatabaseConfigured,
+  toPublicAdmin,
 } from "@/server/auth/admins-store";
-import {
-  ensureSeedAdmin,
-  findAuthUserByEmail,
-  toPublicUser,
-} from "@/server/auth/auth-users-store";
 import { ADMIN_AUTH_COOKIE_NAME } from "@/server/auth/http-auth";
 import { signJwt } from "@/server/auth/jwt";
 
 export async function POST(req: NextRequest) {
+  if (!isDatabaseConfigured()) {
+    return NextResponse.json(
+      { error: "Admin database is not configured (DATABASE_URL)" },
+      { status: 503 },
+    );
+  }
+
   const body = (await req.json()) as unknown;
   if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "Invalid login details" }, { status: 400 });
@@ -29,20 +34,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  await ensureSeedAdmin();
-  if (isDatabaseConfigured()) {
-    await ensureSeedAdminDb();
-  }
+  await ensureSeedAdminDb();
 
-  const user = await findAuthUserByEmail(email);
-  if (!user) {
+  const admin = await findAdminByEmail(email);
+  if (!admin) {
     return NextResponse.json(
       { error: "Invalid login details" },
       { status: 401 },
     );
   }
 
-  const ok = await bcrypt.compare(password, user.passwordHash);
+  const ok = await bcrypt.compare(password, admin.password_hash);
   if (!ok) {
     return NextResponse.json(
       { error: "Invalid login details" },
@@ -50,17 +52,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const token = signJwt(user);
-  const res = NextResponse.json({ token, user: toPublicUser(user) });
-  if (user.role === "admin") {
-    res.cookies.set(ADMIN_AUTH_COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    });
-  }
+  const claims = adminJwtClaims(admin);
+  const token = signJwt(claims);
+
+  const res = NextResponse.json({
+    token,
+    admin: toPublicAdmin(admin),
+  });
+
+  res.cookies.set(ADMIN_AUTH_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  });
+
   return res;
 }
-

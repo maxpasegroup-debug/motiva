@@ -133,61 +133,63 @@ export function HomePage() {
 
         <FadeInSection>
           <section
-            className="mt-14 rounded-3xl border border-neutral-200/80 bg-[#F8FAFC] px-6 py-20 shadow-sm shadow-neutral-900/[0.04] sm:mt-16"
+            className="mt-14 rounded-3xl border border-neutral-100/90 bg-gradient-to-b from-white to-blue-50 px-6 py-24 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.12)] sm:mt-16"
             aria-labelledby="md-section-heading"
           >
-            <div className="mx-auto grid max-w-5xl grid-cols-1 items-center gap-12 md:grid-cols-2 md:gap-14 lg:gap-16">
-              <div className="order-2 flex flex-col text-center md:order-1 md:text-left">
+            <div className="mx-auto grid max-w-5xl grid-cols-1 items-center gap-14 lg:grid-cols-2 lg:gap-20">
+              <div className="order-2 flex flex-col text-center lg:order-1 lg:text-left">
                 <div
-                  className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#F26A2E] md:mx-0"
+                  className="mx-auto mb-4 h-1 w-10 rounded-full bg-orange-500 lg:mx-0"
                   aria-hidden
                 />
                 <h2
                   id="md-section-heading"
-                  className="text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl"
+                  className="text-4xl font-bold leading-tight tracking-tight text-gray-900"
                 >
                   {t("md_section_title")}
                 </h2>
-                <blockquote className="mt-2.5 border-none p-0 text-lg italic leading-relaxed text-neutral-700">
+                <blockquote className="mx-auto mt-4 max-w-xl border-l-4 border-orange-500 pl-4 text-left text-xl italic leading-relaxed text-gray-700 lg:mx-0">
                   “{t("md_quote")}”
                 </blockquote>
-                <p className="mt-6 max-w-xl text-base leading-relaxed text-neutral-600 md:mx-0">
+                <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-gray-600 lg:mx-0">
                   {t("md_message")}
                 </p>
               </div>
 
-              <div className="order-1 md:order-2">
-                <div className="relative mx-auto max-w-md md:mx-0 md:max-w-none">
+              <div className="order-1 lg:order-2">
+                <div className="relative mx-auto w-full max-w-md lg:mx-0 lg:max-w-none">
                   <div
-                    className="pointer-events-none absolute -inset-4 top-1/2 -z-10 h-[85%] -translate-y-1/2 rounded-[3rem] bg-gradient-to-br from-primary/35 via-[#6EC1FF]/25 to-[#F26A2E]/30 opacity-90 blur-3xl"
+                    className="pointer-events-none absolute -z-10 left-10 top-10 h-full min-h-[min(24rem,70vw)] w-full max-w-lg bg-orange-200 opacity-30 blur-3xl"
                     aria-hidden
                   />
-                  <div
-                    className="group relative h-[min(28rem,70vw)] max-h-[400px] w-full overflow-hidden rounded-2xl shadow-2xl shadow-neutral-900/20 transition-[transform,box-shadow] duration-300 ease-out sm:h-[400px] motion-safe:hover:scale-[1.03] motion-safe:hover:shadow-[0_28px_60px_-12px_rgba(15,23,42,0.35)]"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/md.jpg"
-                      alt="Managing Director - Motiva Edus"
-                      className="h-full w-full object-cover rounded-2xl shadow-lg"
-                      onError={(e) => {
-                        console.warn(
-                          "[Motiva Edus] Managing Director image failed to load (/md.jpg). Using fallback.",
-                        );
-                        const el = e.currentTarget;
-                        if (!el.src.endsWith("/fallback.jpg")) {
-                          el.src = "/fallback.jpg";
-                        }
-                      }}
-                    />
-                    <div
-                      className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"
-                      aria-hidden
-                    />
+                  <div className="relative group">
+                    <div className="relative aspect-[4/5] w-full max-h-[420px] overflow-hidden sm:max-h-[440px]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/md.jpg"
+                        alt="Managing Director - Motiva Edus"
+                        className="h-full w-full rounded-2xl object-cover shadow-2xl transition duration-300 motion-safe:group-hover:scale-105"
+                        onError={(e) => {
+                          console.warn(
+                            "[Motiva Edus] Managing Director image failed to load (/md.jpg). Using fallback.",
+                          );
+                          const el = e.currentTarget;
+                          if (!el.src.endsWith("/fallback.jpg")) {
+                            el.src = "/fallback.jpg";
+                          }
+                        }}
+                      />
+                      <div
+                        className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-t from-black/20 to-transparent"
+                        aria-hidden
+                      />
+                    </div>
                   </div>
-                  <p className="mt-4 text-center text-xl font-semibold text-orange-500">
-                    {t("md_director_name")}
-                  </p>
+                  <div className="mt-4 text-center">
+                    <h3 className="text-xl font-semibold text-orange-500">
+                      {t("md_director_name")}
+                    </h3>
+                  </div>
                 </div>
               </div>
             </div>
