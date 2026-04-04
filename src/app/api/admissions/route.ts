@@ -4,6 +4,7 @@ import { getDatabaseUrl } from "@/server/db/pool";
 import { getProgramById } from "@/server/programs/programs-store";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const SUCCESS_MESSAGE = "Request submitted successfully";
 

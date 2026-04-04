@@ -5,6 +5,7 @@ import { getProgramById } from "@/server/programs/programs-store";
 import { requireAdminApi } from "@/server/auth/require-admin";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdminApi(req);

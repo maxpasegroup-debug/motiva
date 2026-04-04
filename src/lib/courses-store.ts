@@ -18,6 +18,7 @@ export type LessonEntity = {
   courseId: string;
   title: string;
   videoUrl: string;
+  description?: string;
 };
 
 /** UI bundle (lessons embedded). */
@@ -25,6 +26,7 @@ export type LessonRecord = {
   id: string;
   title: string;
   videoUrl: string;
+  description?: string;
 };
 
 export type CourseRecord = {
@@ -79,7 +81,9 @@ function readLessons(): LessonEntity[] {
         typeof (x as LessonEntity).id === "string" &&
         typeof (x as LessonEntity).courseId === "string" &&
         typeof (x as LessonEntity).title === "string" &&
-        typeof (x as LessonEntity).videoUrl === "string",
+        typeof (x as LessonEntity).videoUrl === "string" &&
+        ((x as LessonEntity).description === undefined ||
+          typeof (x as LessonEntity).description === "string"),
     );
   } catch {
     return [];
@@ -91,7 +95,12 @@ function saveLessonsEntities(lessons: LessonEntity[]) {
   window.localStorage.setItem(LESSONS_KEY, JSON.stringify(lessons));
 }
 
-type LegacyLesson = { id: string; title: string; videoUrl: string };
+type LegacyLesson = {
+  id: string;
+  title: string;
+  videoUrl: string;
+  description?: string;
+};
 type LegacyCourse = {
   id: string;
   name: string;
@@ -139,7 +148,8 @@ function migrateFromLegacyIfNeeded() {
         typeof l === "object" &&
         typeof l.id === "string" &&
         typeof l.title === "string" &&
-        typeof l.videoUrl === "string",
+        typeof l.videoUrl === "string" &&
+        (l.description === undefined || typeof l.description === "string"),
     );
     u = Math.max(0, Math.min(u, lessonRows.length));
     if (lessonRows.length > 0 && u === 0) u = 1;
@@ -162,6 +172,9 @@ function migrateFromLegacyIfNeeded() {
         courseId: c.id,
         title: l.title,
         videoUrl: l.videoUrl,
+        ...(typeof l.description === "string" && l.description.trim()
+          ? { description: l.description.trim() }
+          : {}),
       });
     }
   }
@@ -180,6 +193,7 @@ function bundleCourse(c: CourseEntity): CourseRecord {
       id: l.id,
       title: l.title,
       videoUrl: l.videoUrl,
+      ...(l.description ? { description: l.description } : {}),
     }));
   let u = c.unlockedThroughLesson;
   u = Math.max(0, Math.min(u, lessons.length));
@@ -234,17 +248,20 @@ export function addLesson(
   courseId: string,
   title: string,
   videoUrl: string,
+  description?: string,
 ): boolean {
   migrateFromLegacyIfNeeded();
   const courses = readCourses();
   const idx = courses.findIndex((c) => c.id === courseId);
   if (idx === -1) return false;
   const c = courses[idx];
+  const desc = description?.trim();
   const lesson: LessonEntity = {
     id: newId("ls"),
     courseId,
     title: title.trim(),
     videoUrl: videoUrl.trim(),
+    ...(desc ? { description: desc } : {}),
   };
   const nextLessons = [...readLessons(), lesson];
   saveLessonsEntities(nextLessons);
@@ -287,4 +304,57 @@ export function deleteCourse(courseId: string) {
   saveLessonsEntities(
     readLessons().filter((l) => l.courseId !== courseId),
   );
+}
+
+/** Payload from `POST /api/admin/courses/publish` — mirrors DB row into localStorage for the admin UI. */
+export type PublishedCoursePayload = {
+  courseId: string;
+  title: string;
+  description: string | null;
+  thumbnail_path: string | null;
+  lessons: Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    video_url: string;
+    sort_order: number;
+  }>;
+};
+
+export function importPublishedCourseToLocalStore(
+  payload: PublishedCoursePayload,
+): CourseRecord {
+  migrateFromLegacyIfNeeded();
+  const n = payload.lessons.length;
+  const nextCourse: CourseEntity = {
+    id: payload.courseId,
+    name: payload.title.trim(),
+    unlockedThroughLesson: n > 0 ? 1 : 0,
+    ...(payload.description?.trim()
+      ? { description: payload.description.trim() }
+      : {}),
+    ...(payload.thumbnail_path?.trim()
+      ? { thumbnailUrl: payload.thumbnail_path.trim() }
+      : {}),
+  };
+
+  const courses = readCourses().filter((c) => c.id !== payload.courseId);
+  saveCoursesEntities([...courses, nextCourse]);
+
+  const otherLessons = readLessons().filter(
+    (l) => l.courseId !== payload.courseId,
+  );
+  const sortedLessons = [...payload.lessons].sort(
+    (a, b) => a.sort_order - b.sort_order,
+  );
+  const newLessons: LessonEntity[] = sortedLessons.map((l) => ({
+    id: l.id,
+    courseId: payload.courseId,
+    title: l.title.trim(),
+    videoUrl: l.video_url.trim(),
+    ...(l.description?.trim() ? { description: l.description.trim() } : {}),
+  }));
+  saveLessonsEntities([...otherLessons, ...newLessons]);
+
+  return bundleCourse(nextCourse);
 }

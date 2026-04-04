@@ -7,6 +7,7 @@ import { getDatabaseUrl } from "@/server/db/pool";
 import { requireAdminApi } from "@/server/auth/require-admin";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function PATCH(
   req: NextRequest,

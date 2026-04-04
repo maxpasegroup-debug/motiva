@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureSeedAdminDb, isDatabaseConfigured } from "@/server/auth/admins-store";
 import { ensureSeedAdmin } from "@/server/auth/auth-users-store";
 import { getAdminSessionToken } from "@/server/auth/http-auth";
 import { verifyJwt, type JwtPayload } from "@/server/auth/jwt";
 
+/** File-based user seed only. DB admin seed runs in login handlers, not here — so `next build` prerender never opens Postgres. */
 async function ensureBootstrap() {
   await ensureSeedAdmin();
-  if (isDatabaseConfigured()) {
-    await ensureSeedAdminDb();
-  }
 }
 
 export type AdminAuthResult =
