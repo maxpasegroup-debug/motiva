@@ -1,7 +1,13 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Button } from "@/components/ui/Button";
+import {
+  ChangeEvent,
+  FormEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Card } from "@/components/ui/Card";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { getAuthToken } from "@/lib/session";
@@ -9,10 +15,8 @@ import { getAuthToken } from "@/lib/session";
 type Program = {
   id: string;
   title: string;
-  subtitle: string;
-  duration: number;
-  image_url: string;
   description: string;
+  image_path: string;
   is_active: boolean;
 };
 
@@ -22,13 +26,15 @@ export function AdminProgramsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const [title, setTitle] = useState("");
-  const [subtitle, setSubtitle] = useState("");
-  const [duration, setDuration] = useState<12 | 25>(12);
-  const [imageUrl, setImageUrl] = useState("");
   const [description, setDescription] = useState("");
+  const [imagePath, setImagePath] = useState("");
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isActive, setIsActive] = useState(true);
+  const previewRevokeRef = useRef<string | null>(null);
 
   const refresh = useCallback(async () => {
     const token = getAuthToken();
@@ -55,24 +61,70 @@ export function AdminProgramsPage() {
     refresh();
   }, [refresh]);
 
+  function revokePreview() {
+    if (previewRevokeRef.current) {
+      URL.revokeObjectURL(previewRevokeRef.current);
+      previewRevokeRef.current = null;
+    }
+  }
+
   function resetForm() {
+    revokePreview();
     setEditingId(null);
     setTitle("");
-    setSubtitle("");
-    setDuration(12);
-    setImageUrl("");
     setDescription("");
+    setImagePath("");
+    setPendingFile(null);
+    setPreviewUrl(null);
     setIsActive(true);
   }
 
   function startEdit(p: Program) {
+    revokePreview();
     setEditingId(p.id);
     setTitle(p.title);
-    setSubtitle(p.subtitle);
-    setDuration(p.duration === 25 ? 25 : 12);
-    setImageUrl(p.image_url);
     setDescription(p.description);
+    setImagePath(p.image_path);
+    setPendingFile(null);
+    setPreviewUrl(p.image_path || null);
     setIsActive(p.is_active);
+  }
+
+  useEffect(() => {
+    return () => revokePreview();
+  }, []);
+
+  function onFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    revokePreview();
+    e.target.value = "";
+    if (!file || !file.type.startsWith("image/")) {
+      setPendingFile(null);
+      setPreviewUrl(imagePath || null);
+      return;
+    }
+    setPendingFile(file);
+    const url = URL.createObjectURL(file);
+    previewRevokeRef.current = url;
+    setPreviewUrl(url);
+  }
+
+  async function uploadThumbnail(
+    file: File,
+    token: string,
+  ): Promise<string | null> {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/admin/programs/upload", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
+    });
+    if (!res.ok) {
+      return null;
+    }
+    const json = (await res.json()) as { path?: string };
+    return typeof json.path === "string" ? json.path : null;
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -81,49 +133,70 @@ export function AdminProgramsPage() {
     if (!token || !title.trim()) return;
 
     setError(null);
-    if (editingId) {
-      const res = await fetch(`/api/admin/programs/${editingId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title,
-          subtitle,
-          duration,
-          image_url: imageUrl,
-          description,
-          is_active: isActive,
-        }),
-      });
-      if (!res.ok) {
-        setError("Could not save");
+    setSaving(true);
+
+    try {
+      let path = imagePath.trim();
+      if (pendingFile) {
+        const uploaded = await uploadThumbnail(pendingFile, token);
+        if (!uploaded) {
+          setError("Could not upload image");
+          setSaving(false);
+          return;
+        }
+        path = uploaded;
+      }
+
+      if (!path) {
+        setError(t("admin_programs_thumbnail_required"));
+        setSaving(false);
         return;
       }
-    } else {
-      const res = await fetch("/api/admin/programs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title,
-          subtitle,
-          duration,
-          image_url: imageUrl,
-          description,
-          is_active: isActive,
-        }),
-      });
-      if (!res.ok) {
-        setError("Could not add");
-        return;
+
+      if (editingId) {
+        const res = await fetch(`/api/admin/programs/${editingId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title,
+            description,
+            image_path: path,
+            is_active: isActive,
+          }),
+        });
+        if (!res.ok) {
+          setError("Could not save");
+          setSaving(false);
+          return;
+        }
+      } else {
+        const res = await fetch("/api/admin/programs", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title,
+            description,
+            image_path: path,
+            is_active: isActive,
+          }),
+        });
+        if (!res.ok) {
+          setError("Could not add");
+          setSaving(false);
+          return;
+        }
       }
+      resetForm();
+      await refresh();
+    } finally {
+      setSaving(false);
     }
-    resetForm();
-    refresh();
   }
 
   async function toggleActive(p: Program) {
@@ -155,90 +228,94 @@ export function AdminProgramsPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-3xl font-bold text-foreground sm:text-4xl">
-          {t("admin_programs_title")}
-        </h1>
-        <p className="mt-2 text-lg text-neutral-600">{t("admin_programs_sub")}</p>
+        <p className="text-lg text-neutral-600">{t("admin_programs_sub")}</p>
       </div>
 
       <Card className="border-2 border-primary/15 p-6 sm:p-8">
         <h2 className="text-xl font-bold text-foreground">
           {editingId ? t("admin_programs_edit") : t("admin_programs_add")}
         </h2>
-        <form onSubmit={handleSubmit} className="mt-6 grid gap-4">
-          <label className="block text-left text-sm font-medium text-neutral-700">
-            {t("admin_programs_field_title")}
+        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+          <label className="flex flex-col gap-2 text-left">
+            <span className="text-sm font-medium text-neutral-700">
+              {t("admin_programs_field_title")}
+            </span>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="mt-2 min-h-14 w-full rounded-xl border border-neutral-300 px-4 text-lg"
+              className="min-h-14 w-full rounded-xl border border-neutral-300 px-4 text-lg outline-none ring-blue-600/30 focus:border-blue-600 focus:ring-2"
             />
           </label>
-          <label className="block text-left text-sm font-medium text-neutral-700">
-            {t("admin_programs_field_subtitle")}
-            <input
-              value={subtitle}
-              onChange={(e) => setSubtitle(e.target.value)}
-              className="mt-2 min-h-14 w-full rounded-xl border border-neutral-300 px-4 text-lg"
-            />
-          </label>
-          <label className="block text-left text-sm font-medium text-neutral-700">
-            {t("admin_programs_field_duration")}
-            <select
-              value={duration}
-              onChange={(e) =>
-                setDuration(Number(e.target.value) === 25 ? 25 : 12)
-              }
-              className="mt-2 min-h-14 w-full rounded-xl border border-neutral-300 px-4 text-lg"
-            >
-              <option value={12}>12</option>
-              <option value={25}>25</option>
-            </select>
-          </label>
-          <label className="block text-left text-sm font-medium text-neutral-700">
-            {t("admin_programs_field_image")}
-            <input
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="https://…"
-              className="mt-2 min-h-14 w-full rounded-xl border border-neutral-300 px-4 text-lg"
-            />
-          </label>
-          <label className="block text-left text-sm font-medium text-neutral-700">
-            {t("admin_programs_field_description")}
+
+          <label className="flex flex-col gap-2 text-left">
+            <span className="text-sm font-medium text-neutral-700">
+              {t("admin_programs_field_description")}
+            </span>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              className="mt-2 w-full rounded-xl border border-neutral-300 px-4 py-3 text-base"
+              rows={5}
+              className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-base leading-relaxed outline-none ring-blue-600/30 focus:border-blue-600 focus:ring-2"
             />
           </label>
-          <label className="flex cursor-pointer items-center gap-3 font-medium">
+
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-neutral-700">
+              {t("admin_programs_field_thumbnail")}
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={onFileChange}
+              className="block w-full text-sm text-neutral-600 file:mr-4 file:rounded-xl file:border-0 file:bg-neutral-100 file:px-4 file:py-3 file:text-sm file:font-semibold file:text-neutral-800 hover:file:bg-neutral-200"
+            />
+            {previewUrl ? (
+              <div className="mt-2 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={previewUrl}
+                  alt=""
+                  className="mx-auto max-h-48 w-full max-w-md object-contain"
+                />
+              </div>
+            ) : null}
+          </div>
+
+          <label className="flex cursor-pointer items-center gap-3 font-medium text-neutral-800">
             <input
               type="checkbox"
               checked={isActive}
               onChange={(e) => setIsActive(e.target.checked)}
-              className="h-6 w-6"
+              className="h-5 w-5 rounded border-neutral-300 text-blue-600 focus:ring-blue-600"
             />
             {t("admin_programs_active")}
           </label>
+
           {error ? (
-            <p className="text-sm font-medium text-accent">{error}</p>
+            <p className="text-sm font-medium text-red-600">{error}</p>
           ) : null}
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button type="submit" className="min-h-14 text-lg">
-              {editingId ? t("admin_programs_save") : t("admin_programs_create")}
-            </Button>
+
+          <div className="flex flex-col gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full rounded-xl bg-blue-600 py-3.5 text-base font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
+            >
+              {saving
+                ? "…"
+                : editingId
+                  ? t("admin_programs_save")
+                  : t("admin_programs_create")}
+            </button>
             {editingId ? (
-              <Button
+              <button
                 type="button"
-                variant="outline"
                 onClick={resetForm}
-                className="min-h-14 text-lg"
+                className="w-full rounded-xl border-2 border-neutral-200 py-3 text-base font-semibold text-neutral-700 hover:bg-neutral-50"
               >
                 {t("admin_programs_cancel")}
-              </Button>
+              </button>
             ) : null}
           </div>
         </form>
@@ -257,43 +334,60 @@ export function AdminProgramsPage() {
             {programs.map((p) => (
               <li key={p.id}>
                 <Card className="p-6">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div className="text-left">
-                      <p className="text-lg font-bold text-foreground">{p.title}</p>
-                      <p className="text-neutral-600">{p.subtitle}</p>
-                      <p className="mt-1 text-sm text-neutral-500">
-                        {p.duration} days ·{" "}
-                        {p.is_active
-                          ? t("admin_programs_status_on")
-                          : t("admin_programs_status_off")}
-                      </p>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex gap-4 text-left">
+                      {p.image_path ? (
+                        <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={p.image_path}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex h-20 w-28 shrink-0 items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-neutral-50 text-xs text-neutral-400">
+                          —
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-lg font-bold text-foreground">
+                          {p.title}
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-sm text-neutral-600">
+                          {p.description}
+                        </p>
+                        <p className="mt-2 text-sm text-neutral-500">
+                          {p.is_active
+                            ? t("admin_programs_status_on")
+                            : t("admin_programs_status_off")}
+                        </p>
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Button
+                      <button
                         type="button"
                         onClick={() => startEdit(p)}
-                        className="min-h-12"
+                        className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white"
                       >
                         {t("admin_programs_edit")}
-                      </Button>
-                      <Button
+                      </button>
+                      <button
                         type="button"
-                        variant="secondary"
                         onClick={() => toggleActive(p)}
-                        className="min-h-12"
+                        className="rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800"
                       >
                         {p.is_active
                           ? t("admin_programs_deactivate")
                           : t("admin_programs_activate")}
-                      </Button>
-                      <Button
+                      </button>
+                      <button
                         type="button"
-                        variant="outline"
                         onClick={() => handleDelete(p.id)}
-                        className="min-h-12 text-accent"
+                        className="rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600"
                       >
                         {t("admin_delete")}
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 </Card>

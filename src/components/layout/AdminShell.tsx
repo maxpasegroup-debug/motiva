@@ -1,15 +1,11 @@
 "use client";
 
-import { AuthenticatedHeader } from "@/components/layout/AuthenticatedHeader";
 import { RoleGate } from "@/components/layout/RoleGate";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <RoleGate allow="admin">
-      <div className="flex w-full flex-1 flex-col">
-        <AuthenticatedHeader />
-        {children}
-      </div>
+      <div className="flex w-full min-h-0 flex-1 flex-col">{children}</div>
     </RoleGate>
   );
 }

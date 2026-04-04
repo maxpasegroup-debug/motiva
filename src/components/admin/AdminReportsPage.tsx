@@ -53,10 +53,7 @@ export function AdminReportsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-foreground sm:text-4xl">
-          {t("admin_reports_title")}
-        </h1>
-        <p className="mt-2 text-lg text-neutral-600">{t("admin_reports_sub")}</p>
+        <p className="text-lg text-neutral-600">{t("admin_reports_sub")}</p>
       </div>
       <div className="rounded-3xl border border-neutral-200 bg-white p-8 shadow-md">
         <ul className="divide-y divide-neutral-100">

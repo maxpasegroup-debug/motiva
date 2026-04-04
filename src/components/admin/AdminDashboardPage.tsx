@@ -105,11 +105,7 @@ export function AdminDashboardPage() {
   }, [refresh]);
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-        {t("admin_nav_dashboard")}
-      </h1>
-
+    <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
         {STAT_CARDS.map(({ key, labelKey, emoji, cardClass, format }) => (
           <div

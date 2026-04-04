@@ -38,3 +38,11 @@ next-env.d.ts
 
 # local server auth user store (hashed passwords — keep out of git)
 /data
+
+# uploaded program images (keep .gitkeep)
+/public/uploads/programs/*
+!/public/uploads/programs/.gitkeep
+
+# uploaded program thumbnails (keep .gitkeep)
+/public/uploads/programs/*
+!/public/uploads/programs/.gitkeep

@@ -67,10 +67,7 @@ export function AdminParentsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-foreground sm:text-4xl">
-          {t("admin_parents_title")}
-        </h1>
-        <p className="mt-2 text-lg text-neutral-600">{t("admin_parents_sub")}</p>
+        <p className="text-lg text-neutral-600">{t("admin_parents_sub")}</p>
       </div>
       {rows.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-neutral-200 bg-white py-12 text-center text-neutral-500">

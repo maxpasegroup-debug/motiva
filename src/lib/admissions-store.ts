@@ -8,6 +8,8 @@ export type AdmissionRequest = {
   parentName: string;
   phone: string;
   courseInterest: string;
+  programId?: string;
+  notes?: string;
   status: AdmissionStatus;
   createdAt: string;
 };
@@ -35,7 +37,11 @@ function readAll(): AdmissionRequest[] {
         typeof (x as AdmissionRequest).courseInterest === "string" &&
         ((x as AdmissionRequest).status === "pending" ||
           (x as AdmissionRequest).status === "approved" ||
-          (x as AdmissionRequest).status === "rejected"),
+          (x as AdmissionRequest).status === "rejected") &&
+        ((x as AdmissionRequest).programId === undefined ||
+          typeof (x as AdmissionRequest).programId === "string") &&
+        ((x as AdmissionRequest).notes === undefined ||
+          typeof (x as AdmissionRequest).notes === "string"),
     );
   } catch {
     return [];
@@ -71,13 +77,20 @@ export function addAdmissionRequest(input: {
   parentName: string;
   phone: string;
   courseInterest: string;
+  programId?: string;
+  notes?: string;
 }): AdmissionRequest {
+  const notes = input.notes?.trim();
   const row: AdmissionRequest = {
     id: newId(),
     studentName: input.studentName.trim(),
     parentName: input.parentName.trim(),
     phone: input.phone.trim(),
     courseInterest: input.courseInterest.trim(),
+    ...(input.programId?.trim()
+      ? { programId: input.programId.trim() }
+      : {}),
+    ...(notes ? { notes } : {}),
     status: "pending",
     createdAt: new Date().toISOString(),
   };

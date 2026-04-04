@@ -15,7 +15,10 @@ import { useLanguage } from "@/components/providers/LanguageProvider";
 export function AdminCoursesPage() {
   const { t } = useLanguage();
   const [courses, setCourses] = useState<CourseRecord[]>([]);
-  const [courseName, setCourseName] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [modalName, setModalName] = useState("");
+  const [modalDescription, setModalDescription] = useState("");
+  const [modalThumbnail, setModalThumbnail] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonUrl, setLessonUrl] = useState("");
@@ -35,16 +38,26 @@ export function AdminCoursesPage() {
 
   const selected = courses.find((c) => c.id === selectedId) ?? null;
 
-  function handleAddCourse(e: FormEvent) {
+  function closeCreateModal() {
+    setCreateOpen(false);
+    setModalName("");
+    setModalDescription("");
+    setModalThumbnail("");
+  }
+
+  function handleCreateCourse(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    const n = courseName.trim();
+    const n = modalName.trim();
     if (!n) {
       setError(t("admin_course_name_required"));
       return;
     }
-    const created = addCourse(n);
-    setCourseName("");
+    const created = addCourse(n, {
+      description: modalDescription.trim() || undefined,
+      thumbnailUrl: modalThumbnail.trim() || undefined,
+    });
+    closeCreateModal();
     refresh();
     setSelectedId(created.id);
   }
@@ -83,43 +96,152 @@ export function AdminCoursesPage() {
     selected.lessons.length > 0 &&
     selected.unlockedThroughLesson < selected.lessons.length;
 
+  function lessonsBlurb(count: number) {
+    return t("admin_course_lessons_blurb").replace("{{n}}", String(count));
+  }
+
   return (
     <div className="space-y-10">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-        {t("admin_nav_courses")}
-      </h1>
-
-      {error ? (
+      {error && !createOpen ? (
         <p className="text-sm text-accent" role="alert">
           {error}
         </p>
       ) : null}
 
-      <Card className="p-6 shadow-md sm:p-8">
-        <h2 className="mb-4 text-lg font-semibold text-foreground">
-          {t("admin_course_add_heading")}
-        </h2>
-        <form
-          onSubmit={handleAddCourse}
-          className="flex flex-col gap-4 sm:flex-row sm:items-end"
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">
+            {t("admin_nav_courses")}
+          </h1>
+          <p className="mt-1 text-neutral-600">{t("admin_courses_sub")}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setError(null);
+            setCreateOpen(true);
+          }}
+          className="shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-white"
         >
-          <label className="block flex-1 text-left text-sm font-medium text-neutral-700">
-            <span className="mb-2 block">{t("admin_course_name_label")}</span>
-            <input
-              type="text"
-              value={courseName}
-              onChange={(e) => {
-                setCourseName(e.target.value);
-                if (error) setError(null);
-              }}
-              className="min-h-14 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base outline-none ring-primary focus-visible:border-primary focus-visible:ring-2"
-            />
-          </label>
-          <Button type="submit" className="min-h-14 shrink-0 sm:min-w-[10rem]">
-            {t("admin_add_course")}
-          </Button>
-        </form>
-      </Card>
+          {t("admin_courses_create")}
+        </button>
+      </div>
+
+      {courses.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-neutral-200 bg-white py-12 text-center text-neutral-500">
+          {t("admin_courses_empty")}
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {courses.map((c) => {
+            const initial = c.name.trim().slice(0, 1).toUpperCase() || "?";
+            const desc =
+              c.description?.trim() || lessonsBlurb(c.lessons.length);
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => {
+                  setSelectedId(c.id);
+                  setError(null);
+                }}
+                className={`group w-full overflow-hidden rounded-2xl border border-neutral-200 bg-white text-left shadow-sm transition duration-200 motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                  selectedId === c.id ? "ring-2 ring-primary" : ""
+                }`}
+              >
+                <div className="aspect-video w-full overflow-hidden bg-neutral-100">
+                  {c.thumbnailUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- admin-provided arbitrary URLs
+                    <img
+                      src={c.thumbnailUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-700 text-4xl font-bold text-white">
+                      {initial}
+                    </div>
+                  )}
+                </div>
+                <div className="p-4">
+                  <h3 className="text-lg font-bold text-foreground">{c.name}</h3>
+                  <p className="mt-2 line-clamp-2 text-sm text-neutral-600">
+                    {desc}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {createOpen ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
+          <Card className="max-h-[90vh] w-full max-w-lg overflow-y-auto p-6 shadow-2xl sm:p-8">
+            <h2 className="text-xl font-bold text-foreground">
+              {t("admin_course_add_heading")}
+            </h2>
+            <form onSubmit={handleCreateCourse} className="mt-6 space-y-4">
+              {error ? (
+                <p className="text-sm text-accent" role="alert">
+                  {error}
+                </p>
+              ) : null}
+              <label className="block text-left text-sm font-medium text-neutral-700">
+                <span className="mb-2 block">{t("admin_course_name_label")}</span>
+                <input
+                  type="text"
+                  value={modalName}
+                  onChange={(e) => {
+                    setModalName(e.target.value);
+                    if (error) setError(null);
+                  }}
+                  className="min-h-14 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base outline-none ring-primary focus-visible:border-primary focus-visible:ring-2"
+                />
+              </label>
+              <label className="block text-left text-sm font-medium text-neutral-700">
+                <span className="mb-2 block">
+                  {t("admin_course_description_label")}
+                </span>
+                <textarea
+                  value={modalDescription}
+                  onChange={(e) => setModalDescription(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-base outline-none ring-primary focus-visible:border-primary focus-visible:ring-2"
+                />
+              </label>
+              <label className="block text-left text-sm font-medium text-neutral-700">
+                <span className="mb-2 block">
+                  {t("admin_course_thumbnail_label")}
+                </span>
+                <input
+                  type="url"
+                  placeholder="https://..."
+                  value={modalThumbnail}
+                  onChange={(e) => setModalThumbnail(e.target.value)}
+                  className="min-h-14 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base outline-none ring-primary focus-visible:border-primary focus-visible:ring-2"
+                />
+              </label>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Button type="submit" className="min-h-14 flex-1 text-lg">
+                  {t("admin_add_course")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setError(null);
+                    closeCreateModal();
+                  }}
+                  className="min-h-14 flex-1 text-lg"
+                >
+                  {t("back")}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      ) : null}
 
       <Card className="p-6 shadow-md sm:p-8">
         <h2 className="mb-4 text-lg font-semibold text-foreground">
@@ -236,15 +358,6 @@ export function AdminCoursesPage() {
       ) : selected && selected.lessons.length === 0 ? (
         <Card className="p-8 text-center text-neutral-500 shadow-md">
           {t("admin_course_no_lessons_yet")}
-        </Card>
-      ) : null}
-
-      {courses.length === 0 ? (
-        <Card
-          interactive={false}
-          className="border-2 border-dashed border-neutral-200 p-8 text-center text-neutral-500 shadow-none"
-        >
-          {t("admin_no_courses")}
         </Card>
       ) : null}
     </div>

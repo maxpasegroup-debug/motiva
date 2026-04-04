@@ -9,6 +9,7 @@ import {
   listAdmissions,
   setAdmissionStatus,
   type AdmissionRequest,
+  type AdmissionStatus,
 } from "@/lib/admissions-store";
 import { addStudentToClass } from "@/lib/class-students-store";
 import { listClasses, type ClassRecord } from "@/lib/classes-store";
@@ -46,14 +47,27 @@ type CreatedCreds = {
   parentPassword: string;
 };
 
+type DbAdmissionApi = {
+  id: string;
+  studentName: string;
+  parentName: string;
+  phone: string;
+  programId: string;
+  programTitle: string;
+  status: string;
+  createdAt: string;
+};
+
+type AdmissionListRow = AdmissionRequest & { source: "local" | "db" };
+
 export function AdminAdmissionsPage() {
   const { t } = useLanguage();
-  const [rows, setRows] = useState<AdmissionRequest[]>([]);
+  const [rows, setRows] = useState<AdmissionListRow[]>([]);
   const [sName, setSName] = useState("");
   const [pName, setPName] = useState("");
   const [phone, setPhone] = useState("");
   const [interest, setInterest] = useState("");
-  const [approveFor, setApproveFor] = useState<AdmissionRequest | null>(null);
+  const [approveFor, setApproveFor] = useState<AdmissionListRow | null>(null);
   const [courseId, setCourseId] = useState("");
   const [classId, setClassId] = useState("");
   const [fee, setFee] = useState("5000");
@@ -62,16 +76,50 @@ export function AdminAdmissionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<CreatedCreds | null>(null);
 
-  const refresh = useCallback(() => {
-    setRows(listAdmissions().sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+  const refreshAll = useCallback(async () => {
+    const token = getAuthToken();
+    const local: AdmissionListRow[] = listAdmissions().map((a) => ({
+      ...a,
+      source: "local",
+    }));
+    let dbRows: AdmissionListRow[] = [];
+    if (token) {
+      try {
+        const res = await fetch("/api/admin/admissions", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const json = (await res.json()) as { admissions?: DbAdmissionApi[] };
+          const admissions = json.admissions ?? [];
+          dbRows = admissions.map((a) => ({
+            id: a.id,
+            studentName: a.studentName,
+            parentName: a.parentName,
+            phone: a.phone,
+            courseInterest: a.programTitle,
+            programId: a.programId,
+            status: a.status as AdmissionStatus,
+            createdAt: a.createdAt,
+            source: "db",
+          }));
+        }
+      } catch {
+        /* keep local rows */
+      }
+    }
+    setRows(
+      [...dbRows, ...local].sort((a, b) =>
+        b.createdAt.localeCompare(a.createdAt),
+      ),
+    );
   }, []);
 
   useEffect(() => {
-    refresh();
-    const ev = () => refresh();
+    void refreshAll();
+    const ev = () => void refreshAll();
     window.addEventListener("motiva-admissions-updated", ev);
     return () => window.removeEventListener("motiva-admissions-updated", ev);
-  }, [refresh]);
+  }, [refreshAll]);
 
   const courses = listCourses();
   const classes = listClasses();
@@ -129,7 +177,7 @@ export function AdminAdmissionsPage() {
     setPName("");
     setPhone("");
     setInterest("");
-    refresh();
+    void refreshAll();
   }
 
   async function finishApprove(e: FormEvent) {
@@ -151,6 +199,79 @@ export function AdminAdmissionsPage() {
     setError(null);
 
     try {
+      if (approveFor.source === "db") {
+        const token = getAuthToken();
+        if (!token) throw new Error("Unauthorized");
+        const res = await fetch(
+          `/api/admin/admissions/${approveFor.id}/approve`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        const body = (await res.json().catch(() => null)) as
+          | {
+              error?: string;
+              student?: { id: string; email: string; password: string };
+              parent?: { id: string; email: string; password: string };
+            }
+          | null;
+        if (!res.ok) {
+          throw new Error(body?.error ?? "Could not approve admission");
+        }
+        if (!body?.student || !body?.parent) {
+          throw new Error("Invalid response");
+        }
+
+        upsertUserPublic({
+          id: body.student.id,
+          name: approveFor.studentName,
+          email: body.student.email,
+          role: "student",
+        });
+        upsertUserPublic({
+          id: body.parent.id,
+          name: approveFor.parentName,
+          email: body.parent.email,
+          role: "parent",
+        });
+
+        addStudentToClass(batch.id, body.student.id);
+
+        upsertStudentProfile({
+          studentId: body.student.id,
+          parentName: approveFor.parentName,
+          parentPhone: approveFor.phone,
+          parentUserId: body.parent.id,
+          courseId: course.id,
+          courseLabel: approveFor.courseInterest || course.name,
+        });
+
+        const amount = Math.max(0, parseFloat(fee) || 0);
+        addPaymentEntry({
+          studentId: body.student.id,
+          studentName: approveFor.studentName,
+          courseLabel: course.name,
+          amount,
+          status: feePaid ? "paid" : "pending",
+        });
+        setStudentPaymentStatus(body.student.id, feePaid ? "paid" : "pending");
+
+        setCreated({
+          studentId: body.student.id,
+          studentEmail: body.student.email,
+          studentPassword: body.student.password,
+          parentId: body.parent.id,
+          parentEmail: body.parent.email,
+          parentPassword: body.parent.password,
+        });
+        setApproveFor(null);
+        setCourseId("");
+        setClassId("");
+        await refreshAll();
+        return;
+      }
+
       const stPass = generatePassword();
       const parPass = generatePassword();
       const stEmail = emailFromName(approveFor.studentName, ".s");
@@ -203,7 +324,7 @@ export function AdminAdmissionsPage() {
       setApproveFor(null);
       setCourseId("");
       setClassId("");
-      refresh();
+      await refreshAll();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");
     } finally {
@@ -214,10 +335,7 @@ export function AdminAdmissionsPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-3xl font-bold text-foreground sm:text-4xl">
-          {t("admin_admissions_title")}
-        </h1>
-        <p className="mt-2 text-lg text-neutral-600">{t("admin_admissions_sub")}</p>
+        <p className="text-lg text-neutral-600">{t("admin_admissions_sub")}</p>
       </div>
 
       <Card className="border-2 border-primary/20 p-6 sm:p-8">
@@ -269,6 +387,9 @@ export function AdminAdmissionsPage() {
         <h2 className="mb-4 text-xl font-bold text-foreground">
           {t("admin_admissions_list")}
         </h2>
+        {error && !approveFor ? (
+          <p className="mb-4 text-sm font-medium text-accent">{error}</p>
+        ) : null}
         {rows.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-neutral-200 bg-white py-12 text-center text-neutral-500">
             {t("admin_admissions_empty")}
@@ -287,6 +408,14 @@ export function AdminAdmissionsPage() {
                         {r.parentName} · {r.phone}
                       </p>
                       <p className="text-sm text-neutral-500">{r.courseInterest}</p>
+                      {r.notes ? (
+                        <p className="mt-2 text-sm text-neutral-600">
+                          <span className="font-medium text-neutral-700">
+                            {t("admin_admissions_notes_label")}:{" "}
+                          </span>
+                          {r.notes}
+                        </p>
+                      ) : null}
                       <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-neutral-400">
                         {r.status}
                       </p>
@@ -295,6 +424,7 @@ export function AdminAdmissionsPage() {
                       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                         <Button
                           type="button"
+                          disabled={busy}
                           onClick={() => {
                             setError(null);
                             setApproveFor(r);
@@ -308,7 +438,46 @@ export function AdminAdmissionsPage() {
                         <Button
                           type="button"
                           variant="secondary"
-                          onClick={() => setAdmissionStatus(r.id, "rejected")}
+                          disabled={busy}
+                          onClick={async () => {
+                            setError(null);
+                            setBusy(true);
+                            try {
+                              if (r.source === "db") {
+                                const token = getAuthToken();
+                                if (!token) throw new Error("Unauthorized");
+                                const res = await fetch(
+                                  `/api/admin/admissions/${r.id}`,
+                                  {
+                                    method: "PATCH",
+                                    headers: {
+                                      Authorization: `Bearer ${token}`,
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({ status: "rejected" }),
+                                  },
+                                );
+                                if (!res.ok) {
+                                  const j = (await res
+                                    .json()
+                                    .catch(() => null)) as {
+                                    error?: string;
+                                  } | null;
+                                  throw new Error(j?.error ?? "Reject failed");
+                                }
+                                await refreshAll();
+                              } else {
+                                setAdmissionStatus(r.id, "rejected");
+                                await refreshAll();
+                              }
+                            } catch (e) {
+                              setError(
+                                e instanceof Error ? e.message : "Error",
+                              );
+                            } finally {
+                              setBusy(false);
+                            }
+                          }}
                           className="min-h-14 text-lg"
                         >
                           {t("admin_admissions_reject")}
@@ -429,40 +598,59 @@ export function AdminAdmissionsPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
           <Card className="w-full max-w-md p-6 shadow-2xl sm:p-8">
             <h3 className="text-center text-2xl font-bold text-primary">
-              ✅ {t("admin_admissions_created_title")}
+              {t("admin_admissions_created_title")}
             </h3>
-            <div className="mt-6 space-y-4 rounded-2xl bg-neutral-50 p-4 text-left text-sm">
-              <p className="font-bold text-foreground">{t("admin_nav_students")}</p>
-              <p>
-                {t("admin_admissions_student_id")}:{" "}
-                <span className="font-mono">{created.studentId}</span>
-              </p>
-              <p>
-                Email:{" "}
-                <span className="font-mono break-all">{created.studentEmail}</span>
-              </p>
-              <p>
-                {t("admin_admissions_password")}:{" "}
-                <span className="font-mono">{created.studentPassword}</span>
-              </p>
+            <div className="mt-6 space-y-5 rounded-2xl bg-neutral-50 p-4 text-left text-sm">
+              <div>
+                <p className="font-bold text-foreground">
+                  {t("admin_admissions_student_login")}
+                </p>
+                <p className="mt-2 text-neutral-600">
+                  {t("admin_admissions_login_email")}:{" "}
+                  <span className="font-mono break-all text-foreground">
+                    {created.studentEmail}
+                  </span>
+                </p>
+                <p className="mt-1 text-neutral-600">
+                  {t("admin_admissions_password")}:{" "}
+                  <span className="font-mono text-foreground">
+                    {created.studentPassword}
+                  </span>
+                </p>
+                <p className="mt-2 text-xs text-neutral-500">
+                  {t("admin_admissions_student_id")}:{" "}
+                  <span className="font-mono">{created.studentId}</span>
+                </p>
+              </div>
               <hr className="border-neutral-200" />
-              <p className="font-bold text-foreground">{t("admin_nav_parents")}</p>
-              <p>
-                {t("admin_admissions_parent_id")}:{" "}
-                <span className="font-mono">{created.parentId}</span>
-              </p>
-              <p>
-                Email:{" "}
-                <span className="font-mono break-all">{created.parentEmail}</span>
-              </p>
-              <p>
-                {t("admin_admissions_password")}:{" "}
-                <span className="font-mono">{created.parentPassword}</span>
-              </p>
+              <div>
+                <p className="font-bold text-foreground">
+                  {t("admin_admissions_parent_login")}
+                </p>
+                <p className="mt-2 text-neutral-600">
+                  {t("admin_admissions_login_email")}:{" "}
+                  <span className="font-mono break-all text-foreground">
+                    {created.parentEmail}
+                  </span>
+                </p>
+                <p className="mt-1 text-neutral-600">
+                  {t("admin_admissions_password")}:{" "}
+                  <span className="font-mono text-foreground">
+                    {created.parentPassword}
+                  </span>
+                </p>
+                <p className="mt-2 text-xs text-neutral-500">
+                  {t("admin_admissions_parent_id")}:{" "}
+                  <span className="font-mono">{created.parentId}</span>
+                </p>
+              </div>
             </div>
             <Button
               type="button"
-              onClick={() => setCreated(null)}
+              onClick={() => {
+                setCreated(null);
+                setError(null);
+              }}
               className="mt-6 min-h-14 w-full text-lg"
             >
               OK

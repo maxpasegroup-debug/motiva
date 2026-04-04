@@ -187,10 +187,7 @@ export function AdminStudentsPage() {
 
   return (
     <div className="space-y-10">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-        {t("admin_nav_students")}
-      </h1>
-      <p className="mt-1 text-sm text-neutral-600">Step 1: Add students</p>
+      <p className="text-sm text-neutral-600">Step 1: Add students</p>
 
       <Card className="p-6 shadow-md sm:p-8">
         <h2 className="mb-6 text-lg font-semibold text-foreground">

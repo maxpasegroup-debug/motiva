@@ -8,6 +8,8 @@ export type CourseEntity = {
   name: string;
   /** 1-based: lessons 1..unlockedThroughLesson are open. */
   unlockedThroughLesson: number;
+  description?: string;
+  thumbnailUrl?: string;
 };
 
 /** Schema: Lessons — id, course_id, title, video_url */
@@ -30,6 +32,8 @@ export type CourseRecord = {
   name: string;
   lessons: LessonRecord[];
   unlockedThroughLesson: number;
+  description?: string;
+  thumbnailUrl?: string;
 };
 
 function readCourses(): CourseEntity[] {
@@ -45,7 +49,11 @@ function readCourses(): CourseEntity[] {
         typeof x === "object" &&
         typeof (x as CourseEntity).id === "string" &&
         typeof (x as CourseEntity).name === "string" &&
-        typeof (x as CourseEntity).unlockedThroughLesson === "number",
+        typeof (x as CourseEntity).unlockedThroughLesson === "number" &&
+        ((x as CourseEntity).description === undefined ||
+          typeof (x as CourseEntity).description === "string") &&
+        ((x as CourseEntity).thumbnailUrl === undefined ||
+          typeof (x as CourseEntity).thumbnailUrl === "string"),
     );
   } catch {
     return [];
@@ -89,6 +97,8 @@ type LegacyCourse = {
   name: string;
   lessons: LegacyLesson[];
   unlockedThroughLesson: number;
+  description?: string;
+  thumbnailUrl?: string;
 };
 
 function migrateFromLegacyIfNeeded() {
@@ -138,6 +148,12 @@ function migrateFromLegacyIfNeeded() {
       id: c.id,
       name: c.name,
       unlockedThroughLesson: u,
+      ...(typeof c.description === "string" && c.description.trim()
+        ? { description: c.description.trim() }
+        : {}),
+      ...(typeof c.thumbnailUrl === "string" && c.thumbnailUrl.trim()
+        ? { thumbnailUrl: c.thumbnailUrl.trim() }
+        : {}),
     });
 
     for (const l of lessonRows) {
@@ -173,6 +189,8 @@ function bundleCourse(c: CourseEntity): CourseRecord {
     name: c.name,
     lessons,
     unlockedThroughLesson: u,
+    ...(c.description ? { description: c.description } : {}),
+    ...(c.thumbnailUrl ? { thumbnailUrl: c.thumbnailUrl } : {}),
   };
 }
 
@@ -193,13 +211,20 @@ function newId(prefix: string) {
     : `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-export function addCourse(name: string): CourseRecord {
+export function addCourse(
+  name: string,
+  meta?: { description?: string; thumbnailUrl?: string },
+): CourseRecord {
   migrateFromLegacyIfNeeded();
   const trimmed = name.trim();
+  const desc = meta?.description?.trim();
+  const thumb = meta?.thumbnailUrl?.trim();
   const record: CourseEntity = {
     id: newId("co"),
     name: trimmed,
     unlockedThroughLesson: 0,
+    ...(desc ? { description: desc } : {}),
+    ...(thumb ? { thumbnailUrl: thumb } : {}),
   };
   saveCoursesEntities([...readCourses(), record]);
   return bundleCourse(record);

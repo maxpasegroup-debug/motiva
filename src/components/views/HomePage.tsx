@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { FadeInSection } from "@/components/ui/FadeInSection";
@@ -20,10 +21,8 @@ const IMG_WHY_BG =
 export type LandingProgram = {
   id: string;
   title: string;
-  subtitle: string;
-  duration: number;
-  image_url: string;
   description: string;
+  image_path: string;
 };
 
 function WhatsAppIcon({ className = "h-6 w-6" }: { className?: string }) {
@@ -70,6 +69,7 @@ function CheckCircleIcon({ className }: { className?: string }) {
 
 export function HomePage() {
   const { t } = useLanguage();
+  const router = useRouter();
   const [programs, setPrograms] = useState<LandingProgram[] | null>(null);
 
   useEffect(() => {
@@ -307,87 +307,66 @@ export function HomePage() {
         <FadeInSection>
           <section
             id="programs"
-            className="relative mx-auto mt-14 max-w-3xl scroll-mt-24 py-16 sm:mt-16 sm:py-20 sm:scroll-mt-28 md:py-24"
+            className="relative mx-auto mt-14 max-w-7xl scroll-mt-24 px-4 py-16 sm:mt-16 sm:py-20 sm:scroll-mt-28 md:py-24"
           >
             <div
               className="pointer-events-none absolute inset-0 -z-10 rounded-[2rem] bg-gradient-to-br from-[#E0F2FE]/80 via-white to-[#FFEDD5]/50"
               aria-hidden
             />
-            <h2 className="mb-12 text-center text-sm font-bold uppercase tracking-[0.2em] text-neutral-600 sm:text-start">
+            <h2 className="mb-10 text-center text-sm font-bold uppercase tracking-[0.2em] text-neutral-600 sm:mb-12 sm:text-start">
               {t("programs_title")}
             </h2>
             {programs === null ? (
-              <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-6">
-                <p className="col-span-full text-center text-lg font-medium text-neutral-500 sm:col-span-2">
-                  {t("landing_programs_loading")}
-                </p>
-                <div className="h-52 animate-pulse rounded-3xl bg-neutral-200/90 sm:h-64" />
-                <div className="h-52 animate-pulse rounded-3xl bg-neutral-200/90 sm:h-64" />
-              </div>
+              <p className="py-12 text-center text-lg font-medium text-neutral-500">
+                {t("landing_programs_loading")}
+              </p>
             ) : programs.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-neutral-300 bg-white/80 py-14 text-center text-lg font-medium text-neutral-500">
                 {t("landing_programs_empty")}
               </p>
             ) : (
-              <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-6">
-                {programs.map((p) => {
-                  const tint =
-                    p.duration === 25
-                      ? "from-primary/50 via-primary/20 to-transparent"
-                      : "from-accent/50 via-accent/20 to-transparent";
-                  return (
-                    <Link
-                      key={p.id}
-                      href="/login"
-                      className="group relative flex min-h-[13rem] touch-manipulation flex-col items-stretch justify-end overflow-hidden rounded-3xl px-8 py-12 text-center shadow-xl shadow-neutral-900/20 transition-all duration-200 ease-out active:scale-[0.99] sm:min-h-[14rem] sm:py-10 sm:text-left md:active:scale-100 motion-safe:hover:-translate-y-1.5 motion-safe:hover:scale-[1.02] motion-safe:hover:shadow-2xl"
-                    >
-                      {p.image_url ? (
-                        <Image
-                          src={p.image_url}
-                          alt=""
-                          fill
-                          unoptimized
-                          className="object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-110"
-                          sizes="(max-width: 640px) 100vw, 50vw"
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {programs.map((program) => (
+                  <div
+                    key={program.id}
+                    role="button"
+                    tabIndex={0}
+                    className="cursor-pointer touch-manipulation group"
+                    onClick={() =>
+                      router.push(`/admission?program=${program.id}`)
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        router.push(`/admission?program=${program.id}`);
+                      }
+                    }}
+                    aria-label={`${t("nav_admission")}: ${program.title}`}
+                  >
+                    <div className="relative overflow-hidden rounded-xl shadow-lg">
+                      {program.image_path ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={program.image_path}
+                          alt={program.title}
+                          className="h-60 w-full object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
                         />
                       ) : (
                         <div
-                          className="absolute inset-0 bg-gradient-to-br from-neutral-700 to-neutral-900"
+                          className="h-60 w-full bg-gradient-to-br from-neutral-600 to-neutral-800"
                           aria-hidden
                         />
                       )}
-                      <div
-                        className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/25"
-                        aria-hidden
-                      />
-                      <div
-                        className={`absolute inset-0 bg-gradient-to-b ${tint}`}
-                        aria-hidden
-                      />
-                      <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-                      <div className="pointer-events-none absolute -right-20 bottom-[-100px] h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-                      <div className="relative z-10 space-y-3 text-center sm:text-left">
-                        <div className="flex flex-wrap items-baseline justify-center gap-2 sm:justify-start">
-                          <span className="rounded-full bg-white/20 px-3 py-1 text-sm font-bold text-white backdrop-blur-sm">
-                            {p.duration}{" "}
-                            {t("admin_classes_days_short")}
-                          </span>
-                        </div>
-                        <div className="text-3xl font-extrabold leading-tight tracking-tight text-white drop-shadow-md sm:text-4xl">
-                          {p.title}
-                        </div>
-                        <div className="text-xl font-bold text-white/95 drop-shadow-sm sm:text-2xl">
-                          {p.subtitle}
-                        </div>
-                        {p.description ? (
-                          <p className="line-clamp-2 text-sm font-medium text-white/80">
-                            {p.description}
-                          </p>
-                        ) : null}
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      <div className="absolute bottom-4 left-4 right-4 text-white">
+                        <h3 className="text-xl font-bold">{program.title}</h3>
+                        <p className="mt-1 line-clamp-3 text-sm opacity-90">
+                          {program.description}
+                        </p>
                       </div>
-                    </Link>
-                  );
-                })}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </section>

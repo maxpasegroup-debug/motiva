@@ -21,14 +21,17 @@ export async function POST(req: NextRequest) {
   const o = body as Record<string, unknown>;
 
   const title = typeof o.title === "string" ? o.title : "";
-  const subtitle = typeof o.subtitle === "string" ? o.subtitle : "";
-  const image_url = typeof o.image_url === "string" ? o.image_url : "";
   const description = typeof o.description === "string" ? o.description : "";
-  const durationRaw = o.duration;
-  const duration = durationRaw === 25 ? 25 : 12;
+  const image_path = typeof o.image_path === "string" ? o.image_path : "";
 
   if (!title.trim()) {
     return NextResponse.json({ error: "Title required" }, { status: 400 });
+  }
+  if (!image_path.trim()) {
+    return NextResponse.json(
+      { error: "Thumbnail image required" },
+      { status: 400 },
+    );
   }
 
   const is_active =
@@ -36,10 +39,8 @@ export async function POST(req: NextRequest) {
 
   const program = await createProgram({
     title,
-    subtitle,
-    duration,
-    image_url,
     description,
+    image_path,
     is_active,
   });
 

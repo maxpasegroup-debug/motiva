@@ -31,7 +31,7 @@ export function Header() {
             {t("nav_programs")}
           </Link>
           <Link
-            href="/login"
+            href="/admission"
             className="min-h-11 text-base font-medium text-gray-700 transition-colors duration-200 hover:text-blue-600"
           >
             {t("nav_admission")}

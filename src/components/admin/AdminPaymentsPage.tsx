@@ -30,10 +30,7 @@ export function AdminPaymentsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-foreground sm:text-4xl">
-          {t("admin_payments_title")}
-        </h1>
-        <p className="mt-2 text-lg text-neutral-600">{t("admin_payments_sub")}</p>
+        <p className="text-lg text-neutral-600">{t("admin_payments_sub")}</p>
       </div>
 
       {rows.length === 0 ? (
