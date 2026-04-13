@@ -2,17 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
+import { whatsappHref } from "@/components/marketing/whatsapp";
 import { FadeInSection } from "@/components/ui/FadeInSection";
 
-/** WhatsApp (country code, no + or spaces). */
-const WHATSAPP_HREF = "https://wa.me/919946930723";
-
-/** Shown in landing trust line; swap for a real count from your data when ready. */
 const LANDING_TRUSTED_STUDENT_COUNT = "100+";
 
+const IMG_HERO_STUDENT =
+  "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1000&q=88";
 const IMG_SERVICES_SIDE =
   "https://images.unsplash.com/photo-1529390079861-591de354faf5?auto=format&fit=crop&w=1000&q=85";
 const IMG_WHY_BG =
@@ -69,7 +67,6 @@ function CheckCircleIcon({ className }: { className?: string }) {
 
 export function HomePage() {
   const { t } = useLanguage();
-  const router = useRouter();
   const [programs, setPrograms] = useState<LandingProgram[] | null>(null);
 
   useEffect(() => {
@@ -89,42 +86,76 @@ export function HomePage() {
 
   return (
     <>
-      <section className="relative w-full overflow-hidden bg-gradient-to-br from-[#0B5ED7] via-[#1565C8] to-[#5DB3F5]">
+      <section className="relative w-full overflow-hidden bg-gradient-to-br from-[#062a63] via-[#0B5ED7] to-[#5DB3F5]">
         <div
-          className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[length:48px_48px]"
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:40px_40px]"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute -left-24 top-0 h-72 w-72 rounded-full bg-white/10 blur-3xl"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-transparent"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute bottom-0 right-0 h-80 w-80 rounded-full bg-white/10 blur-3xl"
+          className="pointer-events-none absolute -left-32 top-20 h-96 w-96 rounded-full bg-cyan-400/20 blur-3xl"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-blue-300/15 blur-3xl"
           aria-hidden
         />
 
-        <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center px-6 py-20 text-center sm:py-28 md:py-32">
-          <h1 className="max-w-3xl text-balance text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl">
-            {t("landing_title")}
-          </h1>
-          <p className="mt-8 max-w-xl text-balance text-lg font-medium leading-relaxed text-white/90 sm:mt-10 sm:text-xl md:text-2xl">
-            {t("landing_subtitle")}
-          </p>
+        <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-10 px-4 py-14 sm:gap-12 sm:px-6 sm:py-20 lg:grid-cols-2 lg:gap-14 lg:py-24">
+          <div className="max-w-xl text-center lg:text-left">
+            <h1 className="text-balance text-3xl font-extrabold leading-[1.15] tracking-tight text-white sm:text-4xl md:text-5xl lg:text-[2.75rem]">
+              {t("hero_heading")}
+            </h1>
+            <p className="mt-5 text-pretty text-lg font-medium leading-relaxed text-white/92 sm:mt-6 sm:text-xl">
+              {t("hero_subtext")}
+            </p>
+            <div className="mt-8 flex w-full flex-col gap-3 sm:mt-10 sm:flex-row sm:flex-wrap sm:justify-center lg:justify-start">
+              <Link
+                href="/programs"
+                className="inline-flex min-h-14 w-full touch-manipulation items-center justify-center rounded-2xl bg-white px-8 text-base font-bold text-[#0B5ED7] shadow-[0_12px_40px_-12px_rgba(0,0,0,0.35)] transition-all duration-200 hover:bg-blue-50 motion-safe:hover:scale-[1.02] sm:w-auto sm:min-w-[12rem]"
+              >
+                {t("hero_explore_programs")}
+              </Link>
+              <a
+                href={whatsappHref(t("hero_whatsapp_prefill"))}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-14 w-full touch-manipulation items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-8 text-base font-bold text-white shadow-[0_12px_40px_-12px_rgba(37,211,102,0.45)] transition-all duration-200 hover:bg-[#20BD5A] motion-safe:hover:scale-[1.02] sm:w-auto sm:min-w-[12rem]"
+              >
+                <WhatsAppIcon className="h-6 w-6 shrink-0" />
+                {t("hero_whatsapp")}
+              </a>
+            </div>
+          </div>
+
+          <div className="relative mx-auto w-full max-w-md lg:max-w-none">
+            <div
+              className="pointer-events-none absolute -inset-3 rounded-[2rem] bg-gradient-to-br from-white/25 to-transparent opacity-60 blur-2xl"
+              aria-hidden
+            />
+            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[1.75rem] shadow-[0_32px_64px_-20px_rgba(0,0,0,0.45)] ring-2 ring-white/25 sm:aspect-[5/6] lg:aspect-[4/5]">
+              <Image
+                src={IMG_HERO_STUDENT}
+                alt=""
+                fill
+                className="object-cover object-center"
+                sizes="(max-width: 1024px) 90vw, 45vw"
+                priority
+              />
+              <div
+                className="absolute inset-0 bg-gradient-to-t from-[#062a63]/70 via-transparent to-[#062a63]/20"
+                aria-hidden
+              />
+            </div>
+          </div>
         </div>
       </section>
 
-      <a
-        href={WHATSAPP_HREF}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] p-4 text-white shadow-lg transition-transform duration-200 hover:bg-[#20BD5A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#25D366] motion-safe:hover:scale-110 sm:h-16 sm:w-16"
-        aria-label={t("footer_whatsapp")}
-      >
-        <WhatsAppIcon className="h-7 w-7 sm:h-8 sm:w-8" />
-      </a>
-
       <div className="mx-auto flex w-full max-w-5xl flex-col px-4 py-12 sm:px-6 sm:py-14">
-        <p className="mx-auto max-w-2xl text-center text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500 sm:text-sm sm:tracking-[0.18em]">
+        <p className="mx-auto max-w-2xl text-center text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500 sm:text-sm">
           {t("landing_trust_line").replace(
             "{count}",
             LANDING_TRUSTED_STUDENT_COUNT,
@@ -132,74 +163,9 @@ export function HomePage() {
         </p>
 
         <FadeInSection>
-          <section
-            className="mt-14 rounded-3xl border border-neutral-100/90 bg-gradient-to-b from-white to-blue-50 px-6 py-24 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.12)] sm:mt-16"
-            aria-labelledby="md-section-heading"
-          >
-            <div className="mx-auto grid max-w-5xl grid-cols-1 items-center gap-14 lg:grid-cols-2 lg:gap-20">
-              <div className="order-2 flex flex-col text-center lg:order-1 lg:text-left">
-                <div
-                  className="mx-auto mb-4 h-1 w-10 rounded-full bg-orange-500 lg:mx-0"
-                  aria-hidden
-                />
-                <h2
-                  id="md-section-heading"
-                  className="text-4xl font-bold leading-tight tracking-tight text-gray-900"
-                >
-                  {t("md_section_title")}
-                </h2>
-                <blockquote className="mx-auto mt-4 max-w-xl border-l-4 border-orange-500 pl-4 text-left text-xl italic leading-relaxed text-gray-700 lg:mx-0">
-                  “{t("md_quote")}”
-                </blockquote>
-                <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-gray-600 lg:mx-0">
-                  {t("md_message")}
-                </p>
-              </div>
-
-              <div className="order-1 lg:order-2">
-                <div className="relative mx-auto w-full max-w-md lg:mx-0 lg:max-w-none">
-                  <div
-                    className="pointer-events-none absolute -z-10 left-10 top-10 h-full min-h-[min(24rem,70vw)] w-full max-w-lg bg-orange-200 opacity-30 blur-3xl"
-                    aria-hidden
-                  />
-                  <div className="relative group">
-                    <div className="relative aspect-[4/5] w-full max-h-[420px] overflow-hidden sm:max-h-[440px]">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="/md.jpg"
-                        alt="Managing Director - Motiva Edus"
-                        className="h-full w-full rounded-2xl object-cover shadow-2xl transition duration-300 motion-safe:group-hover:scale-105"
-                        onError={(e) => {
-                          console.warn(
-                            "[Motiva Edus] Managing Director image failed to load (/md.jpg). Using fallback.",
-                          );
-                          const el = e.currentTarget;
-                          if (!el.src.endsWith("/fallback.jpg")) {
-                            el.src = "/fallback.jpg";
-                          }
-                        }}
-                      />
-                      <div
-                        className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-t from-black/20 to-transparent"
-                        aria-hidden
-                      />
-                    </div>
-                  </div>
-                  <div className="mt-4 text-center">
-                    <h3 className="text-xl font-semibold text-orange-500">
-                      {t("md_director_name")}
-                    </h3>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        </FadeInSection>
-
-        <FadeInSection>
-          <section className="relative mt-14 overflow-hidden rounded-3xl border border-primary/10 bg-gradient-to-br from-[#E8F4FF] via-white to-[#F0F9FF] py-16 shadow-md shadow-primary/5 sm:mt-16 sm:py-20 md:py-24">
+          <section className="relative mt-14 overflow-hidden rounded-3xl border border-primary/10 bg-gradient-to-br from-[#E8F4FF] via-white to-[#F0F9FF] py-14 shadow-[0_24px_60px_-28px_rgba(11,94,215,0.2)] sm:mt-16 sm:py-16 md:py-20">
             <div
-              className="pointer-events-none absolute -right-20 top-1/2 hidden h-[120%] w-1/2 -translate-y-1/2 opacity-[0.14] lg:block"
+              className="pointer-events-none absolute -right-24 top-1/2 hidden h-[130%] w-[55%] -translate-y-1/2 opacity-[0.18] lg:block"
               aria-hidden
             >
               <Image
@@ -211,10 +177,10 @@ export function HomePage() {
               />
             </div>
             <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-8">
-              <h2 className="mb-12 text-center text-sm font-bold uppercase tracking-[0.2em] text-primary/80 sm:text-start">
+              <h2 className="mb-10 text-center text-sm font-bold uppercase tracking-[0.2em] text-primary/85 sm:mb-12 sm:text-start">
                 {t("services_title")}
               </h2>
-              <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 sm:gap-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8">
                 {(
                   [
                     {
@@ -222,38 +188,31 @@ export function HomePage() {
                       titleKey: "service_one_to_one" as const,
                       descKey: "service_one_to_one_desc" as const,
                       circleClass:
-                        "bg-gradient-to-br from-primary/20 to-[#6EC1FF]/25 ring-2 ring-primary/25 shadow-inner",
+                        "bg-gradient-to-br from-primary/25 to-[#6EC1FF]/30 ring-2 ring-primary/30 shadow-inner",
                     },
                     {
                       emoji: "👥",
                       titleKey: "service_group" as const,
                       descKey: "service_group_desc" as const,
                       circleClass:
-                        "bg-gradient-to-br from-primary/15 to-accent/15 ring-2 ring-primary/20 shadow-inner",
-                    },
-                    {
-                      emoji: "🎥",
-                      titleKey: "service_recorded" as const,
-                      descKey: "service_recorded_desc" as const,
-                      circleClass:
-                        "bg-gradient-to-br from-accent/25 to-[#FDBA74]/30 ring-2 ring-accent/30 shadow-inner",
+                        "bg-gradient-to-br from-primary/18 to-accent/20 ring-2 ring-primary/25 shadow-inner",
                     },
                   ] as const
                 ).map(({ emoji, titleKey, descKey, circleClass }) => (
                   <div
                     key={titleKey}
-                    className="flex flex-col items-center gap-5 rounded-xl border border-white/80 bg-white px-6 py-10 text-center shadow-md shadow-neutral-900/[0.06] transition-all duration-200 ease-out ring-1 ring-neutral-100/80 sm:gap-5 sm:px-7 sm:py-9 motion-safe:hover:-translate-y-1.5 motion-safe:hover:scale-[1.02] motion-safe:hover:shadow-lg motion-safe:hover:shadow-primary/10"
+                    className="flex flex-col items-center gap-5 rounded-2xl border border-white/90 bg-white/95 px-6 py-12 text-center shadow-lg shadow-neutral-900/[0.08] ring-1 ring-neutral-100/90 transition-all duration-300 motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-xl motion-safe:hover:shadow-primary/10"
                   >
                     <div
-                      className={`flex h-16 w-16 items-center justify-center rounded-full text-3xl leading-none ${circleClass}`}
+                      className={`flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl text-4xl leading-none ${circleClass}`}
                       aria-hidden
                     >
                       {emoji}
                     </div>
-                    <h3 className="text-lg font-bold text-foreground sm:text-xl">
+                    <h3 className="text-xl font-bold text-foreground">
                       {t(titleKey)}
                     </h3>
-                    <p className="text-sm leading-relaxed text-neutral-600 sm:text-base">
+                    <p className="max-w-sm text-base leading-relaxed text-neutral-600">
                       {t(descKey)}
                     </p>
                   </div>
@@ -264,7 +223,7 @@ export function HomePage() {
         </FadeInSection>
 
         <FadeInSection>
-          <section className="relative mx-auto mt-14 max-w-4xl overflow-hidden rounded-3xl border border-neutral-200/80 py-16 shadow-lg shadow-neutral-900/[0.06] sm:mt-16 sm:py-20 md:py-24">
+          <section className="relative mx-auto mt-14 max-w-4xl overflow-hidden rounded-3xl border border-neutral-200/80 py-16 shadow-[0_24px_50px_-24px_rgba(15,23,42,0.12)] sm:mt-16 sm:py-20 md:py-24">
             <Image
               src={IMG_WHY_BG}
               alt=""
@@ -273,14 +232,14 @@ export function HomePage() {
               sizes="100vw"
             />
             <div
-              className="absolute inset-0 bg-gradient-to-b from-white via-white/95 to-[#FFF8F0]/90"
+              className="absolute inset-0 bg-gradient-to-b from-white via-white/96 to-[#FFF8F0]/92"
               aria-hidden
             />
             <div className="relative z-10 px-4 sm:px-8">
-              <h2 className="mb-12 text-center text-sm font-bold uppercase tracking-[0.2em] text-neutral-600">
+              <h2 className="mb-10 text-center text-sm font-bold uppercase tracking-[0.2em] text-neutral-600 sm:mb-12">
                 {t("why_motiva_title")}
               </h2>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
                 {(
                   [
                     "why_point_personal",
@@ -291,7 +250,7 @@ export function HomePage() {
                 ).map((key) => (
                   <div
                     key={key}
-                    className="flex flex-col items-center gap-5 rounded-2xl border border-neutral-100/90 bg-white/90 px-6 py-9 text-center shadow-md shadow-neutral-900/[0.05] backdrop-blur-sm transition-all duration-200 ease-out motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg"
+                    className="flex flex-col items-center gap-4 rounded-2xl border border-neutral-100/95 bg-white/95 px-5 py-9 text-center shadow-md shadow-neutral-900/[0.06] backdrop-blur-sm transition-all duration-300 motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg"
                   >
                     <CheckCircleIcon className="h-14 w-14 shrink-0" />
                     <p className="text-base font-bold leading-snug text-foreground sm:text-lg">
@@ -307,13 +266,13 @@ export function HomePage() {
         <FadeInSection>
           <section
             id="programs"
-            className="relative mx-auto mt-14 max-w-7xl scroll-mt-24 px-4 py-16 sm:mt-16 sm:py-20 sm:scroll-mt-28 md:py-24"
+            className="relative mx-auto mt-14 max-w-7xl scroll-mt-24 px-0 py-14 sm:mt-16 sm:scroll-mt-28 sm:py-16 md:py-20"
           >
             <div
-              className="pointer-events-none absolute inset-0 -z-10 rounded-[2rem] bg-gradient-to-br from-[#E0F2FE]/80 via-white to-[#FFEDD5]/50"
+              className="pointer-events-none absolute inset-0 -z-10 rounded-[2rem] bg-gradient-to-br from-[#E0F2FE]/90 via-white to-[#FFEDD5]/45"
               aria-hidden
             />
-            <h2 className="mb-10 text-center text-sm font-bold uppercase tracking-[0.2em] text-neutral-600 sm:mb-12 sm:text-start">
+            <h2 className="mb-8 px-1 text-center text-sm font-bold uppercase tracking-[0.2em] text-neutral-600 sm:mb-10 sm:text-start">
               {t("programs_title")}
             </h2>
             {programs === null ? (
@@ -321,68 +280,87 @@ export function HomePage() {
                 {t("landing_programs_loading")}
               </p>
             ) : programs.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-neutral-300 bg-white/80 py-14 text-center text-lg font-medium text-neutral-500">
-                {t("landing_programs_empty")}
-              </p>
+              <div className="rounded-3xl border border-dashed border-neutral-300 bg-white/90 px-6 py-16 text-center shadow-inner">
+                <p className="text-lg font-medium text-neutral-500">
+                  {t("landing_programs_empty")}
+                </p>
+                <Link
+                  href="/programs"
+                  className="mt-6 inline-flex min-h-14 items-center justify-center rounded-2xl bg-primary px-8 font-bold text-white"
+                >
+                  {t("hero_explore_programs")}
+                </Link>
+              </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {programs.map((program) => (
-                  <div
+                  <article
                     key={program.id}
-                    role="button"
-                    tabIndex={0}
-                    className="cursor-pointer touch-manipulation group"
-                    onClick={() =>
-                      router.push(`/admission?program=${program.id}`)
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        router.push(`/admission?program=${program.id}`);
-                      }
-                    }}
-                    aria-label={`${t("nav_admission")}: ${program.title}`}
+                    className="group flex flex-col overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-[0_20px_50px_-28px_rgba(15,23,42,0.15)] transition-all duration-300 motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-[0_28px_60px_-24px_rgba(11,94,215,0.2)]"
                   >
-                    <div className="relative overflow-hidden rounded-xl shadow-lg">
+                    <div className="relative aspect-[16/11] w-full overflow-hidden">
                       {program.image_path ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={program.image_path}
-                          alt={program.title}
-                          className="h-60 w-full object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
+                          alt=""
+                          className="h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105"
                         />
                       ) : (
                         <div
-                          className="h-60 w-full bg-gradient-to-br from-neutral-600 to-neutral-800"
+                          className="h-full w-full bg-gradient-to-br from-neutral-600 to-neutral-900"
                           aria-hidden
                         />
                       )}
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                      <div className="absolute bottom-4 left-4 right-4 text-white">
-                        <h3 className="text-xl font-bold">{program.title}</h3>
-                        <p className="mt-1 line-clamp-3 text-sm opacity-90">
-                          {program.description}
-                        </p>
-                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
                     </div>
-                  </div>
+                    <div className="flex flex-1 flex-col p-5 sm:p-6">
+                      <h3 className="text-xl font-bold text-neutral-900">
+                        {program.title}
+                      </h3>
+                      <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-neutral-600">
+                        {program.description}
+                      </p>
+                      <a
+                        href={whatsappHref(
+                          t("programs_enquire_prefill").replace(
+                            "{title}",
+                            program.title,
+                          ),
+                        )}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-5 inline-flex min-h-14 w-full items-center justify-center rounded-xl bg-[#25D366] text-center text-base font-bold text-white shadow-md transition-all hover:bg-[#20BD5A] motion-safe:hover:scale-[1.01]"
+                      >
+                        {t("programs_enquire_now")}
+                      </a>
+                    </div>
+                  </article>
                 ))}
               </div>
             )}
+            <div className="mt-10 flex justify-center sm:justify-start">
+              <Link
+                href="/programs"
+                className="inline-flex min-h-14 items-center justify-center rounded-2xl border-2 border-primary bg-white px-8 text-base font-bold text-primary shadow-md transition-all hover:bg-primary/5"
+              >
+                {t("programs_view_all")}
+              </Link>
+            </div>
           </section>
         </FadeInSection>
 
         <FadeInSection>
-          <footer className="mt-14 border-t border-neutral-200/90 pt-16 pb-14 sm:mt-16">
-            <Link
-              href={WHATSAPP_HREF}
+          <footer className="mt-14 border-t border-neutral-200/90 pt-14 pb-12 sm:mt-16 sm:pt-16">
+            <a
+              href={whatsappHref()}
               target="_blank"
               rel="noopener noreferrer"
-              className="mx-auto flex min-h-[3.25rem] w-full max-w-md touch-manipulation items-center justify-center gap-3 rounded-xl bg-[#25D366] px-6 text-center text-base font-semibold text-white shadow-md shadow-neutral-900/10 transition-[transform,background-color,filter,box-shadow] duration-200 ease-out hover:bg-[#20BD5A] hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#25D366] active:brightness-95 motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.98]"
+              className="mx-auto flex min-h-[3.5rem] w-full max-w-md touch-manipulation items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-6 text-center text-base font-bold text-white shadow-[0_12px_32px_-8px_rgba(37,211,102,0.4)] transition-all hover:bg-[#20BD5A] motion-safe:hover:scale-[1.02]"
             >
               <WhatsAppIcon className="h-7 w-7 shrink-0" />
               {t("footer_whatsapp")}
-            </Link>
+            </a>
             <p className="mx-auto mt-10 max-w-md text-center text-sm text-neutral-500">
               {t("footer_line")}
             </p>

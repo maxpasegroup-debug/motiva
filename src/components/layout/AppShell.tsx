@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { WhatsAppFloat } from "@/components/marketing/WhatsAppFloat";
 import { Header } from "@/components/ui/Header";
 
 export function AppShell() {
@@ -17,5 +18,10 @@ export function AppShell() {
   ) {
     return null;
   }
-  return <Header />;
+  return (
+    <>
+      <Header />
+      <WhatsAppFloat />
+    </>
+  );
 }

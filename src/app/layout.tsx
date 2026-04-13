@@ -12,7 +12,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Motiva Edus",
-  description: "Simple classes for everyone. One-to-one, group, and recorded courses.",
+  description:
+    "Personal mentorship and structured learning—one-to-one tuition, group classes, and programs that build confident students.",
 };
 
 export default function RootLayout({
