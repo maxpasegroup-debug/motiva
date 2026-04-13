@@ -6,90 +6,70 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useLanguage } from "@/components/providers/LanguageProvider";
-import type { TranslationKey } from "@/lib/i18n";
 import { clearSession, getAuthToken } from "@/lib/session";
 
-const MENU: {
-  href: string;
-  emoji: string;
-  labelKey: TranslationKey;
-}[] = [
-  { href: "/dashboard/join", emoji: "🎥", labelKey: "join_class" },
-  { href: "/dashboard/lessons", emoji: "📚", labelKey: "my_courses" },
+const MENU: { href: string; emoji: string; labelKey: "join_class" }[] = [
+  { href: "/student/join", emoji: "🎥", labelKey: "join_class" },
 ];
 
-type DashboardCourseRow = {
-  course_id: string;
-  title: string;
-  thumbnail_path: string | null;
-  total_lessons: number;
-  completed_lessons: number;
-  current_lesson_number: number;
+type EnrollmentBatch = {
+  id: string;
+  name: string;
+  teacher_id: string;
+  duration: number;
+  current_day: number;
+  unlocked_day: number;
+  completed_days: number;
 };
 
 export function DashboardPage() {
   const { t } = useLanguage();
   const router = useRouter();
-  const [courses, setCourses] = useState<DashboardCourseRow[] | null>(null);
-  const [coursesError, setCoursesError] = useState<string | null>(null);
+  const [batch, setBatch] = useState<EnrollmentBatch | null | undefined>(
+    undefined,
+  );
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const loadCourses = useCallback(async () => {
+  const loadEnrollment = useCallback(async () => {
     const token = getAuthToken();
     if (!token) {
-      setCourses([]);
+      setBatch(null);
       return;
     }
-    setCoursesError(null);
+    setLoadError(null);
     try {
-      const res = await fetch("/api/progress", {
+      const res = await fetch("/api/student/enrollment", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = (await res.json().catch(() => ({}))) as {
         success?: boolean;
-        courses?: DashboardCourseRow[];
+        enrolled?: boolean;
+        batch?: EnrollmentBatch;
         error?: string;
       };
       if (!res.ok) {
-        setCoursesError(
-          json.error ?? t("course_dashboard_load_error"),
-        );
-        setCourses([]);
+        setLoadError(json.error ?? t("course_dashboard_load_error"));
+        setBatch(null);
         return;
       }
-      if (json.success && Array.isArray(json.courses)) {
-        setCourses(json.courses);
+      if (json.success && json.enrolled && json.batch) {
+        setBatch(json.batch);
       } else {
-        setCourses([]);
+        setBatch(null);
       }
     } catch {
-      setCoursesError(t("course_dashboard_load_error"));
-      setCourses([]);
+      setLoadError(t("course_dashboard_load_error"));
+      setBatch(null);
     }
   }, [t]);
 
   useEffect(() => {
-    void loadCourses();
-  }, [loadCourses]);
+    void loadEnrollment();
+  }, [loadEnrollment]);
 
   function handleLogOut() {
     clearSession();
     router.push("/");
-  }
-
-  function progressLabel(row: DashboardCourseRow): string {
-    if (row.total_lessons === 0) return t("course_dashboard_no_lessons");
-    if (row.current_lesson_number === 0) return t("course_dashboard_not_started");
-    return t("course_dashboard_lesson_progress")
-      .replace("{n}", String(row.current_lesson_number))
-      .replace("{total}", String(row.total_lessons));
-  }
-
-  function progressPercent(row: DashboardCourseRow): number {
-    if (row.total_lessons === 0) return 0;
-    return Math.min(
-      100,
-      Math.round((row.completed_lessons / row.total_lessons) * 100),
-    );
   }
 
   return (
@@ -98,60 +78,41 @@ export function DashboardPage() {
         {t("dashboard_title")}
       </h1>
 
-      <section className="space-y-4" aria-labelledby="online-courses-heading">
+      <section className="space-y-4" aria-labelledby="batch-heading">
         <h2
-          id="online-courses-heading"
+          id="batch-heading"
           className="text-lg font-semibold text-foreground"
         >
-          {t("course_dashboard_online_heading")}
+          {t("student_batch_heading")}
         </h2>
-        {coursesError ? (
-          <p className="text-sm text-accent">{coursesError}</p>
+        {loadError ? (
+          <p className="text-sm text-accent">{loadError}</p>
         ) : null}
-        {courses === null ? (
+        {batch === undefined ? (
           <p className="text-sm text-neutral-500">{t("course_player_loading")}</p>
-        ) : courses.length === 0 ? (
+        ) : batch === null ? (
           <Card className="p-6 text-center text-neutral-600 shadow-md">
-            {t("course_dashboard_empty")}
+            {t("student_batch_empty")}
           </Card>
         ) : (
-          <ul className="space-y-4">
-            {courses.map((row) => (
-              <li key={row.course_id}>
-                <Card className="overflow-hidden shadow-md">
-                  {row.thumbnail_path?.startsWith("http") ||
-                  row.thumbnail_path?.startsWith("data:") ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- admin may store data URLs
-                    <img
-                      src={row.thumbnail_path}
-                      alt=""
-                      className="h-36 w-full object-cover"
-                    />
-                  ) : null}
-                  <div className="space-y-3 p-6">
-                    <p className="text-lg font-bold text-foreground">
-                      {row.title}
-                    </p>
-                    <p className="text-sm text-neutral-600">
-                      {progressLabel(row)}
-                    </p>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-200">
-                      <div
-                        className="h-2 rounded-full bg-blue-500 transition-[width] duration-300"
-                        style={{ width: `${progressPercent(row)}%` }}
-                      />
-                    </div>
-                    <Button
-                      href={`/course/${row.course_id}`}
-                      className="min-h-12 w-full sm:w-auto"
-                    >
-                      {t("course_dashboard_continue_learning")}
-                    </Button>
-                  </div>
-                </Card>
-              </li>
-            ))}
-          </ul>
+          <Card className="overflow-hidden p-6 shadow-md">
+            <p className="text-lg font-bold text-foreground">{batch.name}</p>
+            <p className="mt-2 text-sm text-neutral-600">
+              {t("admin_batch_current_day")}:{" "}
+              {t("attendance_day_heading").replace(
+                "{n}",
+                String(batch.current_day),
+              )}
+            </p>
+            <p className="mt-1 text-sm text-neutral-600">
+              {t("admin_classes_card_duration")}: {batch.duration}{" "}
+              {t("admin_classes_days_short")}
+            </p>
+            <p className="mt-1 text-sm text-neutral-600">
+              {t("student_batch_completed_days")}: {batch.completed_days} /{" "}
+              {batch.duration}
+            </p>
+          </Card>
         )}
       </section>
 

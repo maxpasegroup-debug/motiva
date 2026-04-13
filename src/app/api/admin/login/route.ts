@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   adminJwtClaims,
   ensureSeedAdminDb,
-  findAdminByEmail,
+  findAdminByLogin,
   isDatabaseConfigured,
   toPublicAdmin,
 } from "@/server/auth/admins-store";
@@ -24,10 +24,15 @@ export async function POST(req: NextRequest) {
   }
 
   const o = body as Record<string, unknown>;
-  const email = typeof o.email === "string" ? o.email : "";
+  const loginRaw =
+    typeof o.login === "string"
+      ? o.login
+      : typeof o.email === "string"
+        ? o.email
+        : "";
   const password = typeof o.password === "string" ? o.password : "";
 
-  if (!email || !password) {
+  if (!loginRaw || !password) {
     return NextResponse.json(
       { error: "Invalid login details" },
       { status: 401 },
@@ -36,7 +41,7 @@ export async function POST(req: NextRequest) {
 
   await ensureSeedAdminDb();
 
-  const admin = await findAdminByEmail(email);
+  const admin = await findAdminByLogin(loginRaw);
   if (!admin) {
     return NextResponse.json(
       { error: "Invalid login details" },

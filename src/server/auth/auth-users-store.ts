@@ -7,6 +7,7 @@ export type AuthUser = {
   id: string;
   name: string;
   email: string;
+  phone?: string | null;
   passwordHash: string;
   role: Role;
 };
@@ -16,6 +17,10 @@ const USERS_FILE = path.join(DATA_DIR, "auth-users.json");
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
+}
+
+function normalizePhoneDigits(raw: string): string {
+  return raw.replace(/\D/g, "");
 }
 
 function newId(prefix: string) {
@@ -33,25 +38,38 @@ async function ensureDataFile() {
   }
 }
 
+function isValidRole(r: unknown): r is Role {
+  return (
+    r === "admin" ||
+    r === "telecounselor" ||
+    r === "demo_executive" ||
+    r === "mentor" ||
+    r === "teacher" ||
+    r === "student" ||
+    r === "parent"
+  );
+}
+
 export async function readAuthUsers(): Promise<AuthUser[]> {
   await ensureDataFile();
   const raw = await fs.readFile(USERS_FILE, "utf-8");
   const data = JSON.parse(raw) as unknown;
   if (!Array.isArray(data)) return [];
 
-  // Basic validation to avoid runtime crashes.
   return data.filter((u): u is AuthUser => {
     if (!u || typeof u !== "object") return false;
     const o = u as Record<string, unknown>;
+    const phoneOk =
+      o.phone === undefined ||
+      o.phone === null ||
+      typeof o.phone === "string";
     return (
       typeof o.id === "string" &&
       typeof o.name === "string" &&
       typeof o.email === "string" &&
       typeof o.passwordHash === "string" &&
-      (o.role === "admin" ||
-        o.role === "teacher" ||
-        o.role === "student" ||
-        o.role === "parent")
+      isValidRole(o.role) &&
+      phoneOk
     );
   });
 }
@@ -67,6 +85,17 @@ export async function findAuthUserByEmail(email: string) {
   return users.find((u) => normalizeEmail(u.email) === e) ?? null;
 }
 
+export async function findAuthUserByPhoneDigits(digits: string) {
+  if (!digits) return null;
+  const users = await readAuthUsers();
+  return (
+    users.find((u) => {
+      const p = u.phone ? normalizePhoneDigits(u.phone) : "";
+      return p && p === digits;
+    }) ?? null
+  );
+}
+
 export async function findAuthUserById(id: string) {
   const users = await readAuthUsers();
   return users.find((u) => u.id === id) ?? null;
@@ -76,8 +105,6 @@ export async function ensureSeedAdmin() {
   const users = await readAuthUsers();
   if (users.length > 0) return;
 
-  // Bootstrap: if you don't provide env vars, we create a dev default admin.
-  // IMPORTANT: change these env vars for any real deployment.
   const bootEmail = process.env.ADMIN_BOOT_EMAIL ?? "admin@motiva.local";
   const bootPassword = process.env.ADMIN_BOOT_PASSWORD ?? "admin1234";
   const passwordHash = await bcrypt.hash(bootPassword, 10);
@@ -98,7 +125,10 @@ export function isCreatableRole(role: Role) {
     role === "teacher" ||
     role === "student" ||
     role === "admin" ||
-    role === "parent"
+    role === "parent" ||
+    role === "telecounselor" ||
+    role === "demo_executive" ||
+    role === "mentor"
   );
 }
 
@@ -107,6 +137,7 @@ export async function createUserAsAdmin(input: {
   email: string;
   passwordHash: string;
   role: Role;
+  phone?: string | null;
 }) {
   const users = await readAuthUsers();
   const email = normalizeEmail(input.email);
@@ -118,6 +149,7 @@ export async function createUserAsAdmin(input: {
     id: newId("u"),
     name: input.name.trim(),
     email,
+    phone: input.phone?.trim() || null,
     passwordHash: input.passwordHash,
     role: input.role,
   };
@@ -137,7 +169,7 @@ export function toPublicUser(u: AuthUser) {
     id: u.id,
     name: u.name,
     email: u.email,
+    phone: u.phone ?? null,
     role: u.role,
   };
 }
-

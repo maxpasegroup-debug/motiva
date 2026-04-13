@@ -1,4 +1,4 @@
-import type { Role } from "@/lib/roles";
+import { isRole, type Role } from "@/lib/roles";
 
 export const AUTH_TOKEN_STORAGE_KEY = "motiva-auth-token";
 
@@ -42,23 +42,17 @@ export function getSession(): UserSession | null {
   const payload = decodeJwtPayload(token) as Record<string, unknown> | null;
   if (!payload) return null;
 
-  const role = payload.role as Role | undefined;
-  if (
-    role !== "admin" &&
-    role !== "teacher" &&
-    role !== "student" &&
-    role !== "parent"
-  ) {
+  const role = payload.role;
+  if (!isRole(role)) {
     return null;
   }
 
-  if (
-    typeof payload.sub !== "string" ||
-    typeof payload.email !== "string" ||
-    typeof payload.name !== "string"
-  ) {
+  if (typeof payload.sub !== "string" || typeof payload.name !== "string") {
     return null;
   }
+
+  const email =
+    typeof payload.email === "string" ? payload.email : "";
 
   const exp = typeof payload.exp === "number" ? payload.exp : undefined;
   if (typeof exp === "number") {
@@ -69,7 +63,7 @@ export function getSession(): UserSession | null {
   return {
     userId: payload.sub,
     role,
-    email: payload.email,
+    email,
     name: payload.name,
     exp,
   };

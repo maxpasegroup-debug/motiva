@@ -21,12 +21,18 @@ export function DashboardJoinPage() {
 
   useEffect(() => {
     const session = getSession();
-    const s = listStudents().find((x) => x.id === session?.userId) ?? null;
-    setStudent(s);
-    if (!s) {
+    if (session?.role !== "student" || !session.userId) {
+      setStudent(null);
       setAvailableClasses([]);
       return;
     }
+    const fromMirror = listStudents().find((x) => x.id === session.userId);
+    const s: StudentRecord = fromMirror ?? {
+      id: session.userId,
+      name: session.name,
+      email: session.email,
+    };
+    setStudent(s);
 
     const all = listClasses();
     setAvailableClasses(all.filter((c) => !c.studentIds.includes(s.id)));
@@ -47,7 +53,7 @@ export function DashboardJoinPage() {
         new Set<string>([...cls.studentIds, student.id]),
       );
       setClassStudentIds(classId, nextIds);
-      router.push(`/dashboard/class/${classId}`);
+      router.push(`/student/class/${classId}`);
     },
     [availableClasses, router, student],
   );
@@ -56,7 +62,7 @@ export function DashboardJoinPage() {
     <div className="mx-auto max-w-lg space-y-8">
       <div>
         <Link
-          href="/dashboard"
+          href="/student"
           className="text-sm font-semibold text-primary underline-offset-4 hover:underline"
         >
           ← {t("back")}

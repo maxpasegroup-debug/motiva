@@ -13,7 +13,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/parents", labelKey: "admin_nav_parents", icon: "👨‍👩‍👧" },
   { href: "/admin/teachers", labelKey: "admin_nav_teachers", icon: "👨‍🏫" },
   { href: "/admin/batches", labelKey: "admin_nav_batches", icon: "🏫" },
-  { href: "/admin/courses", labelKey: "admin_nav_courses", icon: "📚" },
   { href: "/admin/programs", labelKey: "admin_nav_programs", icon: "🎯" },
   { href: "/admin/payments", labelKey: "admin_nav_payments", icon: "💳" },
   { href: "/admin/reports", labelKey: "admin_nav_reports", icon: "📊" },

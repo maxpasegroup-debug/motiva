@@ -6,7 +6,6 @@ import {
   getBatchStudentIds,
   updateBatch,
 } from "@/server/batches/batches-db";
-import { getCourseById } from "@/server/courses/courses-db";
 import { getDatabaseUrl } from "@/server/db/pool";
 
 export const runtime = "nodejs";
@@ -40,19 +39,10 @@ export async function GET(
     if (!batch) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
-    const course = await getCourseById(batch.course_id);
     const student_ids = await getBatchStudentIds(id);
     return NextResponse.json({
       success: true,
       batch,
-      course: course
-        ? {
-            id: course.id,
-            title: course.title,
-            thumbnail_path: course.thumbnail_path,
-            is_published: course.is_published,
-          }
-        : null,
       student_ids,
     });
   } catch (e) {
@@ -95,15 +85,11 @@ export async function PATCH(
   const o = body as Record<string, unknown>;
   const patch: {
     name?: string;
-    course_id?: string;
     teacher_id?: string;
     duration?: 12 | 25;
     start_date?: string | null;
   } = {};
   if (typeof o.name === "string") patch.name = o.name;
-  if (typeof o.course_id === "string" && UUID_RE.test(o.course_id)) {
-    patch.course_id = o.course_id;
-  }
   if (typeof o.teacher_id === "string") patch.teacher_id = o.teacher_id;
   if (o.duration === 12 || o.duration === 25) patch.duration = o.duration;
   if (o.start_date === null || typeof o.start_date === "string") {
@@ -114,12 +100,6 @@ export async function PATCH(
     const existing = await getBatchById(id);
     if (!existing) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
-    if (patch.course_id) {
-      const c = await getCourseById(patch.course_id);
-      if (!c) {
-        return NextResponse.json({ error: "Course not found" }, { status: 404 });
-      }
     }
     await updateBatch(id, patch);
     const batch = await getBatchById(id);

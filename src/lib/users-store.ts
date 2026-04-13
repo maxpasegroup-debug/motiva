@@ -35,7 +35,10 @@ function isUserRecord(x: unknown): x is UserRecord {
     o.role === "admin" ||
     o.role === "teacher" ||
     o.role === "student" ||
-    o.role === "parent"
+    o.role === "parent" ||
+    o.role === "telecounselor" ||
+    o.role === "demo_executive" ||
+    o.role === "mentor"
   );
 }
 

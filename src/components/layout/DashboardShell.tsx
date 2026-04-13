@@ -5,7 +5,7 @@ import { RoleGate } from "@/components/layout/RoleGate";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
-    <RoleGate allow="student">
+    <RoleGate allow={["student", "admin"]}>
       <AuthenticatedHeader />
       {children}
     </RoleGate>

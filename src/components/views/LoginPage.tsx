@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { getRoleHome } from "@/lib/roles";
+import { getRoleHome, parseRole } from "@/lib/roles";
 import { saveSessionToken } from "@/lib/session";
 
 export function LoginPage() {
@@ -23,16 +23,16 @@ export function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ login: email.trim(), password }),
       });
 
       if (adminRes.ok) {
         const json = (await adminRes.json()) as {
           token: string;
-          admin: { role: "admin" | "teacher" | "student" | "parent" };
+          admin: { role: string };
         };
         saveSessionToken(json.token);
-        router.push(getRoleHome(json.admin.role));
+        router.push(getRoleHome(parseRole(json.admin.role)));
         return;
       }
 
@@ -45,7 +45,7 @@ export function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ login: email.trim(), password }),
       });
       if (!res.ok) {
         setError("Invalid login details");
@@ -53,10 +53,10 @@ export function LoginPage() {
       }
       const json = (await res.json()) as {
         token: string;
-        user: { role: "admin" | "teacher" | "student" | "parent" };
+        user: { role: string };
       };
       saveSessionToken(json.token);
-      router.push(getRoleHome(json.user.role));
+      router.push(getRoleHome(parseRole(json.user.role)));
     } catch {
       setError("Invalid login details");
     }
@@ -71,9 +71,9 @@ export function LoginPage() {
 
         <div className="flex flex-col gap-6">
           <label className="block text-left text-sm font-medium text-neutral-700">
-            <span className="mb-2 block">Email</span>
+            <span className="mb-2 block">{t("login_phone_or_email")}</span>
             <input
-              type="email"
+              type="text"
               name="email"
               inputMode="email"
               autoComplete="username"

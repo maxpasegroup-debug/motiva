@@ -7,10 +7,41 @@ import {
 } from "@/server/auth/http-auth";
 import { verifyJwtEdge } from "@/server/auth/jwt-edge";
 
-function getAdminToken(req: NextRequest): string | null {
+function getSessionToken(req: NextRequest): string | null {
   const bearer = getBearerToken(req);
   if (bearer) return bearer;
   return req.cookies.get(ADMIN_AUTH_COOKIE_NAME)?.value ?? null;
+}
+
+type Guard = { prefix: string; roles: readonly Role[] };
+
+const PAGE_GUARDS: Guard[] = [
+  { prefix: "/admin", roles: ["admin"] },
+  { prefix: "/leads", roles: ["admin", "telecounselor"] },
+  { prefix: "/demo", roles: ["admin", "demo_executive"] },
+  { prefix: "/mentor", roles: ["admin", "mentor"] },
+  { prefix: "/teacher", roles: ["admin", "teacher"] },
+  { prefix: "/student", roles: ["admin", "student"] },
+  { prefix: "/parent", roles: ["admin", "parent"] },
+];
+
+function guardForPath(pathname: string): Guard | null {
+  const sorted = [...PAGE_GUARDS].sort(
+    (a, b) => b.prefix.length - a.prefix.length,
+  );
+  return (
+    sorted.find(
+      (g) => pathname === g.prefix || pathname.startsWith(`${g.prefix}/`),
+    ) ?? null
+  );
+}
+
+function isProtectedAdminApi(pathname: string): boolean {
+  if (!pathname.startsWith("/api/admin")) return false;
+  if (pathname === "/api/admin/login" || pathname === "/api/admin/logout") {
+    return false;
+  }
+  return true;
 }
 
 export async function middleware(request: NextRequest) {
@@ -18,12 +49,21 @@ export async function middleware(request: NextRequest) {
 
   if (
     pathname === "/api/admin/login" ||
-    pathname === "/api/admin/logout"
+    pathname === "/api/admin/logout" ||
+    pathname === "/api/auth/login"
   ) {
     return NextResponse.next();
   }
 
-  const token = getAdminToken(request);
+  const adminApi = isProtectedAdminApi(pathname);
+  const pageGuard = guardForPath(pathname);
+  const dashboardLegacy = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+
+  if (!adminApi && !pageGuard && !dashboardLegacy) {
+    return NextResponse.next();
+  }
+
+  const token = getSessionToken(request);
   if (!token) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -31,15 +71,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  let payload: Awaited<ReturnType<typeof verifyJwtEdge>>;
   try {
-    const payload = await verifyJwtEdge(token);
-    if (payload.role !== "admin") {
-      if (pathname.startsWith("/api/")) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
-      const home = getRoleHome(payload.role as Role);
-      return NextResponse.redirect(new URL(home, request.url));
-    }
+    payload = await verifyJwtEdge(token);
   } catch {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -47,9 +81,53 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  if (adminApi) {
+    if (payload.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    return NextResponse.next();
+  }
+
+  if (dashboardLegacy) {
+    if (payload.role === "student") {
+      const suffix = pathname.replace(/^\/dashboard/, "") || "";
+      return NextResponse.redirect(
+        new URL(`/student${suffix}`, request.url),
+      );
+    }
+    return NextResponse.redirect(
+      new URL(getRoleHome(payload.role), request.url),
+    );
+  }
+
+  if (pageGuard && !pageGuard.roles.includes(payload.role)) {
+    return NextResponse.redirect(
+      new URL(getRoleHome(payload.role), request.url),
+    );
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin", "/admin/:path*", "/api/admin/:path*"],
+  matcher: [
+    "/admin",
+    "/admin/:path*",
+    "/api/admin",
+    "/api/admin/:path*",
+    "/leads",
+    "/leads/:path*",
+    "/demo",
+    "/demo/:path*",
+    "/mentor",
+    "/mentor/:path*",
+    "/teacher",
+    "/teacher/:path*",
+    "/student",
+    "/student/:path*",
+    "/parent",
+    "/parent/:path*",
+    "/dashboard",
+    "/dashboard/:path*",
+  ],
 };

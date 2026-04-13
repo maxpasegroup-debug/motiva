@@ -83,6 +83,20 @@ export async function updateAdmissionRequestStatus(
   return (res.rowCount ?? 0) > 0;
 }
 
+/** Returns true only if the row was pending and is now `newStatus`. Prevents double-approve races. */
+export async function updateAdmissionRequestStatusIfPending(
+  id: string,
+  newStatus: "approved" | "rejected",
+): Promise<boolean> {
+  await ensureTable();
+  const pool = getPool();
+  const res = await pool.query(
+    `UPDATE admission_requests SET status = $2 WHERE id = $1 AND status = 'pending'`,
+    [id, newStatus],
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
 export async function insertAdmissionRequest(input: {
   student_name: string;
   parent_name: string;

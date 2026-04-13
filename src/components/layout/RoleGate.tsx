@@ -6,7 +6,7 @@ import { getRoleHome, type Role } from "@/lib/roles";
 import { getSession } from "@/lib/session";
 
 type Props = {
-  allow: Role;
+  allow: Role | readonly Role[];
   children: React.ReactNode;
 };
 
@@ -20,7 +20,8 @@ export function RoleGate({ allow, children }: Props) {
       router.replace("/login");
       return;
     }
-    if (s.role !== allow) {
+    const allowed = Array.isArray(allow) ? allow : [allow];
+    if (!allowed.includes(s.role)) {
       router.replace(getRoleHome(s.role));
       return;
     }

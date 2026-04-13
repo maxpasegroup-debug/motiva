@@ -95,7 +95,7 @@ export function StudentClassPage({ classId }: Props) {
       <Card className="p-8 text-center shadow-md">
         <p className="text-neutral-600">{t("class_no_access")}</p>
         <Link
-          href="/dashboard"
+          href="/student"
           className="mt-4 inline-block font-semibold text-primary underline-offset-4 hover:underline"
         >
           ← {t("class_back_student")}
@@ -108,7 +108,7 @@ export function StudentClassPage({ classId }: Props) {
     <div className="mx-auto max-w-lg space-y-8">
       <div>
         <Link
-          href="/dashboard"
+          href="/student"
           className="text-sm font-semibold text-primary underline-offset-4 hover:underline"
         >
           ← {t("class_back_student")}

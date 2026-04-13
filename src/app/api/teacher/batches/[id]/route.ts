@@ -5,8 +5,6 @@ import {
   getOrCreateBatchProgress,
 } from "@/server/attendance/attendance-db";
 import { getBatchStudentIds, verifyTeacherOwnsBatch } from "@/server/batches/batches-db";
-import { getCourseById, listLessonsForCourse } from "@/server/courses/courses-db";
-import { getCourseProgress } from "@/server/progress/course-progress-db";
 import { findAuthUserById } from "@/server/auth/auth-users-store";
 import { getDatabaseUrl } from "@/server/db/pool";
 
@@ -43,7 +41,6 @@ export async function GET(
     if (!batch) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
-    const course = await getCourseById(batch.course_id);
     const bp = await getOrCreateBatchProgress(id);
     const attMap = await getAttendanceForDay(id, bp.current_day);
     const attendance_for_day: Record<string, "present" | "absent"> = {};
@@ -51,23 +48,14 @@ export async function GET(
       attendance_for_day[k] = v;
     });
     const studentIds = await getBatchStudentIds(id);
-    const lessons = await listLessonsForCourse(batch.course_id);
 
     const students = await Promise.all(
       studentIds.map(async (student_id) => {
         const u = await findAuthUserById(student_id);
-        const progress = await getCourseProgress(student_id, batch.course_id);
         return {
           id: student_id,
           name: u?.name ?? "—",
           email: u?.email ?? "",
-          progress: progress
-            ? {
-                lesson_id: progress.lesson_id,
-                furthest_completed_order: progress.furthest_completed_order,
-                last_watched_at: progress.last_watched_at.toISOString(),
-              }
-            : null,
         };
       }),
     );
@@ -77,20 +65,6 @@ export async function GET(
       batch,
       current_day: bp.current_day,
       attendance_for_day,
-      course: course
-        ? {
-            id: course.id,
-            title: course.title,
-            description: course.description,
-            thumbnail_path: course.thumbnail_path,
-            is_published: course.is_published,
-          }
-        : null,
-      lessons: lessons.map((l) => ({
-        id: l.id,
-        title: l.title,
-        order: l.sort_order,
-      })),
       students,
     });
   } catch (e) {

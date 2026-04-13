@@ -18,29 +18,40 @@ export function AuthenticatedHeader() {
     const token = getAuthToken();
     if (!token) return;
 
-    // Hydrate the local public mirror for teachers/students so UI can render names.
     const headers = { Authorization: `Bearer ${token}` };
-    Promise.all([
-      fetch(`/api/users?role=teacher`, { headers }),
-      fetch(`/api/users?role=student`, { headers }),
-      fetch(`/api/users?role=parent`, { headers }),
-    ])
-      .then(async ([tRes, sRes, pRes]) => {
-        if (!tRes.ok || !sRes.ok) return;
-        const tJson = (await tRes.json()) as { users: UserRecord[] };
-        const sJson = (await sRes.json()) as { users: UserRecord[] };
-        const pJson = pRes.ok
-          ? ((await pRes.json()) as { users: UserRecord[] })
-          : { users: [] as UserRecord[] };
-        setUsersMirror([
-          ...(tJson.users ?? []),
-          ...(sJson.users ?? []),
-          ...(pJson.users ?? []),
-        ]);
-      })
-      .catch(() => {
-        // Ignore network failures; pages will just show placeholders.
-      });
+
+    if (s?.role === "admin") {
+      Promise.all([
+        fetch(`/api/users?role=teacher`, { headers }),
+        fetch(`/api/users?role=student`, { headers }),
+        fetch(`/api/users?role=parent`, { headers }),
+      ])
+        .then(async ([tRes, sRes, pRes]) => {
+          if (!tRes.ok || !sRes.ok) return;
+          const tJson = (await tRes.json()) as { users: UserRecord[] };
+          const sJson = (await sRes.json()) as { users: UserRecord[] };
+          const pJson = pRes.ok
+            ? ((await pRes.json()) as { users: UserRecord[] })
+            : { users: [] as UserRecord[] };
+          setUsersMirror([
+            ...(tJson.users ?? []),
+            ...(sJson.users ?? []),
+            ...(pJson.users ?? []),
+          ]);
+        })
+        .catch(() => {});
+      return;
+    }
+
+    if (s?.role === "teacher") {
+      void fetch(`/api/teacher/directory`, { headers })
+        .then(async (res) => {
+          if (!res.ok) return;
+          const json = (await res.json()) as { users?: UserRecord[] };
+          setUsersMirror(json.users ?? []);
+        })
+        .catch(() => {});
+    }
   }, []);
 
   return (

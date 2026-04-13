@@ -35,6 +35,62 @@ function emailFromName(raw: string, suffix: string) {
   return `${slug || "user"}${n}${suffix}@motiva.local`;
 }
 
+async function syncParentPortalRegister(input: {
+  token: string;
+  parentId: string;
+  studentId: string;
+  name: string;
+  phone: string;
+  notifyEnrolled: boolean;
+}) {
+  try {
+    const res = await fetch("/api/admin/parents/register", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${input.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        parentId: input.parentId,
+        studentId: input.studentId,
+        name: input.name,
+        phone: input.phone,
+        notifyEnrolled: input.notifyEnrolled,
+      }),
+    });
+    if (!res.ok) {
+      console.warn("[parent portal register]", await res.text());
+    }
+  } catch (e) {
+    console.warn("[parent portal register]", e);
+  }
+}
+
+async function syncStudentPaymentToServer(
+  token: string,
+  studentId: string,
+  status: "paid" | "pending",
+) {
+  try {
+    const res = await fetch(
+      `/api/admin/students/${encodeURIComponent(studentId)}/payment-status`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      },
+    );
+    if (!res.ok) {
+      console.warn("[payment status sync]", await res.text());
+    }
+  } catch (e) {
+    console.warn("[payment status sync]", e);
+  }
+}
+
 type CreatedCreds = {
   studentId: string;
   studentEmail: string;
@@ -307,6 +363,12 @@ export function AdminAdmissionsPage() {
         });
         setStudentPaymentStatus(body.student.id, feePaid ? "paid" : "pending");
 
+        await syncStudentPaymentToServer(
+          token,
+          body.student.id,
+          feePaid ? "paid" : "pending",
+        );
+
         setCreated({
           studentId: body.student.id,
           studentEmail: body.student.email,
@@ -360,6 +422,23 @@ export function AdminAdmissionsPage() {
         status: feePaid ? "paid" : "pending",
       });
       setStudentPaymentStatus(studentUser.id, feePaid ? "paid" : "pending");
+
+      const admToken = getAuthToken();
+      if (admToken) {
+        await syncParentPortalRegister({
+          token: admToken,
+          parentId: parentUser.id,
+          studentId: studentUser.id,
+          name: approveFor.parentName,
+          phone: approveFor.phone,
+          notifyEnrolled: true,
+        });
+        await syncStudentPaymentToServer(
+          admToken,
+          studentUser.id,
+          feePaid ? "paid" : "pending",
+        );
+      }
 
       setAdmissionStatus(approveFor.id, "approved");
       setCreated({

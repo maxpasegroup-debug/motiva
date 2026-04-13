@@ -10,6 +10,7 @@ import {
   type PaymentLedgerEntry,
 } from "@/lib/payments-ledger-store";
 import { setStudentPaymentStatus } from "@/lib/student-payments-store";
+import { getAuthToken } from "@/lib/session";
 
 export function AdminPaymentsPage() {
   const { t } = useLanguage();
@@ -64,6 +65,20 @@ export function AdminPaymentsPage() {
                     onClick={() => {
                       setPaymentEntryStatus(r.id, "paid");
                       setStudentPaymentStatus(r.studentId, "paid");
+                      const tok = getAuthToken();
+                      if (tok) {
+                        void fetch(
+                          `/api/admin/students/${encodeURIComponent(r.studentId)}/payment-status`,
+                          {
+                            method: "PATCH",
+                            headers: {
+                              Authorization: `Bearer ${tok}`,
+                              "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({ status: "paid" }),
+                          },
+                        );
+                      }
                       refresh();
                     }}
                     className="min-h-14 w-full shrink-0 text-lg md:w-auto md:min-w-[12rem]"

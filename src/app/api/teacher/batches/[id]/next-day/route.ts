@@ -5,7 +5,12 @@ import {
   getOrCreateBatchProgress,
   incrementBatchCurrentDay,
 } from "@/server/attendance/attendance-db";
+import { getBatchStudentIds } from "@/server/batches/batches-db";
 import { getDatabaseUrl } from "@/server/db/pool";
+import {
+  createParentNotification,
+  listParentIdsForStudentIds,
+} from "@/server/parents/parents-portal-db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,6 +52,22 @@ export async function POST(
       return NextResponse.json({ error: "Could not advance" }, { status: 500 });
     }
     const advanced = row.current_day > prev.current_day;
+    if (advanced && getDatabaseUrl()) {
+      try {
+        const sids = await getBatchStudentIds(batchId);
+        const pmap = await listParentIdsForStudentIds(sids);
+        for (const sid of sids) {
+          const pid = pmap.get(sid);
+          if (!pid) continue;
+          await createParentNotification(
+            pid,
+            `Class progress: now on day ${row.current_day}.`,
+          );
+        }
+      } catch (notifyErr) {
+        console.error("[POST next-day] parent notify", notifyErr);
+      }
+    }
     return NextResponse.json({
       success: true,
       current_day: row.current_day,

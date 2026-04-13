@@ -1,10 +1,14 @@
 import bcrypt from "bcrypt";
-import type { Role } from "@/lib/roles";
+import { parseRole } from "@/lib/roles";
+import { normalizePhoneDigits } from "@/server/parents/parents-portal-db";
 import { getDatabaseUrl, getPool } from "@/server/db/pool";
 
 export type AdminRow = {
   id: string;
   email: string;
+  name: string | null;
+  phone: string | null;
+  phone_normalized: string | null;
   password_hash: string;
   role: string;
 };
@@ -28,6 +32,18 @@ async function ensureAdminsTable(): Promise<void> {
   await pool.query(
     `CREATE INDEX IF NOT EXISTS idx_admins_email ON admins (email)`,
   );
+  await pool.query(
+    `ALTER TABLE admins ADD COLUMN IF NOT EXISTS name VARCHAR(255)`,
+  );
+  await pool.query(
+    `ALTER TABLE admins ADD COLUMN IF NOT EXISTS phone VARCHAR(64)`,
+  );
+  await pool.query(
+    `ALTER TABLE admins ADD COLUMN IF NOT EXISTS phone_normalized VARCHAR(32)`,
+  );
+  await pool.query(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_admins_phone_normalized ON admins (phone_normalized) WHERE phone_normalized IS NOT NULL AND phone_normalized <> ''`,
+  );
 }
 
 export function ensureAdminsSchema(): Promise<void> {
@@ -41,14 +57,36 @@ function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
+const ADMIN_SELECT = `
+  SELECT id, email, name, phone, phone_normalized, password_hash, role
+  FROM admins
+`;
+
 export async function findAdminByEmail(
   email: string,
 ): Promise<AdminRow | null> {
   await ensureAdminsSchema();
   const pool = getPool();
   const res = await pool.query<AdminRow>(
-    `SELECT id, email, password_hash, role FROM admins WHERE email = $1`,
+    `${ADMIN_SELECT} WHERE email = $1`,
     [normalizeEmail(email)],
+  );
+  return res.rows[0] ?? null;
+}
+
+export async function findAdminByLogin(login: string): Promise<AdminRow | null> {
+  const raw = login.trim();
+  if (!raw) return null;
+  if (raw.includes("@")) {
+    return findAdminByEmail(raw);
+  }
+  const digits = normalizePhoneDigits(raw);
+  if (digits.length < 8) return null;
+  await ensureAdminsSchema();
+  const pool = getPool();
+  const res = await pool.query<AdminRow>(
+    `${ADMIN_SELECT} WHERE phone_normalized = $1`,
+    [digits],
   );
   return res.rows[0] ?? null;
 }
@@ -56,10 +94,9 @@ export async function findAdminByEmail(
 export async function findAdminById(id: string): Promise<AdminRow | null> {
   await ensureAdminsSchema();
   const pool = getPool();
-  const res = await pool.query<AdminRow>(
-    `SELECT id, email, password_hash, role FROM admins WHERE id = $1`,
-    [id],
-  );
+  const res = await pool.query<AdminRow>(`${ADMIN_SELECT} WHERE id = $1`, [
+    id,
+  ]);
   return res.rows[0] ?? null;
 }
 
@@ -87,9 +124,10 @@ export async function ensureSeedAdminDb(): Promise<void> {
       const bootPassword = process.env.ADMIN_BOOT_PASSWORD ?? "admin1234";
       const passwordHash = await bcrypt.hash(bootPassword, 10);
       const pool = getPool();
+      const nm = adminDisplayName(normalizeEmail(bootEmail));
       await pool.query(
-        `INSERT INTO admins (email, password_hash, role) VALUES ($1, $2, 'admin')`,
-        [normalizeEmail(bootEmail), passwordHash],
+        `INSERT INTO admins (email, password_hash, role, name) VALUES ($1, $2, 'admin', $3)`,
+        [normalizeEmail(bootEmail), passwordHash, nm],
       );
     })();
   }
@@ -105,7 +143,9 @@ export function toPublicAdmin(row: AdminRow) {
   return {
     id: row.id,
     email: row.email,
-    role: row.role as Role,
+    name: row.name?.trim() || adminDisplayName(row.email),
+    phone: row.phone,
+    role: parseRole(row.role),
   };
 }
 
@@ -113,7 +153,7 @@ export function adminJwtClaims(row: AdminRow) {
   return {
     id: row.id,
     email: row.email,
-    role: row.role as Role,
-    name: adminDisplayName(row.email),
+    role: parseRole(row.role),
+    name: row.name?.trim() || adminDisplayName(row.email),
   };
 }

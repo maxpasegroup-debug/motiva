@@ -9,6 +9,10 @@ import {
   replaceAttendanceForDay,
 } from "@/server/attendance/attendance-db";
 import { getDatabaseUrl } from "@/server/db/pool";
+import {
+  createParentNotification,
+  listParentIdsForStudentIds,
+} from "@/server/parents/parents-portal-db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -94,6 +98,25 @@ export async function POST(
       markedBy: teacherId,
       entries,
     });
+
+    if (getDatabaseUrl() && entries.length > 0) {
+      try {
+        const parentByStudent = await listParentIdsForStudentIds(
+          entries.map((e) => e.student_id),
+        );
+        for (const e of entries) {
+          const parentId = parentByStudent.get(e.student_id);
+          if (!parentId) continue;
+          const msg =
+            e.status === "present"
+              ? `Day ${dayNumber} marked present for your child.`
+              : `Your child was absent on day ${dayNumber}.`;
+          await createParentNotification(parentId, msg);
+        }
+      } catch (notifyErr) {
+        console.error("[POST attendance] parent notify", notifyErr);
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (e) {

@@ -12,37 +12,21 @@ type Props = { classId: string };
 type BatchPayload = {
   id: string;
   name: string;
-  course_id: string;
   teacher_id: string;
   duration: 12 | 25;
-};
-
-type CoursePayload = {
-  id: string;
-  title: string;
-  is_published: boolean;
 };
 
 type StudentRow = {
   id: string;
   name: string;
   email: string;
-  progress: {
-    lesson_id: string;
-    furthest_completed_order: number;
-    last_watched_at: string;
-  } | null;
 };
 
 export function TeacherClassPage({ classId }: Props) {
   const { t } = useLanguage();
   const [batch, setBatch] = useState<BatchPayload | null>(null);
   const [currentDay, setCurrentDay] = useState(1);
-  const [course, setCourse] = useState<CoursePayload | null>(null);
   const [students, setStudents] = useState<StudentRow[]>([]);
-  const [lessons, setLessons] = useState<{ id: string; title: string; order: number }[]>(
-    [],
-  );
   const [presentSet, setPresentSet] = useState<Set<string>>(() => new Set());
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,9 +52,7 @@ export function TeacherClassPage({ classId }: Props) {
         batch?: BatchPayload;
         current_day?: number;
         attendance_for_day?: Record<string, "present" | "absent">;
-        course?: CoursePayload | null;
         students?: StudentRow[];
-        lessons?: { id: string; title: string; order: number }[];
         error?: string;
       };
       if (!res.ok) {
@@ -87,9 +69,7 @@ export function TeacherClassPage({ classId }: Props) {
         if (att[s.id] === "present") nextPresent.add(s.id);
       }
       setPresentSet(nextPresent);
-      setCourse(json.course ?? null);
       setStudents(json.students ?? []);
-      setLessons(json.lessons ?? []);
     } catch {
       setLoadError(t("class_not_found"));
       setBatch(null);
@@ -215,19 +195,9 @@ export function TeacherClassPage({ classId }: Props) {
         <p className="mt-3 text-xl font-semibold text-primary">
           {t("attendance_day_heading").replace("{n}", String(currentDay))}
         </p>
-        {course ? (
-          <p className="mt-1 text-neutral-600">
-            {course.title} · {batch.duration} {t("admin_classes_days_short")}
-          </p>
-        ) : null}
-        {course?.is_published ? (
-          <Link
-            href={`/course/${course.id}`}
-            className="mt-3 inline-block text-sm font-semibold text-primary underline-offset-4 hover:underline"
-          >
-            {t("teacher_view_course_lessons")}
-          </Link>
-        ) : null}
+        <p className="mt-1 text-neutral-600">
+          {batch.duration} {t("admin_classes_days_short")}
+        </p>
       </div>
 
       {toast ? (
@@ -302,24 +272,6 @@ export function TeacherClassPage({ classId }: Props) {
         ) : null}
       </div>
 
-      {lessons.length > 0 ? (
-        <Card className="p-6 shadow-md">
-          <h2 className="mb-4 text-lg font-semibold text-neutral-800">
-            {t("course_player_lessons_heading")}
-          </h2>
-          <ol className="list-decimal space-y-2 pl-5 text-sm text-neutral-700">
-            {lessons.map((l) => (
-              <li key={l.id}>
-                {l.title}{" "}
-                <span className="text-neutral-400">
-                  ({t("course_player_lesson_label")} {l.order + 1})
-                </span>
-              </li>
-            ))}
-          </ol>
-        </Card>
-      ) : null}
-
       <Card className="p-6 shadow-md">
         <h2 className="mb-4 text-lg font-semibold text-neutral-800">
           {t("teacher_batch_students_progress")}
@@ -337,15 +289,6 @@ export function TeacherClassPage({ classId }: Props) {
               >
                 <p className="font-semibold text-foreground">{s.name}</p>
                 <p className="text-xs text-neutral-500">{s.email}</p>
-                <p className="mt-2 text-neutral-600">
-                  {s.progress &&
-                  s.progress.furthest_completed_order >= 0
-                    ? t("teacher_progress_furthest_lesson_order").replace(
-                        "{n}",
-                        String(s.progress.furthest_completed_order + 1),
-                      )
-                    : t("teacher_progress_none")}
-                </p>
               </li>
             ))}
           </ul>

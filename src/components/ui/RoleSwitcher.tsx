@@ -8,6 +8,9 @@ import type { TranslationKey } from "@/lib/i18n";
 
 const ROLE_LABEL_KEYS: Record<Role, TranslationKey> = {
   admin: "role_admin",
+  telecounselor: "role_telecounselor",
+  demo_executive: "role_demo_executive",
+  mentor: "role_mentor",
   teacher: "role_teacher",
   student: "role_student",
   parent: "role_parent",

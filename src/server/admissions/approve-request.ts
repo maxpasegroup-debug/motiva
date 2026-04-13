@@ -6,7 +6,9 @@ import {
 import {
   getAdmissionRequestById,
   updateAdmissionRequestStatus,
+  updateAdmissionRequestStatusIfPending,
 } from "@/server/admissions/admissions-db";
+import { getDatabaseUrl } from "@/server/db/pool";
 
 function randomPassword(): string {
   const chars =
@@ -46,7 +48,21 @@ export async function approveAdmissionInDatabase(
   const row = await getAdmissionRequestById(admissionId);
   if (!row) return { ok: false, error: "Admission not found" };
   if (row.status !== "pending") {
-    return { ok: false, error: "Admission is not pending" };
+    return {
+      ok: false,
+      error:
+        row.status === "approved"
+          ? "Already approved"
+          : "Admission is not pending",
+    };
+  }
+
+  const claimed = await updateAdmissionRequestStatusIfPending(
+    admissionId,
+    "approved",
+  );
+  if (!claimed) {
+    return { ok: false, error: "Already processed" };
   }
 
   const stPass = randomPassword();
@@ -73,11 +89,13 @@ export async function approveAdmissionInDatabase(
       break;
     }
     if (attempt.error !== "Email already exists") {
+      await updateAdmissionRequestStatus(admissionId, "pending");
       return { ok: false, error: attempt.error };
     }
   }
 
   if (!studentCreated?.ok) {
+    await updateAdmissionRequestStatus(admissionId, "pending");
     return { ok: false, error: "Could not create student login" };
   }
 
@@ -102,12 +120,14 @@ export async function approveAdmissionInDatabase(
     }
     if (attempt.error !== "Email already exists") {
       await deleteUserAsAdmin(studentCreated.user.id);
+      await updateAdmissionRequestStatus(admissionId, "pending");
       return { ok: false, error: attempt.error };
     }
   }
 
   if (!parentCreated?.ok) {
     await deleteUserAsAdmin(studentCreated.user.id);
+    await updateAdmissionRequestStatus(admissionId, "pending");
     return {
       ok: false,
       error:
@@ -117,11 +137,25 @@ export async function approveAdmissionInDatabase(
     };
   }
 
-  const updated = await updateAdmissionRequestStatus(admissionId, "approved");
-  if (!updated) {
-    await deleteUserAsAdmin(parentCreated.user.id);
-    await deleteUserAsAdmin(studentCreated.user.id);
-    return { ok: false, error: "Could not update admission status" };
+  if (getDatabaseUrl()) {
+    try {
+      const { upsertParentRecord, createParentNotification } = await import(
+        "@/server/parents/parents-portal-db"
+      );
+      await upsertParentRecord({
+        id: parentCreated.user.id,
+        name: row.parent_name.trim(),
+        phone: row.phone.trim(),
+        student_id: studentCreated.user.id,
+        email: null,
+      });
+      await createParentNotification(
+        parentCreated.user.id,
+        "Your child has been enrolled successfully.",
+      );
+    } catch (e) {
+      console.error("[approveAdmissionInDatabase] parent portal", e);
+    }
   }
 
   return {

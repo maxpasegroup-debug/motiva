@@ -29,7 +29,10 @@ export async function POST(req: NextRequest) {
   if (
     role !== "teacher" &&
     role !== "student" &&
-    role !== "parent"
+    role !== "parent" &&
+    role !== "telecounselor" &&
+    role !== "demo_executive" &&
+    role !== "mentor"
   ) {
     return NextResponse.json({ error: "Invalid role" }, { status: 400 });
   }

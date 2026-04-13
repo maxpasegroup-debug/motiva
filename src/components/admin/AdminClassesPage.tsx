@@ -13,11 +13,9 @@ type ClassDuration = 12 | 25;
 type ApiBatch = {
   id: string;
   name: string;
-  course_id: string;
   teacher_id: string;
   duration: ClassDuration;
   student_count: number;
-  course_title: string;
   start_date: string | null;
   current_day?: number;
   present_today?: number;
@@ -31,12 +29,6 @@ type AttendanceReport = {
     name: string;
     attended_label: string;
   }[];
-};
-
-type CourseOption = {
-  id: string;
-  title: string;
-  is_published?: boolean;
 };
 
 const DURATION_PRESETS: { days: ClassDuration; emoji: string }[] = [
@@ -74,13 +66,11 @@ function TrashIcon() {
 export function AdminClassesPage() {
   const { t } = useLanguage();
   const [batches, setBatches] = useState<ApiBatch[]>([]);
-  const [courses, setCourses] = useState<CourseOption[]>([]);
   const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [listError, setListError] = useState<string | null>(null);
 
   const [batchName, setBatchName] = useState("");
-  const [courseId, setCourseId] = useState("");
   const [teacherId, setTeacherId] = useState("");
   const [duration, setDuration] = useState<ClassDuration>(12);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -93,7 +83,6 @@ export function AdminClassesPage() {
 
   const [editBatchId, setEditBatchId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [editCourseId, setEditCourseId] = useState("");
   const [editTeacherId, setEditTeacherId] = useState("");
   const [editSaved, setEditSaved] = useState(false);
 
@@ -134,32 +123,6 @@ export function AdminClassesPage() {
     }
   }, [token, t]);
 
-  const loadCourses = useCallback(async () => {
-    if (!token) return;
-    try {
-      const res = await fetch("/api/courses", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) return;
-      const json = (await res.json()) as {
-        courses?: Array<{
-          id: string;
-          title: string;
-          is_published?: boolean;
-        }>;
-      };
-      setCourses(
-        (json.courses ?? []).map((c) => ({
-          id: c.id,
-          title: c.title,
-          is_published: c.is_published,
-        })),
-      );
-    } catch {
-      /* ignore */
-    }
-  }, [token]);
-
   function refreshUsers() {
     setTeachers(listTeachers());
     setStudents(listStudents());
@@ -168,8 +131,7 @@ export function AdminClassesPage() {
   useEffect(() => {
     refreshUsers();
     void loadBatches();
-    void loadCourses();
-  }, [loadBatches, loadCourses]);
+  }, [loadBatches]);
 
   useEffect(() => {
     function onUsersUpdated() {
@@ -206,7 +168,6 @@ export function AdminClassesPage() {
   useEffect(() => {
     if (!editBatchId || !token) {
       setEditName("");
-      setEditCourseId("");
       setEditTeacherId("");
       return;
     }
@@ -219,7 +180,6 @@ export function AdminClassesPage() {
       };
       if (json.batch) {
         setEditName(json.batch.name);
-        setEditCourseId(json.batch.course_id);
         setEditTeacherId(json.batch.teacher_id);
       }
     })();
@@ -231,10 +191,6 @@ export function AdminClassesPage() {
     if (!token) return;
     if (!teacherId) {
       setCreateError(t("admin_teacher_pick_required"));
-      return;
-    }
-    if (!courseId) {
-      setCreateError(t("admin_batch_course_required"));
       return;
     }
     const name = batchName.trim() || previewName;
@@ -250,7 +206,6 @@ export function AdminClassesPage() {
       },
       body: JSON.stringify({
         name,
-        course_id: courseId,
         teacher_id: teacherId,
         duration,
       }),
@@ -260,7 +215,6 @@ export function AdminClassesPage() {
       return;
     }
     setBatchName("");
-    setCourseId("");
     setTeacherId("");
     setDuration(12);
     await loadBatches();
@@ -344,7 +298,6 @@ export function AdminClassesPage() {
       },
       body: JSON.stringify({
         name: editName.trim(),
-        course_id: editCourseId,
         teacher_id: editTeacherId,
       }),
     });
@@ -353,21 +306,6 @@ export function AdminClassesPage() {
       await loadBatches();
     }
   }
-
-  const publishedCourses = courses.filter((c) => c.is_published === true);
-
-  const editCourseOptions = useMemo(() => {
-    const base = [...publishedCourses];
-    const b = batches.find((x) => x.id === editBatchId);
-    if (b && !base.some((c) => c.id === b.course_id)) {
-      base.unshift({
-        id: b.course_id,
-        title: b.course_title,
-        is_published: true,
-      });
-    }
-    return base;
-  }, [publishedCourses, batches, editBatchId]);
 
   return (
     <div className="space-y-10">
@@ -396,25 +334,6 @@ export function AdminClassesPage() {
                 placeholder={previewName || t("admin_classes_preview")}
                 className="min-h-14 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base outline-none ring-primary focus-visible:border-primary focus-visible:ring-2"
               />
-            </label>
-
-            <label className="block text-left text-sm font-medium text-neutral-700">
-              <span className="mb-2 block">{t("admin_batch_select_course")}</span>
-              <select
-                value={courseId}
-                onChange={(e) => {
-                  setCourseId(e.target.value);
-                  setCreateError(null);
-                }}
-                className="min-h-14 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base outline-none ring-primary focus-visible:border-primary focus-visible:ring-2"
-              >
-                <option value="">{t("admin_course_select_placeholder")}</option>
-                {publishedCourses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.title}
-                  </option>
-                ))}
-              </select>
             </label>
 
             <label className="block text-left text-sm font-medium text-neutral-700">
@@ -487,7 +406,7 @@ export function AdminClassesPage() {
 
             <Button
               type="submit"
-              disabled={teachers.length === 0 || publishedCourses.length === 0}
+              disabled={teachers.length === 0}
               className="min-h-14"
             >
               {t("admin_classes_create_btn")}
@@ -495,11 +414,6 @@ export function AdminClassesPage() {
             {teachers.length === 0 ? (
               <p className="text-center text-sm text-neutral-500">
                 {t("admin_add_teacher_first")}
-              </p>
-            ) : null}
-            {publishedCourses.length === 0 ? (
-              <p className="text-center text-sm text-neutral-500">
-                {t("admin_batch_need_published_course")}
               </p>
             ) : null}
           </form>
@@ -532,7 +446,7 @@ export function AdminClassesPage() {
                   <option value="">{t("admin_classes_select_batch")}</option>
                   {batches.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name} · {c.course_title}
+                      {c.name}
                     </option>
                   ))}
                 </select>
@@ -621,9 +535,6 @@ export function AdminClassesPage() {
                   </button>
                   <p className="pr-10 text-2xl font-bold leading-tight text-foreground sm:text-3xl">
                     {c.name}
-                  </p>
-                  <p className="mt-2 text-sm font-medium text-primary">
-                    {c.course_title}
                   </p>
                   <div className="mt-6 space-y-3 text-base">
                     <div className="flex items-center gap-2">
@@ -725,20 +636,6 @@ export function AdminClassesPage() {
                           onChange={(e) => setEditName(e.target.value)}
                           className="mt-1 min-h-12 w-full rounded-lg border border-neutral-300 px-3"
                         />
-                      </label>
-                      <label className="block text-sm font-medium text-neutral-700">
-                        {t("admin_batch_select_course")}
-                        <select
-                          value={editCourseId}
-                          onChange={(e) => setEditCourseId(e.target.value)}
-                          className="mt-1 min-h-12 w-full rounded-lg border border-neutral-300 px-3"
-                        >
-                          {editCourseOptions.map((x) => (
-                            <option key={x.id} value={x.id}>
-                              {x.title}
-                            </option>
-                          ))}
-                        </select>
                       </label>
                       <label className="block text-sm font-medium text-neutral-700">
                         {t("admin_assign_teacher")}

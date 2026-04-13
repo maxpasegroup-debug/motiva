@@ -27,7 +27,7 @@ export function DashboardSubPage({ titleKey, emoji }: Props) {
 
       <p className="text-center">
         <Link
-          href="/dashboard"
+          href="/student"
           className="text-base font-semibold text-primary underline-offset-4 hover:underline"
         >
           ← {t("back")}

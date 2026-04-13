@@ -1,16 +1,25 @@
 import { getPool } from "@/server/db/pool";
-import { ensureCourseTables } from "@/server/courses/courses-db";
 
 let tableReady: Promise<void> | null = null;
 
+async function teardownLmsArtifacts(pool: ReturnType<typeof getPool>): Promise<void> {
+  await pool.query(
+    `ALTER TABLE IF EXISTS batches DROP CONSTRAINT IF EXISTS batches_course_id_fkey`,
+  );
+  await pool.query(`DROP TABLE IF EXISTS course_progress CASCADE`);
+  await pool.query(`DROP TABLE IF EXISTS lessons CASCADE`);
+  await pool.query(`DROP TABLE IF EXISTS courses CASCADE`);
+  await pool.query(`DROP INDEX IF EXISTS idx_batches_course_id`);
+  await pool.query(`ALTER TABLE IF EXISTS batches DROP COLUMN IF EXISTS course_id`);
+}
+
 async function ensureBatchesTables(): Promise<void> {
-  await ensureCourseTables();
   const pool = getPool();
+  await teardownLmsArtifacts(pool);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS batches (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name VARCHAR(512) NOT NULL,
-      course_id UUID NOT NULL REFERENCES courses (id) ON DELETE RESTRICT,
       teacher_id VARCHAR(255) NOT NULL,
       duration INTEGER NOT NULL CHECK (duration IN (12, 25)),
       start_date DATE,
@@ -19,9 +28,6 @@ async function ensureBatchesTables(): Promise<void> {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
-  await pool.query(
-    `CREATE INDEX IF NOT EXISTS idx_batches_course_id ON batches (course_id)`,
-  );
   await pool.query(
     `CREATE INDEX IF NOT EXISTS idx_batches_teacher_id ON batches (teacher_id)`,
   );
@@ -50,7 +56,6 @@ export function ensureBatchesDbTables(): Promise<void> {
 export type BatchRow = {
   id: string;
   name: string;
-  course_id: string;
   teacher_id: string;
   duration: 12 | 25;
   start_date: Date | null;
@@ -61,7 +66,6 @@ export type BatchRow = {
 
 export async function insertBatch(input: {
   name: string;
-  course_id: string;
   teacher_id: string;
   duration: 12 | 25;
   start_date?: string | null;
@@ -74,17 +78,11 @@ export async function insertBatch(input: {
       : null;
   const res = await pool.query<{ id: string }>(
     `
-    INSERT INTO batches (name, course_id, teacher_id, duration, start_date)
-    VALUES ($1, $2, $3, $4, $5)
+    INSERT INTO batches (name, teacher_id, duration, start_date)
+    VALUES ($1, $2, $3, $4)
     RETURNING id
     `,
-    [
-      input.name.trim(),
-      input.course_id,
-      input.teacher_id,
-      input.duration,
-      start,
-    ],
+    [input.name.trim(), input.teacher_id, input.duration, start],
   );
   const row = res.rows[0];
   if (!row?.id) throw new Error("Insert batch failed");
@@ -97,7 +95,6 @@ export async function updateBatch(
   id: string,
   patch: {
     name?: string;
-    course_id?: string;
     teacher_id?: string;
     duration?: 12 | 25;
     start_date?: string | null;
@@ -110,10 +107,6 @@ export async function updateBatch(
   if (patch.name !== undefined) {
     parts.push(`name = $${i++}`);
     vals.push(patch.name.trim());
-  }
-  if (patch.course_id !== undefined) {
-    parts.push(`course_id = $${i++}`);
-    vals.push(patch.course_id);
   }
   if (patch.teacher_id !== undefined) {
     parts.push(`teacher_id = $${i++}`);
@@ -153,7 +146,7 @@ export async function getBatchById(id: string): Promise<BatchRow | null> {
   const pool = getPool();
   const res = await pool.query<BatchRow>(
     `
-    SELECT id, name, course_id, teacher_id, duration, start_date, unlocked_day, completed_days, created_at
+    SELECT id, name, teacher_id, duration, start_date, unlocked_day, completed_days, created_at
     FROM batches WHERE id = $1
     `,
     [id],
@@ -163,7 +156,6 @@ export async function getBatchById(id: string): Promise<BatchRow | null> {
 
 export type BatchAdminListRow = BatchRow & {
   student_count: number;
-  course_title: string;
 };
 
 export async function listBatchesAdmin(): Promise<BatchAdminListRow[]> {
@@ -172,12 +164,10 @@ export async function listBatchesAdmin(): Promise<BatchAdminListRow[]> {
   const res = await pool.query<BatchAdminListRow & { student_count: string }>(
     `
     SELECT
-      b.id, b.name, b.course_id, b.teacher_id, b.duration, b.start_date,
+      b.id, b.name, b.teacher_id, b.duration, b.start_date,
       b.unlocked_day, b.completed_days, b.created_at,
-      c.title AS course_title,
       (SELECT COUNT(*)::text FROM batch_students bs WHERE bs.batch_id = b.id) AS student_count
     FROM batches b
-    JOIN courses c ON c.id = b.course_id
     ORDER BY b.created_at DESC
     `,
   );
@@ -195,12 +185,10 @@ export async function listBatchesForTeacher(
   const res = await pool.query<BatchAdminListRow & { student_count: string }>(
     `
     SELECT
-      b.id, b.name, b.course_id, b.teacher_id, b.duration, b.start_date,
+      b.id, b.name, b.teacher_id, b.duration, b.start_date,
       b.unlocked_day, b.completed_days, b.created_at,
-      c.title AS course_title,
       (SELECT COUNT(*)::text FROM batch_students bs WHERE bs.batch_id = b.id) AS student_count
     FROM batches b
-    JOIN courses c ON c.id = b.course_id
     WHERE b.teacher_id = $1
     ORDER BY b.created_at DESC
     `,
@@ -260,43 +248,22 @@ export async function setBatchStudents(
 
 export async function getStudentBatchRow(
   studentId: string,
-): Promise<(BatchRow & { course_title: string }) | null> {
+): Promise<BatchRow | null> {
   await ensureTables();
   const pool = getPool();
-  const res = await pool.query<BatchRow & { course_title: string }>(
+  const res = await pool.query<BatchRow>(
     `
     SELECT
-      b.id, b.name, b.course_id, b.teacher_id, b.duration, b.start_date,
-      b.unlocked_day, b.completed_days, b.created_at,
-      c.title AS course_title
+      b.id, b.name, b.teacher_id, b.duration, b.start_date,
+      b.unlocked_day, b.completed_days, b.created_at
     FROM batch_students bs
     JOIN batches b ON b.id = bs.batch_id
-    JOIN courses c ON c.id = b.course_id
     WHERE bs.student_id = $1
     LIMIT 1
     `,
     [studentId],
   );
   return res.rows[0] ?? null;
-}
-
-export async function studentHasCourseAccess(
-  studentId: string,
-  courseId: string,
-): Promise<boolean> {
-  await ensureTables();
-  const pool = getPool();
-  const res = await pool.query<{ ok: string }>(
-    `
-    SELECT '1' AS ok
-    FROM batch_students bs
-    JOIN batches b ON b.id = bs.batch_id
-    WHERE bs.student_id = $1 AND b.course_id = $2
-    LIMIT 1
-    `,
-    [studentId, courseId],
-  );
-  return !!res.rows[0];
 }
 
 export async function verifyTeacherOwnsBatch(
