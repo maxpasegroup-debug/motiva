@@ -55,6 +55,8 @@ model User {
 
   pinResetRequests PinResetRequest[]
 
+  courseEnrollments CourseEnrollment[]
+
   @@index([role])
   @@map("users")
 }
@@ -73,6 +75,75 @@ model PinResetRequest {
   @@index([status, requestedAt(sort: Desc)])
   @@index([userId])
   @@map("pin_reset_requests")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RECORDED COURSES  — on-demand video curriculum (admin builder + enrollments)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Course {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String   @db.VarChar(512)
+  thumbnail   String   @db.Text
+  description String   @db.Text
+  targetRole  String   @map("target_role") @db.VarChar(32)
+  price       Float    @default(0)
+  status      String   @default("draft") @db.VarChar(32)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  sections    CourseSection[]
+  enrollments CourseEnrollment[]
+
+  @@index([status])
+  @@index([targetRole])
+  @@map("courses")
+}
+
+model CourseSection {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  courseId     String   @map("course_id") @db.Uuid
+  type         String   @db.VarChar(16)
+  sectionTitle String   @map("section_title") @db.VarChar(512)
+  order        Int
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  course Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  videos CourseVideo[]
+
+  @@index([courseId, order])
+  @@map("course_sections")
+}
+
+model CourseVideo {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sectionId   String   @map("section_id") @db.Uuid
+  videoTitle  String   @map("video_title") @db.VarChar(512)
+  videoUrl    String   @map("video_url") @db.Text
+  description String   @db.Text
+  order       Int
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  section CourseSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@index([sectionId, order])
+  @@map("course_videos")
+}
+
+model CourseEnrollment {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  courseId   String   @map("course_id") @db.Uuid
+  enrolledAt DateTime @default(now()) @map("enrolled_at") @db.Timestamptz
+  progress   Int      @default(0)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@map("course_enrollments")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

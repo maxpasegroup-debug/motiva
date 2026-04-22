@@ -2,6 +2,7 @@
 
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { Card } from "@/components/ui/Card";
+import { RoleCoursesSection } from "@/components/courses/RoleCoursesSection";
 
 export function MentorDashboardPage() {
   const { t } = useLanguage();
@@ -16,6 +17,7 @@ export function MentorDashboardPage() {
           <li>{t("mentor_teacher_allocation")}</li>
         </ul>
       </Card>
+      <RoleCoursesSection role="mentor" heading="Courses" />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { RoleCoursesSection } from "@/components/courses/RoleCoursesSection";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { getAuthToken } from "@/lib/session";
 
@@ -330,6 +331,8 @@ export function ParentDashboardPage() {
           {t("parent_whatsapp_open")}
         </a>
       ) : null}
+
+      <RoleCoursesSection role="parent" heading="Courses" />
     </div>
   );
 }

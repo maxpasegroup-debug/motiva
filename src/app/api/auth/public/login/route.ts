@@ -44,10 +44,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid login details" }, { status: 401 });
   }
 
-  if (user.pinResetRequired) {
-    return NextResponse.json({ requiresPinReset: true }, { status: 200 });
-  }
-
   const token = jwt.sign(
     {
       sub: user.id,
@@ -56,6 +52,7 @@ export async function POST(req: NextRequest) {
       role: user.role,
       email: user.email,
       name: user.name,
+      pinResetRequired: user.pinResetRequired,
       tokenType: "public",
     },
     getJwtSecret(),
@@ -64,6 +61,7 @@ export async function POST(req: NextRequest) {
 
   const res = NextResponse.json({
     success: true,
+    requiresPinReset: user.pinResetRequired,
     token,
     user: { id: user.id, mobile: user.mobile, role: user.role, name: user.name },
   });

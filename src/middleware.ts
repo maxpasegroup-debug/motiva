@@ -21,24 +21,12 @@ function getSessionToken(req: NextRequest): string | null {
 
 type Guard = { prefix: string; roles: readonly Role[] };
 
-const ROLES_ANY_AUTHENTICATED: readonly Role[] = [
-  "admin",
-  "mentor",
-  "teacher",
-  "student",
-  "parent",
-  "telecounselor",
-  "demo_executive",
-  "public",
-];
-
 const PAGE_GUARDS: Guard[] = [
   { prefix: "/admin", roles: ["admin"] },
   { prefix: "/mentor", roles: ["mentor"] },
   { prefix: "/teacher", roles: ["teacher"] },
   { prefix: "/student", roles: ["student"] },
   { prefix: "/parent", roles: ["parent"] },
-  { prefix: "/courses", roles: ROLES_ANY_AUTHENTICATED },
   { prefix: "/leads", roles: ["admin", "telecounselor"] },
   { prefix: "/demo", roles: ["admin", "demo_executive"] },
 ];
@@ -82,6 +70,9 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    if (dashboardLegacy) {
+      return NextResponse.redirect(new URL("/auth/public/login", request.url));
+    }
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -91,6 +82,9 @@ export async function middleware(request: NextRequest) {
   } catch {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (dashboardLegacy) {
+      return NextResponse.redirect(new URL("/auth/public/login", request.url));
     }
     return NextResponse.redirect(new URL("/login", request.url));
   }
