@@ -14,6 +14,7 @@ const ROLE_LABEL_KEYS: Record<Role, TranslationKey> = {
   teacher: "role_teacher",
   student: "role_student",
   parent: "role_parent",
+  public: "role_public",
 };
 
 export function RoleSwitcher() {

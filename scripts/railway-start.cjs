@@ -7,7 +7,13 @@ const { spawnSync } = require("child_process");
 const path = require("path");
 
 function required(name) {
-  const v = process.env[name]?.trim();
+  const envValues = {
+    JWT_SECRET: process.env.JWT_SECRET,
+    DATABASE_URL: process.env.DATABASE_URL,
+    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+  };
+  const v = envValues[name]?.trim();
   if (!v) {
     console.error(
       `[env] ${name} is missing or empty. Set it in Railway Variables (see .env.example).`,

@@ -5,7 +5,8 @@ export type Role =
   | "mentor"
   | "teacher"
   | "student"
-  | "parent";
+  | "parent"
+  | "public";
 
 export const DEFAULT_ROLE: Role = "admin";
 
@@ -17,6 +18,7 @@ export const ROLES: readonly Role[] = [
   "teacher",
   "student",
   "parent",
+  "public",
 ] as const;
 
 const ROLE_HOME: Record<Role, string> = {
@@ -27,6 +29,7 @@ const ROLE_HOME: Record<Role, string> = {
   teacher: "/teacher",
   student: "/student",
   parent: "/parent",
+  public: "/courses",
 };
 
 export function getRoleHome(role: Role): string {
@@ -41,7 +44,8 @@ export function parseRole(value: unknown): Role {
     value === "mentor" ||
     value === "teacher" ||
     value === "student" ||
-    value === "parent"
+    value === "parent" ||
+    value === "public"
   ) {
     return value;
   }

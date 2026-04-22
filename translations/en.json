@@ -165,6 +165,7 @@
   "role_telecounselor": "Telecounselor",
   "role_demo_executive": "Demo Executive",
   "role_mentor": "Mentor",
+  "role_public": "Public User",
   "student_batch_heading": "Your batch",
   "student_batch_empty": "You are not assigned to a batch yet. Ask your coordinator or use Join class if available.",
   "student_batch_completed_days": "Days completed",

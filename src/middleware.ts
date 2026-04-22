@@ -7,22 +7,40 @@ import {
 } from "@/server/auth/http-auth";
 import { verifyJwtEdge } from "@/server/auth/jwt-edge";
 
+const USER_AUTH_COOKIE_NAME = "motiva_user_auth";
+
 function getSessionToken(req: NextRequest): string | null {
   const bearer = getBearerToken(req);
   if (bearer) return bearer;
-  return req.cookies.get(ADMIN_AUTH_COOKIE_NAME)?.value ?? null;
+  return (
+    req.cookies.get(ADMIN_AUTH_COOKIE_NAME)?.value ??
+    req.cookies.get(USER_AUTH_COOKIE_NAME)?.value ??
+    null
+  );
 }
 
 type Guard = { prefix: string; roles: readonly Role[] };
 
+const ROLES_ANY_AUTHENTICATED: readonly Role[] = [
+  "admin",
+  "mentor",
+  "teacher",
+  "student",
+  "parent",
+  "telecounselor",
+  "demo_executive",
+  "public",
+];
+
 const PAGE_GUARDS: Guard[] = [
   { prefix: "/admin", roles: ["admin"] },
+  { prefix: "/mentor", roles: ["mentor"] },
+  { prefix: "/teacher", roles: ["teacher"] },
+  { prefix: "/student", roles: ["student"] },
+  { prefix: "/parent", roles: ["parent"] },
+  { prefix: "/courses", roles: ROLES_ANY_AUTHENTICATED },
   { prefix: "/leads", roles: ["admin", "telecounselor"] },
   { prefix: "/demo", roles: ["admin", "demo_executive"] },
-  { prefix: "/mentor", roles: ["admin", "mentor"] },
-  { prefix: "/teacher", roles: ["admin", "teacher"] },
-  { prefix: "/student", roles: ["admin", "student"] },
-  { prefix: "/parent", roles: ["admin", "parent"] },
 ];
 
 function guardForPath(pathname: string): Guard | null {
@@ -47,11 +65,7 @@ function isProtectedAdminApi(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (
-    pathname === "/api/admin/login" ||
-    pathname === "/api/admin/logout" ||
-    pathname === "/api/auth/login"
-  ) {
+  if (pathname.startsWith("/api/auth/")) {
     return NextResponse.next();
   }
 
@@ -111,6 +125,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/api/auth/:path*",
     "/admin",
     "/admin/:path*",
     "/api/admin",
@@ -127,6 +142,8 @@ export const config = {
     "/student/:path*",
     "/parent",
     "/parent/:path*",
+    "/courses",
+    "/courses/:path*",
     "/dashboard",
     "/dashboard/:path*",
   ],

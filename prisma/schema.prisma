@@ -1,0 +1,429 @@
+// Motiva Edus — Prisma schema
+// Migration target: replaces data/auth-users.json and data/programs.json
+// with PostgreSQL tables, and adds audit_log, payment_transactions,
+// mentor_notes, learning_plans, class_schedules, issues, messages.
+//
+// Existing tables (admins … admissions) are modelled here so Prisma
+// Client can query them; they already exist in the database.
+//
+// How to apply:
+//   New database   → npx prisma migrate dev --name init
+//   Existing DB    → npx prisma db push   (schema-drift reconciliation)
+//   Data migration → npx tsx scripts/migrate-json-to-db.ts
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LEGACY ADMIN TABLE  (001_admins.sql — kept for backwards compatibility)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Admin {
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String @unique @db.VarChar(255)
+  passwordHash String @map("password_hash") @db.Text
+  role         String @default("admin") @db.VarChar(32)
+
+  @@map("admins")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// USERS  — migration target for data/auth-users.json
+// All roles live here: admin, teacher, student, parent,
+// telecounselor, demo_executive, mentor
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String   @db.VarChar(255)
+  email        String   @unique @db.VarChar(255)
+  username     String?  @unique @db.VarChar(64)
+  mobile       String?  @unique @db.VarChar(16)
+  phone        String?  @db.VarChar(64)
+  pin          String?  @db.Text
+  pinResetRequired Boolean @default(false) @map("pin_reset_required")
+  passwordHash String   @map("password_hash") @db.Text
+  role         String   @default("public") @db.VarChar(32)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  pinResetRequests PinResetRequest[]
+
+  @@index([role])
+  @@map("users")
+}
+
+model PinResetRequest {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  mobile      String   @db.VarChar(16)
+  status      String   @default("pending") @db.VarChar(16)
+  requestedAt DateTime @default(now()) @map("requested_at") @db.Timestamptz
+  resolvedAt  DateTime? @map("resolved_at") @db.Timestamptz
+  resolvedBy  String?  @map("resolved_by") @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, requestedAt(sort: Desc)])
+  @@index([userId])
+  @@map("pin_reset_requests")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROGRAMS  — migration target for data/programs.json
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Program {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String   @db.VarChar(512)
+  description String   @db.Text
+  imagePath   String   @default("") @map("image_path") @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("programs")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMISSION REQUESTS  — public enrollment form (002_admission_requests.sql)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AdmissionRequest {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentName String   @map("student_name") @db.VarChar(255)
+  parentName  String   @map("parent_name") @db.VarChar(255)
+  phone       String   @db.VarChar(64)
+  programId   String   @map("program_id") @db.VarChar(64)
+  status      String   @default("pending") @db.VarChar(32)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("admission_requests")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BATCHES & ROSTERS  (005_batches.sql)
+//
+// duration is plain Int — any number of days is valid.
+// The old CHECK (duration IN (12, 25)) constraint is intentionally removed.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Batch {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String    @db.VarChar(512)
+  teacherId     String    @map("teacher_id") @db.VarChar(255)
+  duration      Int
+  startDate     DateTime? @map("start_date") @db.Date
+  unlockedDay   Int       @default(1) @map("unlocked_day")
+  completedDays Int       @default(0) @map("completed_days")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  students   BatchStudent[]
+  progress   BatchProgress?
+  attendance Attendance[]
+  schedules  ClassSchedule[]
+
+  @@index([teacherId])
+  @@map("batches")
+}
+
+// One row per student — a student belongs to at most one batch at a time.
+model BatchStudent {
+  studentId String @id @map("student_id") @db.VarChar(255)
+  batchId   String @map("batch_id") @db.Uuid
+
+  batch Batch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId])
+  @@map("batch_students")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ATTENDANCE & DAY PROGRESS  (006_attendance.sql)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model BatchProgress {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  batchId    String @unique @map("batch_id") @db.Uuid
+  currentDay Int    @default(1) @map("current_day")
+
+  batch Batch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId])
+  @@map("batch_progress")
+}
+
+model Attendance {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId String   @map("student_id") @db.VarChar(255)
+  batchId   String   @map("batch_id") @db.Uuid
+  dayNumber Int      @map("day_number")
+  status    String   @db.VarChar(20)
+  markedBy  String   @map("marked_by") @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  batch Batch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, batchId, dayNumber], name: "attendance_student_batch_day_unique")
+  @@index([batchId, dayNumber])
+  @@index([batchId])
+  @@map("attendance")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PARENTS & NOTIFICATIONS  (007_parent_portal.sql)
+//
+// parents.id mirrors the auth user ID (VARCHAR, not auto-UUID).
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Parent {
+  id              String   @id @db.VarChar(255)
+  name            String   @db.VarChar(255)
+  phone           String   @db.VarChar(64)
+  phoneNormalized String   @map("phone_normalized") @db.VarChar(32)
+  studentId       String   @unique @map("student_id") @db.VarChar(255)
+  email           String?  @db.VarChar(255)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  notifications ParentNotification[]
+
+  @@index([phoneNormalized])
+  @@map("parents")
+}
+
+model ParentNotification {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  parentId  String   @map("parent_id") @db.VarChar(255)
+  message   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  isRead    Boolean  @default(false) @map("is_read")
+
+  parent Parent @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@index([parentId, createdAt(sort: Desc)])
+  @@map("parent_notifications")
+}
+
+model StudentPaymentStatus {
+  studentId String   @id @map("student_id") @db.VarChar(255)
+  status    String   @default("pending") @db.VarChar(20)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("student_payment_status")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PAYMENT TRANSACTIONS
+// DB replacement for the localStorage payments ledger.
+// Stores individual payment records with full history.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model PaymentTransaction {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId   String   @map("student_id") @db.VarChar(255)
+  studentName String   @map("student_name") @db.VarChar(255)
+  courseLabel String   @map("course_label") @db.VarChar(255)
+  amountCents Int      @map("amount_cents")
+  currency    String   @default("INR") @db.VarChar(8)
+  status      String   @default("pending") @db.VarChar(20)
+  notes       String?  @db.Text
+  recordedBy  String?  @map("recorded_by") @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([studentId])
+  @@index([status])
+  @@map("payment_transactions")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CRM  — leads, demos, pipeline admissions
+// (tables created inline in leads-demos-admissions-db.ts)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Lead {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String   @db.VarChar(255)
+  phone      String   @db.VarChar(64)
+  type       String   @db.VarChar(32)
+  subjects   String?  @db.Text
+  status     String   @default("new") @db.VarChar(32)
+  assignedTo String?  @map("assigned_to") @db.VarChar(255)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  demos      Demo[]
+  admissions Admission[]
+
+  @@index([status])
+  @@index([assignedTo])
+  @@map("leads")
+}
+
+model Demo {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadId          String   @map("lead_id") @db.Uuid
+  demoExecutiveId String   @map("demo_executive_id") @db.VarChar(255)
+  status          String   @default("pending") @db.VarChar(32)
+  result          String?  @db.VarChar(32)
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+  @@index([demoExecutiveId])
+  @@map("demos")
+}
+
+model Admission {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadId         String   @map("lead_id") @db.Uuid
+  studentName    String   @map("student_name") @db.VarChar(255)
+  parentName     String   @map("parent_name") @db.VarChar(255)
+  phone          String   @db.VarChar(64)
+  type           String   @db.VarChar(32)
+  status         String   @default("pending") @db.VarChar(32)
+  feeAmountCents Int?     @map("fee_amount_cents")
+  feeCurrency    String?  @default("INR") @map("fee_currency") @db.VarChar(8)
+  notes          String?  @db.Text
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Restrict)
+
+  @@index([leadId])
+  @@index([status])
+  @@map("admissions")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUDIT LOG  — system-wide action trail for all admin and user actions
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorId    String?  @map("actor_id") @db.VarChar(255)
+  actorRole  String?  @map("actor_role") @db.VarChar(32)
+  action     String   @db.VarChar(128)
+  entityType String?  @map("entity_type") @db.VarChar(64)
+  entityId   String?  @map("entity_id") @db.VarChar(255)
+  meta       Json?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_log")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MENTOR NOTES  — mentor observations and progress notes per student
+// ─────────────────────────────────────────────────────────────────────────────
+
+model MentorNote {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mentorId  String   @map("mentor_id") @db.VarChar(255)
+  studentId String   @map("student_id") @db.VarChar(255)
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([mentorId])
+  @@index([studentId])
+  @@map("mentor_notes")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LEARNING PLANS  — structured plans assigned to a student
+// ─────────────────────────────────────────────────────────────────────────────
+
+model LearningPlan {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId   String    @map("student_id") @db.VarChar(255)
+  title       String    @db.VarChar(512)
+  description String?   @db.Text
+  batchId     String?   @map("batch_id") @db.Uuid
+  startDate   DateTime? @map("start_date") @db.Date
+  endDate     DateTime? @map("end_date") @db.Date
+  status      String    @default("active") @db.VarChar(32)
+  createdBy   String?   @map("created_by") @db.VarChar(255)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([studentId])
+  @@map("learning_plans")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CLASS SCHEDULES  — per-day scheduling metadata (topic, time) for a batch
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ClassSchedule {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  batchId     String    @map("batch_id") @db.Uuid
+  dayNumber   Int       @map("day_number")
+  scheduledAt DateTime? @map("scheduled_at") @db.Timestamptz
+  topic       String?   @db.VarChar(512)
+  notes       String?   @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  batch Batch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, dayNumber])
+  @@index([batchId])
+  @@map("class_schedules")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ISSUES  — support tickets or reported problems raised by any role
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Issue {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reportedBy  String   @map("reported_by") @db.VarChar(255)
+  assignedTo  String?  @map("assigned_to") @db.VarChar(255)
+  entityType  String?  @map("entity_type") @db.VarChar(64)
+  entityId    String?  @map("entity_id") @db.VarChar(255)
+  title       String   @db.VarChar(512)
+  description String?  @db.Text
+  priority    String   @default("medium") @db.VarChar(16)
+  status      String   @default("open") @db.VarChar(32)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([reportedBy])
+  @@index([assignedTo])
+  @@index([status])
+  @@map("issues")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MESSAGES  — direct messages between any two users
+// (student↔teacher, parent↔teacher, admin↔any, etc.)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Message {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  senderId   String    @map("sender_id") @db.VarChar(255)
+  receiverId String    @map("receiver_id") @db.VarChar(255)
+  content    String    @db.Text
+  isRead     Boolean   @default(false) @map("is_read")
+  readAt     DateTime? @map("read_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([senderId, receiverId, createdAt(sort: Desc)])
+  @@map("messages")
+}
