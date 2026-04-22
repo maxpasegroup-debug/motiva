@@ -146,6 +146,34 @@ model CourseEnrollment {
   @@map("course_enrollments")
 }
 
+model Teacher {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String   @db.VarChar(255)
+  subject      String   @db.VarChar(255)
+  bio          String?  @db.Text
+  photo        String?  @db.Text
+  displayOrder Int      @default(0) @map("display_order")
+  isVisible    Boolean  @default(true) @map("is_visible")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([displayOrder, createdAt])
+  @@map("teachers")
+}
+
+model Enquiry {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String   @db.VarChar(255)
+  mobile          String   @db.VarChar(32)
+  programInterest String   @map("program_interest") @db.VarChar(128)
+  message         String?  @db.Text
+  status          String   @default("new") @db.VarChar(32)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([status, createdAt(sort: Desc)])
+  @@map("enquiries")
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PROGRAMS  — migration target for data/programs.json
 // ─────────────────────────────────────────────────────────────────────────────

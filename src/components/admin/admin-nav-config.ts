@@ -15,6 +15,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/batches", labelKey: "admin_nav_batches", icon: "🏫" },
   { href: "/admin/programs", labelKey: "admin_nav_programs", icon: "🎯" },
   { href: "/admin/courses", labelKey: "admin_nav_courses", icon: "🎬" },
+  { href: "/admin/enquiries", labelKey: "admin_nav_enquiries", icon: "📨" },
   { href: "/admin/payments", labelKey: "admin_nav_payments", icon: "💳" },
   { href: "/admin/reports", labelKey: "admin_nav_reports", icon: "📊" },
   { href: "/admin/settings", labelKey: "admin_nav_settings", icon: "⚙️" },

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { AdminTeachersPage } from "@/components/admin/AdminTeachersPage";
+import { AdminTeachersManagerPage } from "@/components/admin/AdminTeachersManagerPage";
 
 export const metadata: Metadata = {
   title: "Teachers — Motiva Edus",
 };
 
 export default function Page() {
-  return <AdminTeachersPage />;
+  return <AdminTeachersManagerPage />;
 }
