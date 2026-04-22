@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import { verifyJwt } from "@/server/auth/jwt";
 import { DashboardCoursePlayer } from "@/components/courses/DashboardCoursePlayer";
 
+export const dynamic = "force-dynamic";
+
 const ADMIN_AUTH_COOKIE = "motiva_admin_auth";
 const USER_AUTH_COOKIE = "motiva_user_auth";
 

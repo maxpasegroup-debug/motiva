@@ -1,5 +1,8 @@
+import Image from "next/image";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
 
 function formatPrice(price: number) {
   if (price <= 0) return "Free";
@@ -45,10 +48,12 @@ export default async function PublicCoursesPage() {
             >
               <div className="aspect-video w-full bg-neutral-100">
                 {course.thumbnail ? (
-                  <img
+                  <Image
                     src={course.thumbnail}
                     alt={course.title}
                     className="h-full w-full object-cover"
+                    width={400}
+                    height={225}
                   />
                 ) : null}
               </div>

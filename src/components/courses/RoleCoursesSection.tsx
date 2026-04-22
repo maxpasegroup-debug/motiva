@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -113,10 +114,12 @@ export function RoleCoursesSection({
               >
                 <div className="aspect-video w-full bg-neutral-100">
                   {course.thumbnail ? (
-                    <img
+                    <Image
                       src={course.thumbnail}
                       alt={course.title}
                       className="h-full w-full object-cover"
+                      width={400}
+                      height={225}
                     />
                   ) : null}
                 </div>

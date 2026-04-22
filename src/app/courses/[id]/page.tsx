@@ -1,7 +1,10 @@
+import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import { verifyJwt, type JwtPayload } from "@/server/auth/jwt";
+
+export const dynamic = "force-dynamic";
 
 const ADMIN_AUTH_COOKIE = "motiva_admin_auth";
 const USER_AUTH_COOKIE = "motiva_user_auth";
@@ -91,10 +94,12 @@ export default async function PublicCoursePreviewPage({
       <div className="mb-6 overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm">
         <div className="aspect-video w-full bg-neutral-100">
           {course.thumbnail ? (
-            <img
+            <Image
               src={course.thumbnail}
               alt={course.title}
               className="h-full w-full object-cover"
+              width={400}
+              height={225}
             />
           ) : null}
         </div>

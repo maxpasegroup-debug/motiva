@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
@@ -20,10 +21,12 @@ export function Header() {
           className="group flex shrink-0 items-center"
           aria-label={t("brand")}
         >
-          <img
+          <Image
             src="/logo.png"
             alt=""
             className="h-9 w-auto object-contain transition duration-300 motion-safe:group-hover:scale-105 sm:h-11"
+            width={120}
+            height={40}
             decoding="async"
           />
         </Link>

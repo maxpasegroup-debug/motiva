@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -17,6 +18,8 @@ type Session = {
 export const metadata: Metadata = {
   title: "Dashboard — Motiva Edus",
 };
+
+export const dynamic = "force-dynamic";
 
 function getSession(): Session | null {
   const store = cookies();
@@ -91,10 +94,12 @@ export default async function Page() {
               >
                 <div className="aspect-video w-full bg-neutral-100">
                   {row.course.thumbnail ? (
-                    <img
+                    <Image
                       src={row.course.thumbnail}
                       alt={row.course.title}
                       className="h-full w-full object-cover"
+                      width={400}
+                      height={225}
                     />
                   ) : null}
                 </div>
