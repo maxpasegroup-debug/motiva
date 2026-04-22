@@ -6,6 +6,7 @@ import {
   updateLeadStatus,
 } from "@/server/crm/leads-demos-admissions-db";
 import { getDatabaseUrl } from "@/server/db/pool";
+import { getLegacyLeadStatus, type LeadStatus } from "@/lib/leads";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,12 +54,18 @@ export async function PATCH(
 
     if (typeof o.status === "string") {
       const allowed = ["new", "demo", "admission", "closed"] as const;
-      type LeadStatus = (typeof allowed)[number];
-      const st = o.status as LeadStatus;
+      type LegacyLeadStatus = (typeof allowed)[number];
+      const st = o.status as LegacyLeadStatus;
       if (!allowed.includes(st)) {
         return NextResponse.json({ error: "Invalid status" }, { status: 400 });
       }
-      await updateLeadStatus(id, st);
+      const mappedStatus: LeadStatus =
+        st === "demo"
+          ? "demo_scheduled"
+          : st === "closed"
+            ? "closed_lost"
+            : st;
+      await updateLeadStatus(id, mappedStatus);
     }
 
     if (o.assigned_to !== undefined) {
@@ -74,7 +81,13 @@ export async function PATCH(
     }
 
     const lead = await getLeadById(id);
-    return NextResponse.json({ success: true, lead });
+    const legacyLead = lead
+      ? {
+          ...lead,
+          status: getLegacyLeadStatus(lead.status),
+        }
+      : null;
+    return NextResponse.json({ success: true, lead: legacyLead });
   } catch (e) {
     console.error("[PATCH /api/leads/[id]]", e);
     return NextResponse.json(

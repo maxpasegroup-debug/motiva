@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRolesApi } from "@/server/auth/require-roles";
 import { insertLead, listLeads } from "@/server/crm/leads-demos-admissions-db";
 import { getDatabaseUrl } from "@/server/db/pool";
+import { getLegacyLeadStatus, normalizeLeadFlowType } from "@/lib/leads";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +21,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const leads = await listLeads();
+    const leads = (await listLeads()).map((lead) => ({
+      ...lead,
+      status: getLegacyLeadStatus(lead.status),
+      flow_type: normalizeLeadFlowType(lead.flow_type),
+    }));
     return NextResponse.json({ success: true, leads });
   } catch (e) {
     console.error("[GET /api/leads]", e);
@@ -78,6 +83,7 @@ export async function POST(req: NextRequest) {
       type,
       subjects,
       assigned_to,
+      flow_type: "tuition",
     });
     return NextResponse.json({ success: true, id });
   } catch (e) {

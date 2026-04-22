@@ -56,6 +56,11 @@ model User {
   pinResetRequests PinResetRequest[]
 
   courseEnrollments CourseEnrollment[]
+  createdStudentAccounts StudentAccount[] @relation("StudentAccountCreatedBy")
+  mentoredStudentAccounts StudentAccount[] @relation("StudentAccountMentor")
+  taughtStudentAccounts StudentAccount[] @relation("StudentAccountTeacher")
+  createdParentAccounts ParentAccount[] @relation("ParentAccountCreatedBy")
+  assignedMentorLeads Lead[] @relation("LeadAssignedMentor")
 
   @@index([role])
   @@map("users")
@@ -226,6 +231,7 @@ model Batch {
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
   students   BatchStudent[]
+  studentAccounts StudentAccount[]
   progress   BatchProgress?
   attendance Attendance[]
   schedules  ClassSchedule[]
@@ -327,6 +333,9 @@ model StudentPaymentStatus {
 
 model PaymentTransaction {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadId      String?  @map("lead_id") @db.Uuid
+  orderId     String?  @map("order_id") @db.VarChar(255)
+  razorpayPaymentId String? @map("razorpay_payment_id") @db.VarChar(255)
   studentId   String   @map("student_id") @db.VarChar(255)
   studentName String   @map("student_name") @db.VarChar(255)
   courseLabel String   @map("course_label") @db.VarChar(255)
@@ -338,7 +347,10 @@ model PaymentTransaction {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
+  @@index([leadId])
   @@index([studentId])
+  @@index([orderId])
+  @@index([razorpayPaymentId])
   @@index([status])
   @@map("payment_transactions")
 }
@@ -355,16 +367,75 @@ model Lead {
   type       String   @db.VarChar(32)
   subjects   String?  @db.Text
   status     String   @default("new") @db.VarChar(32)
+  flowType   String   @default("tuition") @map("flow_type") @db.VarChar(32)
   assignedTo String?  @map("assigned_to") @db.VarChar(255)
+  assignedMentorId String? @map("assigned_mentor_id") @db.Uuid
+  notes      String?  @db.Text
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   demos      Demo[]
   admissions Admission[]
+  assignedMentor User? @relation("LeadAssignedMentor", fields: [assignedMentorId], references: [id], onDelete: SetNull)
 
   @@index([status])
   @@index([assignedTo])
+  @@index([flowType])
+  @@index([assignedMentorId])
   @@map("leads")
+}
+
+model StudentAccount {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentName     String   @map("student_name") @db.VarChar(255)
+  parentName      String   @map("parent_name") @db.VarChar(255)
+  mobile          String   @unique @db.VarChar(16)
+  email           String?  @db.VarChar(255)
+  username        String   @unique @db.VarChar(64)
+  pin             String   @db.Text
+  pinResetRequired Boolean @default(false) @map("pin_reset_required")
+  role            String   @default("student") @db.VarChar(32)
+  batchId         String?  @map("batch_id") @db.Uuid
+  mentorId        String?  @map("mentor_id") @db.Uuid
+  teacherId       String?  @map("teacher_id") @db.Uuid
+  programType     String   @map("program_type") @db.VarChar(32)
+  admissionStatus String   @default("active") @map("admission_status") @db.VarChar(32)
+  createdBy       String   @map("created_by") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  batch          Batch?           @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  mentor         User?            @relation("StudentAccountMentor", fields: [mentorId], references: [id], onDelete: SetNull)
+  teacher        User?            @relation("StudentAccountTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
+  creator        User             @relation("StudentAccountCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  parentAccounts ParentAccount[]
+
+  @@index([batchId])
+  @@index([mentorId])
+  @@index([teacherId])
+  @@index([createdBy])
+  @@index([programType])
+  @@map("student_accounts")
+}
+
+model ParentAccount {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String   @db.VarChar(255)
+  mobile     String   @unique @db.VarChar(16)
+  username   String   @unique @db.VarChar(64)
+  pin        String   @db.Text
+  role       String   @default("parent") @db.VarChar(32)
+  studentId  String   @map("student_id") @db.Uuid
+  createdBy  String   @map("created_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  student StudentAccount @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  creator User           @relation("ParentAccountCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([studentId])
+  @@index([createdBy])
+  @@map("parent_accounts")
 }
 
 model Demo {

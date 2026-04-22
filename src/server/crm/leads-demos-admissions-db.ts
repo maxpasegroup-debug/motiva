@@ -1,4 +1,6 @@
 import { getPool } from "@/server/db/pool";
+import prisma from "@/lib/prisma";
+import { normalizeLeadFlowType, normalizeLeadStatus, type LeadStatus } from "@/lib/leads";
 
 let tableReady: Promise<void> | null = null;
 
@@ -9,11 +11,19 @@ async function ensureCrmTables(): Promise<void> {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name VARCHAR(255) NOT NULL,
       phone VARCHAR(64) NOT NULL,
-      type VARCHAR(32) NOT NULL CHECK (type IN ('tuition', 'foundation')),
+      type VARCHAR(32) NOT NULL CHECK (type IN ('tuition', 'foundation', 'remedial')),
       subjects TEXT,
       status VARCHAR(32) NOT NULL DEFAULT 'new'
-        CHECK (status IN ('new', 'demo', 'admission', 'closed')),
+        CHECK (status IN (
+          'new', 'contacted', 'demo_scheduled', 'demo_done', 'counseling',
+          'admission', 'payment_pending', 'payment_confirmed', 'mentor_assigned',
+          'closed_won', 'closed_lost', 'demo', 'closed'
+        )),
+      flow_type VARCHAR(32) NOT NULL DEFAULT 'tuition'
+        CHECK (flow_type IN ('tuition', 'remedial')),
       assigned_to VARCHAR(255),
+      assigned_mentor_id UUID,
+      notes TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
@@ -81,10 +91,13 @@ export type LeadRow = {
   id: string;
   name: string;
   phone: string;
-  type: "tuition" | "foundation";
+  type: "tuition" | "foundation" | "remedial";
   subjects: string | null;
-  status: "new" | "demo" | "admission" | "closed";
+  status: LeadStatus;
+  flow_type: "tuition" | "remedial";
   assigned_to: string | null;
+  assigned_mentor_id: string | null;
+  notes: string | null;
   created_at: Date;
   updated_at: Date;
 };
@@ -118,16 +131,19 @@ export type PipelineAdmissionRow = {
 export async function insertLead(input: {
   name: string;
   phone: string;
-  type: "tuition" | "foundation";
+  type: "tuition" | "foundation" | "remedial";
   subjects?: string | null;
   assigned_to?: string | null;
+  flow_type?: "tuition" | "remedial" | null;
+  status?: LeadStatus | null;
+  notes?: string | null;
 }): Promise<{ id: string }> {
   await ensureTables();
   const pool = getPool();
   const res = await pool.query<{ id: string }>(
     `
-    INSERT INTO leads (name, phone, type, subjects, assigned_to)
-    VALUES ($1, $2, $3, $4, $5)
+    INSERT INTO leads (name, phone, type, subjects, assigned_to, flow_type, status, notes)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     RETURNING id
     `,
     [
@@ -136,6 +152,9 @@ export async function insertLead(input: {
       input.type,
       input.subjects?.trim() || null,
       input.assigned_to?.trim() || null,
+      normalizeLeadFlowType(input.flow_type),
+      normalizeLeadStatus(input.status),
+      input.notes?.trim() || null,
     ],
   );
   const id = res.rows[0]?.id;
@@ -147,7 +166,7 @@ export async function listLeads(): Promise<LeadRow[]> {
   await ensureTables();
   const pool = getPool();
   const res = await pool.query<LeadRow>(
-    `SELECT id, name, phone, type, subjects, status, assigned_to, created_at, updated_at
+    `SELECT id, name, phone, type, subjects, status, flow_type, assigned_to, assigned_mentor_id, notes, created_at, updated_at
      FROM leads ORDER BY created_at DESC`,
   );
   return res.rows;
@@ -157,7 +176,7 @@ export async function getLeadById(id: string): Promise<LeadRow | null> {
   await ensureTables();
   const pool = getPool();
   const res = await pool.query<LeadRow>(
-    `SELECT id, name, phone, type, subjects, status, assigned_to, created_at, updated_at
+    `SELECT id, name, phone, type, subjects, status, flow_type, assigned_to, assigned_mentor_id, notes, created_at, updated_at
      FROM leads WHERE id = $1`,
     [id],
   );
@@ -166,13 +185,13 @@ export async function getLeadById(id: string): Promise<LeadRow | null> {
 
 export async function updateLeadStatus(
   id: string,
-  status: LeadRow["status"],
+  status: LeadStatus,
 ): Promise<boolean> {
   await ensureTables();
   const pool = getPool();
   const r = await pool.query(
     `UPDATE leads SET status = $2, updated_at = NOW() WHERE id = $1`,
-    [id, status],
+    [id, normalizeLeadStatus(status)],
   );
   return (r.rowCount ?? 0) > 0;
 }
@@ -206,7 +225,7 @@ export async function insertDemo(input: {
   );
   const id = res.rows[0]?.id;
   if (!id) throw new Error("insert demo failed");
-  await updateLeadStatus(input.lead_id, "demo");
+  await updateLeadStatus(input.lead_id, "demo_scheduled");
   return { id };
 }
 
@@ -255,9 +274,9 @@ export async function completeDemo(
   const row = res.rows[0];
   if (!row) return null;
   if (input.result === "interested") {
-    await updateLeadStatus(row.lead_id, "new");
+    await updateLeadStatus(row.lead_id, "demo_done");
   } else {
-    await updateLeadStatus(row.lead_id, "closed");
+    await updateLeadStatus(row.lead_id, "closed_lost");
   }
   return row;
 }
@@ -323,6 +342,18 @@ export async function getPipelineAdmissionById(
     [id],
   );
   return res.rows[0] ?? null;
+}
+
+export async function getLeadWithDemosById(id: string) {
+  await ensureTables();
+  return prisma.lead.findUnique({
+    where: { id },
+    include: {
+      demos: {
+        orderBy: { createdAt: "desc" },
+      },
+    },
+  });
 }
 
 export async function approvePipelineAdmission(

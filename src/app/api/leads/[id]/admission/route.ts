@@ -69,6 +69,12 @@ export async function POST(
     if (!lead) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
+    if (lead.type === "remedial") {
+      return NextResponse.json(
+        { error: "Use the remedial admission flow for remedial leads" },
+        { status: 400 },
+      );
+    }
     const { id } = await insertPipelineAdmission({
       lead_id: leadId,
       student_name,

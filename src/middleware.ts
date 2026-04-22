@@ -22,6 +22,15 @@ function getSessionToken(req: NextRequest): string | null {
 type Guard = { prefix: string; roles: readonly Role[] };
 
 const PAGE_GUARDS: Guard[] = [
+  { prefix: "/admin/leads", roles: ["admin", "telecounselor"] },
+  {
+    prefix: "/admin/admissions/create-account",
+    roles: ["admin", "telecounselor"],
+  },
+  {
+    prefix: "/admin/admissions/remedial",
+    roles: ["admin", "telecounselor"],
+  },
   { prefix: "/admin", roles: ["admin"] },
   { prefix: "/mentor", roles: ["mentor"] },
   { prefix: "/teacher", roles: ["teacher"] },
@@ -50,6 +59,40 @@ function isProtectedAdminApi(pathname: string): boolean {
   return true;
 }
 
+function adminApiAllowedRoles(pathname: string): readonly Role[] {
+  if (
+    pathname === "/api/admin/leads" ||
+    pathname.startsWith("/api/admin/leads/")
+  ) {
+    return ["admin", "telecounselor"];
+  }
+  if (
+    pathname === "/api/admin/admissions/remedial" ||
+    pathname.startsWith("/api/admin/admissions/remedial/")
+  ) {
+    return ["admin", "telecounselor"];
+  }
+  if (
+    pathname === "/api/admin/admissions/create-account" ||
+    pathname.startsWith("/api/admin/admissions/create-account/")
+  ) {
+    return ["admin", "telecounselor"];
+  }
+  return ["admin"];
+}
+
+function paymentsApiAllowedRoles(pathname: string): readonly Role[] {
+  if (
+    pathname === "/api/payments/create-order" ||
+    pathname.startsWith("/api/payments/create-order/") ||
+    pathname === "/api/payments/verify" ||
+    pathname.startsWith("/api/payments/verify/")
+  ) {
+    return ["admin", "telecounselor"];
+  }
+  return [];
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -58,10 +101,11 @@ export async function middleware(request: NextRequest) {
   }
 
   const adminApi = isProtectedAdminApi(pathname);
+  const paymentsApi = pathname.startsWith("/api/payments/");
   const pageGuard = guardForPath(pathname);
   const dashboardLegacy = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
 
-  if (!adminApi && !pageGuard && !dashboardLegacy) {
+  if (!adminApi && !paymentsApi && !pageGuard && !dashboardLegacy) {
     return NextResponse.next();
   }
 
@@ -90,7 +134,16 @@ export async function middleware(request: NextRequest) {
   }
 
   if (adminApi) {
-    if (payload.role !== "admin") {
+    const allowed = adminApiAllowedRoles(pathname);
+    if (!allowed.includes(payload.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    return NextResponse.next();
+  }
+
+  if (paymentsApi) {
+    const allowed = paymentsApiAllowedRoles(pathname);
+    if (!allowed.includes(payload.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     return NextResponse.next();
@@ -124,6 +177,7 @@ export const config = {
     "/admin/:path*",
     "/api/admin",
     "/api/admin/:path*",
+    "/api/payments/:path*",
     "/leads",
     "/leads/:path*",
     "/demo",

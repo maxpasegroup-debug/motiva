@@ -9,6 +9,16 @@ export type AdminNavItem = {
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/dashboard", labelKey: "admin_nav_dashboard", icon: "📊" },
   { href: "/admin/admissions", labelKey: "admin_nav_admissions", icon: "📥" },
+  {
+    href: "/admin/admissions/remedial",
+    labelKey: "admin_nav_remedial_admission",
+    icon: "🩺",
+  },
+  {
+    href: "/admin/admissions/create-account",
+    labelKey: "admin_nav_create_account",
+    icon: "🔐",
+  },
   { href: "/admin/students", labelKey: "admin_nav_students", icon: "🎓" },
   { href: "/admin/parents", labelKey: "admin_nav_parents", icon: "👨‍👩‍👧" },
   { href: "/admin/teachers", labelKey: "admin_nav_teachers", icon: "👨‍🏫" },
@@ -21,7 +31,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/settings", labelKey: "admin_nav_settings", icon: "⚙️" },
 ];
 
-/** Longest matching admin route for breadcrumb-style titles. */
 export function adminTitleKeyForPath(pathname: string | null): TranslationKey {
   if (!pathname) return "admin_nav_dashboard";
   const sorted = [...ADMIN_NAV_ITEMS].sort(
