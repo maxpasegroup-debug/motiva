@@ -55,3 +55,4 @@ export async function POST(
     mobile: request.user.mobile ?? request.mobile,
   });
 }
+export const dynamic = "force-dynamic";

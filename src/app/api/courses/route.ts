@@ -45,3 +45,4 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ courses });
 }
+export const dynamic = "force-dynamic";

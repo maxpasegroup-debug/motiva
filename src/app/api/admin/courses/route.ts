@@ -91,3 +91,4 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ course });
 }
+export const dynamic = "force-dynamic";

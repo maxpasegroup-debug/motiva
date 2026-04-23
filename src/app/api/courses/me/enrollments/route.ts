@@ -33,3 +33,4 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ enrollments: rows });
 }
+export const dynamic = "force-dynamic";

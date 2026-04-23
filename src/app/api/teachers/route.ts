@@ -16,3 +16,4 @@ export async function GET() {
   });
   return NextResponse.json({ teachers });
 }
+export const dynamic = "force-dynamic";

@@ -102,3 +102,4 @@ export async function POST(req: NextRequest, context: Ctx) {
 
   return NextResponse.json({ section });
 }
+export const dynamic = "force-dynamic";

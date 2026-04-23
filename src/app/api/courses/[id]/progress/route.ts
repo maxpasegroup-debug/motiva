@@ -68,3 +68,4 @@ export async function PUT(
 
   return NextResponse.json({ progress });
 }
+export const dynamic = "force-dynamic";

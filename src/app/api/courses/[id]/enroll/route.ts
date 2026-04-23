@@ -60,3 +60,4 @@ export async function POST(
 
   return NextResponse.json({ enrolled: true });
 }
+export const dynamic = "force-dynamic";

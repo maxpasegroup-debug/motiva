@@ -125,3 +125,4 @@ export async function DELETE(req: NextRequest, context: Ctx) {
   await prisma.courseSection.delete({ where: { id: sectionId } });
   return NextResponse.json({ ok: true });
 }
+export const dynamic = "force-dynamic";

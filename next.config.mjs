@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    instrumentationHook: true,
+  },
+  webpack: (config) => {
+    config.ignoreWarnings = [{ module: /opentelemetry/ }];
+    return config;
+  },
   images: {
     remotePatterns: [
       {
