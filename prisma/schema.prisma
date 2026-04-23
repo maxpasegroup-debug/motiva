@@ -412,6 +412,7 @@ model StudentAccount {
   learningPlans  LearningPlan[]
   issues         Issue[]
   classSchedules ClassSchedule[]
+  wellbeingEntries StudentWellbeing[]
 
   @@index([batchId])
   @@index([mentorId])
@@ -439,6 +440,20 @@ model ParentAccount {
   @@index([studentId])
   @@index([createdBy])
   @@map("parent_accounts")
+}
+
+model StudentWellbeing {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId String   @map("student_id") @db.Uuid
+  rating    Int
+  date      DateTime @db.Date
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  student StudentAccount @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, date])
+  @@index([studentId, date(sort: Desc)])
+  @@map("student_wellbeing")
 }
 
 model Demo {

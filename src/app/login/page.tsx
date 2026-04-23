@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { LoginPage } from "@/components/views/LoginPage";
+import { InternalLoginPage } from "@/components/auth/InternalLoginPage";
 
 export const metadata: Metadata = {
-  title: "Login — Motiva Edus",
+  title: "Internal Login - Motiva Edus",
 };
 
 export default function Page() {
-  return <LoginPage />;
+  return <InternalLoginPage />;
 }

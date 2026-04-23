@@ -71,6 +71,7 @@ export async function POST(req: NextRequest) {
 
     const response = NextResponse.json({
       success: true,
+      requiresPinReset: user.pinResetRequired,
       token,
       user: {
         id: user.id,
@@ -150,6 +151,7 @@ export async function POST(req: NextRequest) {
 
   const response = NextResponse.json({
     success: true,
+    requiresPinReset: false,
     token,
     user: {
       id: parentAccount.id,

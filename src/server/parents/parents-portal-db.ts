@@ -225,6 +225,20 @@ export async function markParentNotificationsRead(
   );
 }
 
+export async function markAllParentNotificationsRead(
+  parentId: string,
+): Promise<void> {
+  await ensureParentsPortalTables();
+  const pool = getPool();
+  await pool.query(
+    `
+    UPDATE parent_notifications SET is_read = TRUE
+    WHERE parent_id = $1
+    `,
+    [parentId],
+  );
+}
+
 export async function getStudentPaymentStatusDb(
   studentId: string,
 ): Promise<"paid" | "pending"> {

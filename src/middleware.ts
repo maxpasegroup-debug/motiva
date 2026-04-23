@@ -93,6 +93,16 @@ function paymentsApiAllowedRoles(pathname: string): readonly Role[] {
   return [];
 }
 
+function internalApiAllowedRoles(pathname: string): readonly Role[] {
+  if (pathname === "/api/student" || pathname.startsWith("/api/student/")) {
+    return ["student"];
+  }
+  if (pathname === "/api/parent" || pathname.startsWith("/api/parent/")) {
+    return ["parent"];
+  }
+  return [];
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -102,10 +112,11 @@ export async function middleware(request: NextRequest) {
 
   const adminApi = isProtectedAdminApi(pathname);
   const paymentsApi = pathname.startsWith("/api/payments/");
+  const internalApi = pathname.startsWith("/api/student/") || pathname.startsWith("/api/parent/");
   const pageGuard = guardForPath(pathname);
   const dashboardLegacy = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
 
-  if (!adminApi && !paymentsApi && !pageGuard && !dashboardLegacy) {
+  if (!adminApi && !paymentsApi && !internalApi && !pageGuard && !dashboardLegacy) {
     return NextResponse.next();
   }
 
@@ -149,6 +160,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (internalApi) {
+    const allowed = internalApiAllowedRoles(pathname);
+    if (!allowed.includes(payload.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    return NextResponse.next();
+  }
+
   if (dashboardLegacy) {
     if (payload.role === "student") {
       const suffix = pathname.replace(/^\/dashboard/, "") || "";
@@ -178,6 +197,8 @@ export const config = {
     "/api/admin",
     "/api/admin/:path*",
     "/api/payments/:path*",
+    "/api/student/:path*",
+    "/api/parent/:path*",
     "/leads",
     "/leads/:path*",
     "/demo",
