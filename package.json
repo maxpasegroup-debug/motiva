@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "node scripts/railway-start.cjs",
     "lint": "next lint",
+    "health-check": "npx ts-node --project tsconfig.json scripts/health-check.ts",
     "db:migrate": "node scripts/migrate.cjs",
     "db:seed-admin": "node scripts/seed-admin.cjs",
     "db:verify": "node scripts/verify-db.cjs",
@@ -15,6 +16,9 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "@sentry/nextjs": "^10.49.0",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.37.0",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.9.0",
     "framer-motion": "^12.38.0",
@@ -25,7 +29,9 @@
     "prisma": "^6.19.3",
     "razorpay": "^2.9.6",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "ts-node": "^10.9.2",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

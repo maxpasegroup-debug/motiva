@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getRoleHome, type Role } from "@/lib/roles";
+import { apiLimiter, authLimiter, publicLimiter } from "@/lib/ratelimit";
 import {
   ADMIN_AUTH_COOKIE_NAME,
   getBearerToken,
@@ -8,6 +9,40 @@ import {
 import { verifyJwtEdge } from "@/server/auth/jwt-edge";
 
 const USER_AUTH_COOKIE_NAME = "motiva_user_auth";
+
+function getRateLimitIdentifier(req: NextRequest): string {
+  const forwardedFor = req.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0]?.trim() || "anonymous";
+  }
+  return req.ip ?? "anonymous";
+}
+
+async function applyRateLimit(
+  req: NextRequest,
+  namespace: string,
+  limiter: typeof authLimiter,
+) {
+  if (!limiter) {
+    return null;
+  }
+
+  const identifier = `${namespace}:${getRateLimitIdentifier(req)}`;
+  const result = await limiter.limit(identifier);
+  if (result.success) {
+    return null;
+  }
+
+  return NextResponse.json(
+    { error: "Too many requests", retryAfter: 60 },
+    {
+      status: 429,
+      headers: {
+        "Retry-After": "60",
+      },
+    },
+  );
+}
 
 function getSessionToken(req: NextRequest): string | null {
   const bearer = getBearerToken(req);
@@ -107,7 +142,17 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/api/auth/")) {
+    const limited = await applyRateLimit(request, "auth", authLimiter);
+    if (limited) return limited;
     return NextResponse.next();
+  }
+
+  if (pathname === "/api/enquiry" || pathname === "/api/courses") {
+    const limited = await applyRateLimit(request, "public", publicLimiter);
+    if (limited) return limited;
+  } else if (pathname.startsWith("/api/")) {
+    const limited = await applyRateLimit(request, "api", apiLimiter);
+    if (limited) return limited;
   }
 
   const adminApi = isProtectedAdminApi(pathname);
@@ -191,6 +236,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/api/:path*",
     "/api/auth/:path*",
     "/admin",
     "/admin/:path*",

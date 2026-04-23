@@ -1,16 +1,23 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { getJwtSecret } from "@/lib/jwt-env";
 
 import prisma from "@/lib/prisma";
 
 const AUTH_COOKIE = "motiva_user_auth";
-const MOBILE_RE = /^\d{10}$/;
 
 function normalizeMobile(input: string): string {
   return input.replace(/\D/g, "");
 }
+
+const loginSchema = z.object({
+  mobile: z.string().transform((value) => normalizeMobile(value)).pipe(
+    z.string().regex(/^\d{10}$/),
+  ),
+  pin: z.string().regex(/^\d{4}$/, "PIN must be 4 digits"),
+});
 
 export async function POST(req: NextRequest) {
   let body: unknown;
@@ -24,13 +31,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const o = body as Record<string, unknown>;
-  const mobile = normalizeMobile(typeof o.mobile === "string" ? o.mobile : "");
-  const pin = typeof o.pin === "string" ? o.pin : "";
-
-  if (!MOBILE_RE.test(mobile) || !pin) {
-    return NextResponse.json({ error: "Invalid login details" }, { status: 401 });
+  const parsed = loginSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: "Validation failed",
+        details: parsed.error.flatten(),
+      },
+      { status: 400 },
+    );
   }
+
+  const { mobile, pin } = parsed.data;
 
   const user = await prisma.user.findFirst({
     where: { mobile },

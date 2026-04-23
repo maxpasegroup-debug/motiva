@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { appendLeadNote } from "@/lib/leads";
 import { verifyPaymentSignature } from "@/lib/razorpay";
+import { captureException } from "@/lib/sentry";
 import { requireRolesApi } from "@/server/auth/require-roles";
 
 export const runtime = "nodejs";
@@ -91,6 +92,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    captureException(error, {
+      route: "/api/payments/verify",
+      leadId,
+      actorId: auth.payload.sub,
+    });
     console.error("[POST /api/payments/verify]", error);
     return NextResponse.json(
       { error: "Could not verify payment" },

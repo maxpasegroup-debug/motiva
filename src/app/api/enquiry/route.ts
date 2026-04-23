@@ -1,5 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import prisma from "@/lib/prisma";
+
+const enquirySchema = z.object({
+  name: z.string().trim().min(2).max(100),
+  mobile: z.string().regex(/^\d{10}$/, "Mobile must be 10 digits"),
+  programInterest: z.enum([
+    "tuition",
+    "remedial",
+    "recorded_courses",
+    "career_counseling",
+    "other",
+  ]),
+  message: z.string().max(1000).optional(),
+});
 
 export async function POST(req: NextRequest) {
   let body: unknown;
@@ -12,26 +26,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const o = body as Record<string, unknown>;
-  const name = typeof o.name === "string" ? o.name.trim() : "";
-  const mobile = typeof o.mobile === "string" ? o.mobile.trim() : "";
-  const programInterest =
-    typeof o.programInterest === "string" ? o.programInterest.trim() : "";
-  const message = typeof o.message === "string" ? o.message.trim() : "";
-
-  if (!name || !mobile || !programInterest) {
+  const parsed = enquirySchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "name, mobile, and programInterest are required" },
+      { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 },
     );
   }
+
+  const { name, mobile, programInterest, message } = parsed.data;
 
   const enquiry = await prisma.enquiry.create({
     data: {
       name,
       mobile,
       programInterest,
-      message: message || null,
+      message: message?.trim() || null,
       status: "new",
     },
   });

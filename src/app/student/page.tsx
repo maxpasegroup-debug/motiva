@@ -59,7 +59,7 @@ export default async function StudentDashboardPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <MetricCard
           label="Current Day"
           value={

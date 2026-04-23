@@ -48,8 +48,8 @@ export default function PublicLoginPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 py-8">
-      <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+    <main className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center px-4 py-8">
+      <div className="w-full rounded-lg border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
         <h1 className="text-2xl font-bold text-neutral-900">Public Login</h1>
         <p className="mt-1 text-sm text-neutral-600">
           Use mobile number and 4-digit PIN.

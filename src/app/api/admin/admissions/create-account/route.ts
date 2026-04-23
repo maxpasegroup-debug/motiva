@@ -1,7 +1,9 @@
 import bcrypt from "bcrypt";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { appendLeadNote, determineProgramTypeFromLead } from "@/lib/leads";
+import { captureException } from "@/lib/sentry";
 import { sendCredentials } from "@/lib/whatsapp";
 import { requireRolesApi } from "@/server/auth/require-roles";
 
@@ -9,23 +11,15 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ROLES = ["admin", "telecounselor"] as const;
-const USERNAME_RE = /^[a-zA-Z0-9]{4,}$/;
-const PIN_RE = /^\d{4}$/;
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-type FieldErrors = Partial<
-  Record<
-    | "leadId"
-    | "studentName"
-    | "studentUsername"
-    | "studentPin"
-    | "parentName"
-    | "parentUsername"
-    | "parentPin",
-    string
-  >
->;
+const createAccountSchema = z.object({
+  leadId: z.string().uuid(),
+  studentName: z.string().trim().min(2).max(100),
+  studentUsername: z.string().regex(/^[a-z0-9]{4,64}$/),
+  studentPin: z.string().regex(/^\d{4}$/),
+  parentName: z.string().trim().min(2).max(100),
+  parentUsername: z.string().regex(/^[a-z0-9]{4,64}$/),
+  parentPin: z.string().regex(/^\d{4}$/),
+});
 
 export async function POST(req: NextRequest) {
   const auth = await requireRolesApi(req, ROLES);
@@ -42,50 +36,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const payload = body as Record<string, unknown>;
-  const leadId = typeof payload.leadId === "string" ? payload.leadId.trim() : "";
-  const studentName =
-    typeof payload.studentName === "string" ? payload.studentName.trim() : "";
-  const studentUsername =
-    typeof payload.studentUsername === "string"
-      ? payload.studentUsername.trim()
-      : "";
-  const studentPin =
-    typeof payload.studentPin === "string" ? payload.studentPin.trim() : "";
-  const parentName =
-    typeof payload.parentName === "string" ? payload.parentName.trim() : "";
-  const parentUsername =
-    typeof payload.parentUsername === "string"
-      ? payload.parentUsername.trim()
-      : "";
-  const parentPin =
-    typeof payload.parentPin === "string" ? payload.parentPin.trim() : "";
-
-  const fieldErrors: FieldErrors = {};
-  if (!UUID_RE.test(leadId)) fieldErrors.leadId = "Invalid leadId.";
-  if (!studentName) fieldErrors.studentName = "Student name is required.";
-  if (!USERNAME_RE.test(studentUsername)) {
-    fieldErrors.studentUsername =
-      "Student username must be alphanumeric and at least 4 characters.";
-  }
-  if (!PIN_RE.test(studentPin)) {
-    fieldErrors.studentPin = "Student PIN must be exactly 4 digits.";
-  }
-  if (!parentName) fieldErrors.parentName = "Parent name is required.";
-  if (!USERNAME_RE.test(parentUsername)) {
-    fieldErrors.parentUsername =
-      "Parent username must be alphanumeric and at least 4 characters.";
-  }
-  if (!PIN_RE.test(parentPin)) {
-    fieldErrors.parentPin = "Parent PIN must be exactly 4 digits.";
-  }
-
-  if (Object.keys(fieldErrors).length > 0) {
+  const parsed = createAccountSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "Validation failed", fieldErrors },
+      {
+        error: "Validation failed",
+        details: parsed.error.flatten(),
+      },
       { status: 400 },
     );
   }
+
+  const {
+    leadId,
+    studentName,
+    studentUsername,
+    studentPin,
+    parentName,
+    parentUsername,
+    parentPin,
+  } = parsed.data;
 
   try {
     const lead = await prisma.lead.findUnique({
@@ -130,7 +100,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error: "Student username already exists",
-          fieldErrors: {
+          details: {
             studentUsername: "Student username already exists.",
           },
         },
@@ -141,7 +111,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error: "Parent username already exists",
-          fieldErrors: {
+          details: {
             parentUsername: "Parent username already exists.",
           },
         },
@@ -152,7 +122,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error: "Mobile already has a student account",
-          fieldErrors: {
+          details: {
             leadId: "A student account already exists for this mobile number.",
           },
         },
@@ -224,6 +194,10 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
+    captureException(error, {
+      route: "/api/admin/admissions/create-account",
+      actorId: auth.payload.sub,
+    });
     console.error("[POST /api/admin/admissions/create-account]", error);
     return NextResponse.json(
       { error: "Could not create accounts" },

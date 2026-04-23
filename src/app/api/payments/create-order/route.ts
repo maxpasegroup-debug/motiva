@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import prisma from "@/lib/prisma";
 import razorpay from "@/lib/razorpay";
 import { requireRolesApi } from "@/server/auth/require-roles";
@@ -8,8 +9,12 @@ export const dynamic = "force-dynamic";
 
 const ROLES = ["admin", "telecounselor"] as const;
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const createOrderSchema = z.object({
+  leadId: z.string().uuid(),
+  amount: z.coerce.number().positive().max(1000000),
+  currency: z.string().default("INR"),
+  notes: z.string().max(1000).optional(),
+});
 
 export async function POST(req: NextRequest) {
   const auth = await requireRolesApi(req, ROLES);
@@ -26,29 +31,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const payload = body as Record<string, unknown>;
-  const leadId = typeof payload.leadId === "string" ? payload.leadId.trim() : "";
-  const amountInput =
-    typeof payload.amount === "number"
-      ? payload.amount
-      : typeof payload.amount === "string"
-        ? Number(payload.amount)
-        : Number.NaN;
-  const currency =
-    typeof payload.currency === "string" && payload.currency.trim()
-      ? payload.currency.trim().toUpperCase()
-      : "INR";
-  const notes =
-    typeof payload.notes === "string" && payload.notes.trim()
-      ? payload.notes.trim()
-      : null;
+  const parsed = createOrderSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
 
-  if (!UUID_RE.test(leadId)) {
-    return NextResponse.json({ error: "Invalid leadId" }, { status: 400 });
-  }
-  if (!Number.isFinite(amountInput) || amountInput <= 0) {
-    return NextResponse.json({ error: "Amount must be a positive number" }, { status: 400 });
-  }
+  const { leadId, amount: amountInput, currency, notes } = parsed.data;
 
   try {
     const lead = await prisma.lead.findUnique({
@@ -62,11 +53,11 @@ export async function POST(req: NextRequest) {
     const amountPaise = Math.round(amountInput * 100);
     const order = await razorpay.orders.create({
       amount: amountPaise,
-      currency,
+      currency: currency.trim().toUpperCase(),
       notes: {
         leadId,
         studentName: lead.name,
-        ...(notes ? { notes } : {}),
+        ...(notes?.trim() ? { notes: notes.trim() } : {}),
       },
     });
 
@@ -84,8 +75,8 @@ export async function POST(req: NextRequest) {
         data: {
           orderId: order.id,
           amountCents: amountPaise,
-          currency,
-          notes: notes ?? existingPending.notes,
+          currency: currency.trim().toUpperCase(),
+          notes: notes?.trim() ?? existingPending.notes,
         },
       });
     } else {
@@ -97,9 +88,9 @@ export async function POST(req: NextRequest) {
           studentName: lead.name,
           courseLabel: "Admission Fee",
           amountCents: amountPaise,
-          currency,
+          currency: currency.trim().toUpperCase(),
           status: "pending",
-          notes: notes ?? "Admission fee",
+          notes: notes?.trim() ?? "Admission fee",
           recordedBy: auth.payload.sub,
         },
       });
@@ -108,7 +99,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       orderId: order.id,
       amount: amountPaise,
-      currency,
+      currency: currency.trim().toUpperCase(),
       keyId: process.env.RAZORPAY_KEY_ID,
     });
   } catch (error) {

@@ -13,6 +13,14 @@ export function Header() {
   const navLinkClass =
     "min-h-12 rounded-xl px-3 text-base font-semibold text-neutral-700 transition-colors duration-200 hover:bg-neutral-100 hover:text-[#0B5ED7] sm:min-h-11";
 
+  const links = [
+    { href: "/#programs", label: t("nav_programs") },
+    { href: "/#teachers", label: "Teachers" },
+    { href: "/courses", label: "Courses" },
+    { href: "/about", label: t("nav_about") },
+    { href: "/#enquiry-form", label: t("nav_contact") },
+  ];
+
   return (
     <header className="sticky top-0 z-50 border-b border-neutral-200/80 bg-white/95 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.12)] backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
@@ -35,15 +43,11 @@ export function Header() {
           className="hidden items-center gap-1 md:flex md:gap-2"
           aria-label="Main"
         >
-          <Link href="/programs" className={navLinkClass}>
-            {t("nav_programs")}
-          </Link>
-          <Link href="/about" className={navLinkClass}>
-            {t("nav_about")}
-          </Link>
-          <Link href="/contact" className={navLinkClass}>
-            {t("nav_contact")}
-          </Link>
+          {links.map((link) => (
+            <Link key={link.href} href={link.href} className={navLinkClass}>
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         <div className="flex flex-1 items-center justify-end gap-2 sm:gap-3 md:flex-initial">
@@ -106,27 +110,16 @@ export function Header() {
           className="border-t border-neutral-100 bg-white px-4 py-4 shadow-inner md:hidden"
         >
           <nav className="flex flex-col gap-1" aria-label="Mobile main">
-            <Link
-              href="/programs"
-              className="min-h-14 rounded-2xl px-4 py-3 text-lg font-semibold text-neutral-800 active:bg-neutral-100"
-              onClick={() => setMenuOpen(false)}
-            >
-              {t("nav_programs")}
-            </Link>
-            <Link
-              href="/about"
-              className="min-h-14 rounded-2xl px-4 py-3 text-lg font-semibold text-neutral-800 active:bg-neutral-100"
-              onClick={() => setMenuOpen(false)}
-            >
-              {t("nav_about")}
-            </Link>
-            <Link
-              href="/contact"
-              className="min-h-14 rounded-2xl px-4 py-3 text-lg font-semibold text-neutral-800 active:bg-neutral-100"
-              onClick={() => setMenuOpen(false)}
-            >
-              {t("nav_contact")}
-            </Link>
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="min-h-14 rounded-2xl px-4 py-3 text-lg font-semibold text-neutral-800 active:bg-neutral-100"
+                onClick={() => setMenuOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
           </nav>
         </div>
       ) : null}
