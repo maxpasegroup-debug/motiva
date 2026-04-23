@@ -1,16 +1,11 @@
-import type { Metadata } from "next";
 import { MentorDashboardView } from "@/components/mentor/MentorDashboardView";
 import { formatDateTime } from "@/lib/mentor";
 import { requireMentorSession } from "@/server/mentor/auth";
 import { getMentorDashboardSnapshot } from "@/server/mentor/data";
 
-export const metadata: Metadata = {
-  title: "Mentor - Motiva Edus",
-};
-
 export const dynamic = "force-dynamic";
 
-export default async function Page() {
+export default async function MentorStudentsPage() {
   const session = requireMentorSession();
   const snapshot = await getMentorDashboardSnapshot(session.userId);
 
@@ -25,11 +20,12 @@ export default async function Page() {
 
   return (
     <MentorDashboardView
-      heading="Mentor Dashboard"
-      subheading="Track your assigned students, today's classes, and follow-ups from one place."
+      heading="My Students"
+      subheading="A focused view of every student assigned to you."
       metrics={snapshot.metrics}
       students={students}
       classes={snapshot.todayClasses}
+      hideClasses
     />
   );
 }

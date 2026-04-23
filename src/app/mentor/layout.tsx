@@ -1,4 +1,5 @@
 import { StaffPortalShell } from "@/components/layout/StaffPortalShell";
+import { MentorNav } from "@/components/mentor/MentorNav";
 
 export default function MentorLayout({
   children,
@@ -7,7 +8,10 @@ export default function MentorLayout({
 }) {
   return (
     <StaffPortalShell allow={["mentor", "admin"]}>
-      {children}
+      <div className="space-y-6">
+        <MentorNav />
+        {children}
+      </div>
     </StaffPortalShell>
   );
 }

@@ -409,6 +409,9 @@ model StudentAccount {
   teacher        User?            @relation("StudentAccountTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
   creator        User             @relation("StudentAccountCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
   parentAccounts ParentAccount[]
+  learningPlans  LearningPlan[]
+  issues         Issue[]
+  classSchedules ClassSchedule[]
 
   @@index([batchId])
   @@index([mentorId])
@@ -519,16 +522,22 @@ model MentorNote {
 
 model LearningPlan {
   id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  studentId   String    @map("student_id") @db.VarChar(255)
-  title       String    @db.VarChar(512)
+  studentId   String    @map("student_id") @db.Uuid
+  title       String    @default("Learning Plan") @db.VarChar(512)
   description String?   @db.Text
   batchId     String?   @map("batch_id") @db.Uuid
   startDate   DateTime? @map("start_date") @db.Date
   endDate     DateTime? @map("end_date") @db.Date
   status      String    @default("active") @db.VarChar(32)
+  subjects    Json?
+  goals       String?   @db.Text
+  revisionCycle String? @map("revision_cycle") @db.VarChar(32)
+  notes       String?   @db.Text
   createdBy   String?   @map("created_by") @db.VarChar(255)
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  student StudentAccount @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId])
   @@map("learning_plans")
@@ -540,17 +549,30 @@ model LearningPlan {
 
 model ClassSchedule {
   id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  batchId     String    @map("batch_id") @db.Uuid
-  dayNumber   Int       @map("day_number")
+  batchId     String?   @map("batch_id") @db.Uuid
+  dayNumber   Int?      @map("day_number")
   scheduledAt DateTime? @map("scheduled_at") @db.Timestamptz
   topic       String?   @db.VarChar(512)
+  studentId   String?   @map("student_id") @db.Uuid
+  teacherId   String?   @map("teacher_id") @db.Uuid
+  mentorId    String?   @map("mentor_id") @db.Uuid
+  subject     String?   @db.VarChar(255)
+  classType   String?   @map("class_type") @db.VarChar(32)
+  scheduledDate DateTime? @map("scheduled_date") @db.Date
+  scheduledTime String? @map("scheduled_time") @db.VarChar(16)
+  durationMinutes Int   @default(60) @map("duration_minutes")
   notes       String?   @db.Text
+  status      String    @default("scheduled") @db.VarChar(32)
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
-  batch Batch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  batch   Batch?          @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  student StudentAccount? @relation(fields: [studentId], references: [id], onDelete: SetNull)
 
-  @@unique([batchId, dayNumber])
+  @@index([studentId])
+  @@index([teacherId])
+  @@index([mentorId])
+  @@index([scheduledDate])
   @@index([batchId])
   @@map("class_schedules")
 }
@@ -563,17 +585,27 @@ model Issue {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   reportedBy  String   @map("reported_by") @db.VarChar(255)
   assignedTo  String?  @map("assigned_to") @db.VarChar(255)
+  studentId   String?  @map("student_id") @db.Uuid
+  raisedById  String?  @map("raised_by_id") @db.Uuid
+  assignedToId String? @map("assigned_to_id") @db.Uuid
   entityType  String?  @map("entity_type") @db.VarChar(64)
   entityId    String?  @map("entity_id") @db.VarChar(255)
   title       String   @db.VarChar(512)
+  category    String?  @db.VarChar(32)
   description String?  @db.Text
   priority    String   @default("medium") @db.VarChar(16)
   status      String   @default("open") @db.VarChar(32)
+  timeline    Json?
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
+  student StudentAccount? @relation(fields: [studentId], references: [id], onDelete: SetNull)
+
   @@index([reportedBy])
   @@index([assignedTo])
+  @@index([studentId])
+  @@index([raisedById])
+  @@index([assignedToId])
   @@index([status])
   @@map("issues")
 }
