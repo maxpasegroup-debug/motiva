@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { saveSessionToken } from "@/lib/session";
 
 type LoginResponse = {
   error?: string;
   requiresPinReset?: boolean;
+  token?: string;
   user?: {
     role: string;
   };
@@ -70,6 +72,10 @@ export function InternalLoginPage() {
       return;
     }
 
+    if (json?.token) {
+      saveSessionToken(json.token);
+    }
+
     router.push(roleDestination(json?.user?.role ?? ""));
     router.refresh();
   }
@@ -87,11 +93,14 @@ export function InternalLoginPage() {
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           <label className="flex flex-col gap-2 text-sm font-medium text-neutral-700">
-            <span>Username</span>
+            <span>Mobile number</span>
             <input
               type="text"
+              inputMode="numeric"
               value={username}
-              onChange={(event) => setUsername(event.target.value)}
+              onChange={(event) =>
+                setUsername(event.target.value.replace(/\D/g, "").slice(0, 10))
+              }
               className="min-h-12 rounded-2xl border border-neutral-200 px-4 py-3 outline-none transition focus:border-neutral-400"
               required
             />

