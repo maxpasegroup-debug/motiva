@@ -29,6 +29,9 @@ const FOUNDER = {
   bio: "At Motiva Edus, every student matters. Our team is committed to clear teaching, steady encouragement, and paths that help learners grow with pride—in class and in life.",
 };
 
+const HERO_CLASSROOM_IMAGE =
+  "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=2200&q=85";
+
 const STATIC_PROGRAMS = [
   {
     id: "tuition",
@@ -189,32 +192,151 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
 
   return (
     <main className="w-full overflow-x-hidden bg-white">
-      <section
-        className="relative flex min-h-[60vh] items-center bg-[linear-gradient(135deg,#0B5ED7_0%,#1a3a6b_100%)] md:min-h-screen"
-      >
-        <div className="mx-auto flex w-full max-w-6xl items-center px-4 py-16 sm:px-6">
-          <div className="max-w-3xl">
-            <h1 className="text-balance text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
-              Unlock Your Child&apos;s Full Potential
-            </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white/92 sm:text-xl">
-              Personalized one-to-one tuition, remedial programs, and recorded
-              courses — guided by dedicated mentors.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <button
-                type="button"
-                onClick={() => scrollToEnquiry()}
-                className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-white px-6 py-3 text-base font-semibold text-[#0B5ED7] shadow-lg transition hover:bg-blue-50"
-              >
-                Enquire Now
-              </button>
-              <Link
-                href="/courses"
-                className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-white/60 px-6 py-3 text-base font-semibold text-white transition hover:bg-white/10"
-              >
-                View Courses
-              </Link>
+      <section className="relative min-h-[88vh] overflow-hidden bg-[#091323] text-white">
+        <Image
+          src={HERO_CLASSROOM_IMAGE}
+          alt=""
+          fill
+          priority
+          className="object-cover object-center opacity-55"
+          sizes="100vw"
+        />
+        <div
+          className="absolute inset-0 bg-[linear-gradient(90deg,rgba(9,19,35,0.96)_0%,rgba(9,19,35,0.84)_40%,rgba(9,19,35,0.48)_72%,rgba(9,19,35,0.74)_100%)]"
+          aria-hidden
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-white via-white/60 to-transparent"
+          aria-hidden
+        />
+        <div className="relative z-10 mx-auto flex min-h-[88vh] w-full max-w-6xl flex-col justify-center px-4 pb-20 pt-24 sm:px-6 lg:pb-24 lg:pt-28">
+          <div className="grid items-center gap-10 lg:grid-cols-[1fr_0.86fr]">
+            <div className="max-w-3xl">
+              <div className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-sm backdrop-blur-md">
+                <span className="h-2 w-2 rounded-full bg-[#F26A2E]" aria-hidden />
+                Tuition academy + recorded growth courses
+              </div>
+
+              <h1 className="mt-5 text-balance text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
+                Unlock Your Child&apos;s Full Potential
+              </h1>
+              <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white/90 sm:text-xl">
+                Personalized one-to-one tuition, remedial classes, mentoring,
+                and recorded personal-development courses that help students
+                learn with confidence.
+              </p>
+
+              <div className="mt-7 flex flex-wrap gap-2">
+                {[
+                  "Maths",
+                  "Science",
+                  "English",
+                  "Public Speaking",
+                  "Career Guidance",
+                ].map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-semibold text-white/90 backdrop-blur-md"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => scrollToEnquiry()}
+                  className="inline-flex min-h-12 items-center justify-center rounded-lg bg-white px-6 py-3 text-base font-semibold text-[#0B5ED7] shadow-lg transition hover:bg-blue-50"
+                >
+                  Enquire Now
+                </button>
+                <Link
+                  href="/courses"
+                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/60 bg-white/10 px-6 py-3 text-base font-semibold text-white backdrop-blur-md transition hover:bg-white/20"
+                >
+                  View Recorded Courses
+                </Link>
+              </div>
+
+              <div className="mt-9 grid max-w-xl grid-cols-3 gap-3">
+                {[
+                  ["1:1", "Personal attention"],
+                  ["12/25", "Remedial plans"],
+                  ["24/7", "Recorded access"],
+                ].map(([value, label]) => (
+                  <div
+                    key={label}
+                    className="rounded-lg border border-white/15 bg-white/10 p-3 backdrop-blur-md"
+                  >
+                    <p className="text-2xl font-extrabold text-white">{value}</p>
+                    <p className="mt-1 text-xs font-medium leading-5 text-white/75">
+                      {label}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative hidden min-h-[34rem] lg:block">
+              <div className="absolute right-0 top-0 w-[22rem] rounded-lg border border-white/18 bg-white/95 p-3 text-neutral-900 shadow-2xl">
+                <div className="relative aspect-[16/10] overflow-hidden rounded-md bg-neutral-100">
+                  <Image
+                    src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1000&q=85"
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="360px"
+                  />
+                  <div
+                    className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent"
+                    aria-hidden
+                  />
+                  <div className="absolute bottom-3 left-3 rounded-lg bg-white/92 px-3 py-2 text-sm font-bold text-[#0B5ED7]">
+                    Recorded Course Preview
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold">Confidence Builder</p>
+                    <p className="text-xs text-neutral-500">18 bite-sized lessons</p>
+                  </div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F26A2E] text-sm font-black text-white">
+                    Play
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute bottom-7 left-0 w-[18rem] rounded-lg border border-white/18 bg-white p-5 text-neutral-900 shadow-2xl">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#0B5ED7]">
+                  Today&apos;s Tuition Plan
+                </p>
+                <div className="mt-4 space-y-3">
+                  {[
+                    ["4:30 PM", "Maths concept clarity"],
+                    ["5:15 PM", "Worksheet correction"],
+                    ["6:00 PM", "Speaking practice"],
+                  ].map(([time, title]) => (
+                    <div key={title} className="flex gap-3">
+                      <span className="w-16 text-sm font-bold text-[#F26A2E]">
+                        {time}
+                      </span>
+                      <span className="text-sm font-medium text-neutral-700">
+                        {title}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="absolute bottom-0 right-8 w-64 rounded-lg border border-white/20 bg-[#102A43]/95 p-4 text-white shadow-2xl">
+                <p className="text-sm font-semibold text-white/75">
+                  Parent progress note
+                </p>
+                <p className="mt-2 text-lg font-bold leading-snug">
+                  Clearer basics, stronger confidence, steady follow-up.
+                </p>
+              </div>
             </div>
           </div>
         </div>
