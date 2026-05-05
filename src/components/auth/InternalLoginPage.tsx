@@ -9,6 +9,7 @@ type LoginResponse = {
   error?: string;
   requiresPinReset?: boolean;
   token?: string;
+  role?: string;
   user?: {
     role: string;
   };
@@ -47,13 +48,13 @@ export function InternalLoginPage() {
     setSubmitting(true);
     setError(null);
 
-    const response = await fetch("/api/auth/internal/login", {
+    const response = await fetch("/api/auth/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        username,
+        mobile: username,
         pin,
       }),
     });
@@ -76,7 +77,7 @@ export function InternalLoginPage() {
       saveSessionToken(json.token);
     }
 
-    router.push(roleDestination(json?.user?.role ?? ""));
+    router.push(roleDestination(json?.role ?? json?.user?.role ?? ""));
     router.refresh();
   }
 

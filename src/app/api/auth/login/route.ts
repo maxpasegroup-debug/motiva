@@ -12,12 +12,24 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const loginSchema = z.object({
-  mobile: z.string().transform((value) => normalizeMobile(value)).pipe(
-    z.string().regex(/^\d{10}$/, "Mobile must be 10 digits"),
-  ),
-  pin: z.string().refine(isFourDigitPin, "PIN must be exactly 4 digits"),
-});
+const loginSchema = z
+  .object({
+    mobile: z.string().optional(),
+    pin: z.string().optional(),
+    login: z.string().optional(),
+    username: z.string().optional(),
+    password: z.string().optional(),
+  })
+  .transform((value) => ({
+    mobile: normalizeMobile(value.mobile ?? value.login ?? value.username ?? ""),
+    pin: value.pin ?? value.password ?? "",
+  }))
+  .pipe(
+    z.object({
+      mobile: z.string().regex(/^\d{10}$/, "Mobile must be 10 digits"),
+      pin: z.string().refine(isFourDigitPin, "PIN must be exactly 4 digits"),
+    }),
+  );
 
 function invalidLogin() {
   return NextResponse.json(
@@ -74,6 +86,12 @@ export async function POST(req: NextRequest) {
   const response = NextResponse.json({
     success: true,
     role: user.role,
+    user: {
+      id: user.id,
+      role: user.role,
+      name: user.name,
+      mobile: user.mobile,
+    },
     token,
   });
   setAuthCookie(response, token);

@@ -12,53 +12,35 @@ import { saveSessionToken } from "@/lib/session";
 export function LoginPage() {
   const { t } = useLanguage();
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [login, setLogin] = useState("");
+  const [credential, setCredential] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   async function handleLogin() {
     setError(null);
     try {
-      const adminRes = await fetch("/api/admin/login", {
+      const isEmailLogin = login.includes("@");
+      const res = await fetch(isEmailLogin ? "/api/admin/login" : "/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ login: email.trim(), password }),
+        body: JSON.stringify(
+          isEmailLogin
+            ? { login: login.trim(), password: credential }
+            : { mobile: login, pin: credential },
+        ),
       });
-
-      if (adminRes.ok) {
-        const json = (await adminRes.json()) as {
-          token: string;
-          admin: { role: string };
-        };
-        saveSessionToken(json.token);
-        router.push(getRoleHome(parseRole(json.admin.role)));
+      const json = (await res.json().catch(() => null)) as
+        | { token?: string; role?: string; user?: { role: string }; error?: string }
+        | null;
+      if (!res.ok || !json?.token) {
+        setError(json?.error ?? "Invalid mobile number or PIN");
         return;
       }
-
-      if (adminRes.status !== 503 && adminRes.status !== 401) {
-        setError("Invalid login details");
-        return;
-      }
-
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ login: email.trim(), password }),
-      });
-      if (!res.ok) {
-        setError("Invalid login details");
-        return;
-      }
-      const json = (await res.json()) as {
-        token: string;
-        user: { role: string };
-      };
       saveSessionToken(json.token);
-      router.push(getRoleHome(parseRole(json.user.role)));
+      router.push(getRoleHome(parseRole(json.role ?? json.user?.role)));
     } catch {
-      setError("Invalid login details");
+      setError("Invalid mobile number or PIN");
     }
   }
 
@@ -71,16 +53,16 @@ export function LoginPage() {
 
         <div className="flex flex-col gap-6">
           <label className="block text-left text-sm font-medium text-neutral-700">
-            <span className="mb-2 block">{t("login_phone_or_email")}</span>
+            <span className="mb-2 block">Mobile number or admin email</span>
             <input
               type="text"
-              name="email"
-              inputMode="email"
+              name="login"
+              inputMode="text"
               autoComplete="username"
-              placeholder="you@example.com"
-              value={email}
+              placeholder="10-digit mobile or admin email"
+              value={login}
               onChange={(e) => {
-                setEmail(e.target.value);
+                setLogin(e.target.value.trim());
                 if (error) setError(null);
               }}
               className="min-h-16 w-full rounded-xl border border-neutral-300 bg-white px-4 text-center text-lg tracking-wide outline-none ring-primary transition-[box-shadow] focus-visible:border-primary focus-visible:ring-2 sm:text-left"
@@ -88,15 +70,15 @@ export function LoginPage() {
           </label>
 
           <label className="block text-left text-sm font-medium text-neutral-700">
-            <span className="mb-2 block">Password</span>
+            <span className="mb-2 block">PIN or password</span>
             <input
               type="password"
-              name="password"
+              name="credential"
               autoComplete="current-password"
-              placeholder="••••••••"
-              value={password}
+              placeholder="PIN or password"
+              value={credential}
               onChange={(e) => {
-                setPassword(e.target.value);
+                setCredential(e.target.value);
                 if (error) setError(null);
               }}
               className="min-h-16 w-full rounded-xl border border-neutral-300 bg-white px-4 text-center text-lg tracking-wide outline-none ring-primary transition-[box-shadow] focus-visible:border-primary focus-visible:ring-2 sm:text-left"
@@ -120,7 +102,7 @@ export function LoginPage() {
           href="/"
           className="font-medium text-primary underline-offset-4 hover:underline"
         >
-          ← {t("home")}
+          Back to {t("home")}
         </Link>
       </p>
     </div>

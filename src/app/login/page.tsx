@@ -38,8 +38,8 @@ function roleDestination(role: Role): string {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [mobile, setMobile] = useState("");
-  const [pin, setPin] = useState("");
+  const [login, setLogin] = useState("");
+  const [credential, setCredential] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,11 +48,16 @@ export default function LoginPage() {
     setSubmitting(true);
     setError(null);
 
-    const response = await fetch("/api/auth/login", {
+    const isEmailLogin = login.includes("@");
+    const response = await fetch(isEmailLogin ? "/api/admin/login" : "/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ mobile, pin }),
+      body: JSON.stringify(
+        isEmailLogin
+          ? { login: login.trim(), password: credential }
+          : { mobile: login, pin: credential },
+      ),
     });
 
     const json = (await response.json().catch(() => null)) as LoginResponse | null;
@@ -85,38 +90,31 @@ export default function LoginPage() {
           <p className="text-sm font-medium text-neutral-500">Motiva Edus</p>
           <h1 className="mt-2 text-3xl font-bold text-neutral-900">Login</h1>
           <p className="mt-2 text-sm text-neutral-600">
-            Use your mobile number and 4-digit PIN.
+            Use mobile and PIN, or legacy admin email and password.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           <label className="flex flex-col gap-2 text-sm font-medium text-neutral-700">
-            <span>Mobile number</span>
+            <span>Mobile number or admin email</span>
             <input
               type="text"
-              inputMode="numeric"
-              autoComplete="tel"
-              maxLength={10}
-              value={mobile}
-              onChange={(event) =>
-                setMobile(event.target.value.replace(/\D/g, "").slice(0, 10))
-              }
+              inputMode="text"
+              autoComplete="username"
+              value={login}
+              onChange={(event) => setLogin(event.target.value.trim())}
               className="min-h-12 rounded-xl border border-neutral-200 px-4 py-3 outline-none transition focus:border-neutral-400"
               required
             />
           </label>
 
           <label className="flex flex-col gap-2 text-sm font-medium text-neutral-700">
-            <span>4-digit PIN</span>
+            <span>PIN or password</span>
             <input
               type="password"
-              inputMode="numeric"
-              pattern="[0-9]{4}"
-              maxLength={4}
-              value={pin}
-              onChange={(event) =>
-                setPin(event.target.value.replace(/\D/g, "").slice(0, 4))
-              }
+              autoComplete="current-password"
+              value={credential}
+              onChange={(event) => setCredential(event.target.value)}
               className="min-h-12 rounded-xl border border-neutral-200 px-4 py-3 outline-none transition focus:border-neutral-400"
               required
             />
