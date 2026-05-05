@@ -7,12 +7,32 @@ import {
   todayDateOnly,
 } from "@/lib/portal";
 
-export async function getStudentPortalSnapshot(studentId: string) {
+export async function getStudentAccountByUserId(userId: string) {
+  return prisma.studentAccount.findUnique({
+    where: { userId },
+    include: {
+      batch: {
+        include: {
+          progress: true,
+        },
+      },
+      teacher: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+}
+
+export async function getStudentPortalSnapshot(userId: string) {
   const today = todayDateOnly();
   const tomorrow = addDays(today, 1);
 
   const student = await prisma.studentAccount.findUnique({
-    where: { id: studentId },
+    where: { userId },
     include: {
       batch: {
         include: {
@@ -57,51 +77,53 @@ export async function getStudentPortalSnapshot(studentId: string) {
     return null;
   }
 
-  const [attendanceRecords, recentAttendance, teacherMap, enrollments] = await Promise.all([
-    prisma.attendance.findMany({
-      where: {
-        studentId,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    }),
-    prisma.attendance.findMany({
-      where: {
-        studentId,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: 30,
-    }),
-    student.classSchedules.length
-      ? prisma.user.findMany({
-          where: {
-            id: {
-              in: student.classSchedules
-                .map((schedule) => schedule.teacherId)
-                .filter((teacherId): teacherId is string => Boolean(teacherId)),
+  const studentAccountId = student.id;
+  const [attendanceRecords, recentAttendance, teacherMap, enrollments] =
+    await Promise.all([
+      prisma.attendance.findMany({
+        where: {
+          studentId: studentAccountId,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+      prisma.attendance.findMany({
+        where: {
+          studentId: studentAccountId,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 30,
+      }),
+      student.classSchedules.length
+        ? prisma.user.findMany({
+            where: {
+              id: {
+                in: student.classSchedules
+                  .map((schedule) => schedule.teacherId)
+                  .filter((teacherId): teacherId is string => Boolean(teacherId)),
+              },
             },
-          },
-          select: {
-            id: true,
-            name: true,
-          },
-        })
-      : Promise.resolve([]),
-    prisma.courseEnrollment.findMany({
-      where: {
-        userId: studentId,
-      },
-      include: {
-        course: true,
-      },
-      orderBy: {
-        enrolledAt: "desc",
-      },
-    }),
-  ]);
+            select: {
+              id: true,
+              name: true,
+            },
+          })
+        : Promise.resolve([]),
+      prisma.courseEnrollment.findMany({
+        where: {
+          userId,
+        },
+        include: {
+          course: true,
+        },
+        orderBy: {
+          enrolledAt: "desc",
+        },
+      }),
+    ]);
 
   const presentCount = attendanceRecords.filter((record) => record.status === "present").length;
   const absentCount = attendanceRecords.filter((record) => record.status === "absent").length;
@@ -131,19 +153,24 @@ export async function getStudentPortalSnapshot(studentId: string) {
   };
 }
 
-export async function getStudentAttendanceHistory(studentId: string) {
+export async function getStudentAttendanceHistory(userId: string) {
+  const student = await getStudentAccountByUserId(userId);
+  if (!student) return [];
   return prisma.attendance.findMany({
     where: {
-      studentId,
+      studentId: student.id,
     },
     orderBy: [{ createdAt: "desc" }, { dayNumber: "desc" }],
   });
 }
 
-export async function getStudentPlan(studentId: string) {
+export async function getStudentPlan(userId: string) {
+  const student = await getStudentAccountByUserId(userId);
+  if (!student) return null;
+
   const plan = await prisma.learningPlan.findFirst({
     where: {
-      studentId,
+      studentId: student.id,
     },
     orderBy: {
       updatedAt: "desc",
@@ -160,10 +187,10 @@ export async function getStudentPlan(studentId: string) {
   };
 }
 
-export async function getStudentCourses(studentId: string) {
+export async function getStudentCourses(userId: string) {
   return prisma.courseEnrollment.findMany({
     where: {
-      userId: studentId,
+      userId,
     },
     include: {
       course: true,
@@ -174,22 +201,26 @@ export async function getStudentCourses(studentId: string) {
   });
 }
 
-export async function getStudentMoodToday(studentId: string) {
+export async function getStudentMoodToday(userId: string) {
+  const student = await getStudentAccountByUserId(userId);
+  if (!student) return null;
   return prisma.studentWellbeing.findUnique({
     where: {
       studentId_date: {
-        studentId,
+        studentId: student.id,
         date: todayDateOnly(),
       },
     },
   });
 }
 
-export async function getStudentAttendanceThisWeek(studentId: string) {
+export async function getStudentAttendanceThisWeek(userId: string) {
+  const student = await getStudentAccountByUserId(userId);
+  if (!student) return [];
   const start = startOfWeek(new Date());
   return prisma.attendance.findMany({
     where: {
-      studentId,
+      studentId: student.id,
       createdAt: {
         gte: start,
       },

@@ -9,17 +9,18 @@ export async function GET(req: NextRequest) {
   const auth = await requireRolesApi(req, ["student"]);
   if (!auth.ok) return auth.response;
 
-  const limitValue = Number(req.nextUrl.searchParams.get("limit") ?? "0");
-  const take = Number.isFinite(limitValue) && limitValue > 0 ? Math.min(limitValue, 90) : undefined;
+  const student = await prisma.studentAccount.findUnique({
+    where: { userId: auth.payload.sub },
+    select: { id: true },
+  });
+
+  if (!student) {
+    return NextResponse.json({ error: "Student profile not found" }, { status: 404 });
+  }
 
   const records = await prisma.attendance.findMany({
-    where: {
-      studentId: auth.payload.sub,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    ...(take ? { take } : {}),
+    where: { studentId: student.id },
+    orderBy: [{ createdAt: "desc" }, { dayNumber: "desc" }],
   });
 
   return NextResponse.json({ records });

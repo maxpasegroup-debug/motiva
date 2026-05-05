@@ -137,6 +137,7 @@ export async function POST(req: NextRequest) {
       prisma.lead.update({
         where: { id: leadId },
         data: {
+          status: "mentor_assigned",
           assignedMentorId: mentorId,
           notes: appendLeadNote(lead.notes, {
             text: noteParts.join(" "),

@@ -11,6 +11,10 @@ export function LanguageToggle({ variant = "default" }: Props) {
   const { locale, setLocale } = useLanguage();
 
   const codes = ["en", "ml"] as Locale[];
+  const shortLabels: Record<Locale, string> = {
+    en: "EN",
+    ml: "ML",
+  };
 
   if (variant === "compact") {
     return (
@@ -44,7 +48,7 @@ export function LanguageToggle({ variant = "default" }: Props) {
   if (variant === "header") {
     return (
       <div
-        className="inline-flex shrink-0 items-center gap-2"
+        className="inline-flex shrink-0 items-center rounded-xl border border-neutral-200 bg-neutral-50 p-1"
         role="group"
         aria-label="Language"
       >
@@ -55,14 +59,16 @@ export function LanguageToggle({ variant = "default" }: Props) {
               key={code}
               type="button"
               onClick={() => setLocale(code)}
-              className={`min-h-11 min-w-[2.75rem] touch-manipulation rounded-full px-3 py-2 text-sm font-semibold transition-[transform,background-color,color] duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 motion-safe:active:scale-[0.98] ${
+              className={`min-h-10 min-w-10 touch-manipulation rounded-lg px-2.5 py-2 text-xs font-bold transition-[transform,background-color,color] duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 motion-safe:active:scale-[0.98] ${
                 active
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-neutral-100 text-gray-700 hover:bg-neutral-200"
+                  ? "bg-white text-[#0B5ED7] shadow-sm"
+                  : "text-gray-600 hover:bg-white/70 hover:text-neutral-900"
               }`}
               aria-pressed={active}
+              aria-label={LOCALE_LABELS[code]}
+              title={LOCALE_LABELS[code]}
             >
-              {LOCALE_LABELS[code]}
+              {shortLabels[code]}
             </button>
           );
         })}

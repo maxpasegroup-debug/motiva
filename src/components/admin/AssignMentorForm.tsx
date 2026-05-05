@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
-type Mentor = { id: string; name: string; email: string; mobile: string | null };
-type TeacherOption = { id: string; name: string; email: string };
+type Mentor = { id: string; name: string; email: string | null; mobile: string | null };
+type TeacherOption = { id: string; name: string; email: string | null };
 type BatchOption = { id: string; name: string; duration: number };
 
 type StudentAccountInput = {

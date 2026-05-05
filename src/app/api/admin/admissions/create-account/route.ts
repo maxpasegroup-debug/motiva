@@ -1,4 +1,3 @@
-import bcrypt from "bcrypt";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
@@ -6,20 +5,30 @@ import { appendLeadNote, determineProgramTypeFromLead } from "@/lib/leads";
 import { captureException } from "@/lib/sentry";
 import { sendCredentials } from "@/lib/whatsapp";
 import { requireRolesApi } from "@/server/auth/require-roles";
+import { hashPin, isFourDigitPin, normalizeMobile } from "@/server/auth/unified-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ROLES = ["admin", "telecounselor"] as const;
+
 const createAccountSchema = z.object({
   leadId: z.string().uuid(),
   studentName: z.string().trim().min(2).max(100),
-  studentUsername: z.string().regex(/^[a-z0-9]{4,64}$/),
-  studentPin: z.string().regex(/^\d{4}$/),
   parentName: z.string().trim().min(2).max(100),
-  parentUsername: z.string().regex(/^[a-z0-9]{4,64}$/),
-  parentPin: z.string().regex(/^\d{4}$/),
+  mobile: z.string().transform((value) => normalizeMobile(value)).pipe(
+    z.string().regex(/^\d{10}$/, "Student mobile must be 10 digits"),
+  ),
+  studentPin: z.string().refine(isFourDigitPin, "Student PIN must be 4 digits"),
+  parentMobile: z.string().transform((value) => normalizeMobile(value)).pipe(
+    z.string().regex(/^\d{10}$/, "Parent mobile must be 10 digits"),
+  ),
+  parentPin: z.string().refine(isFourDigitPin, "Parent PIN must be 4 digits"),
 });
+
+function usernameFromMobile(prefix: string, mobile: string) {
+  return `${prefix}_${mobile}`;
+}
 
 export async function POST(req: NextRequest) {
   const auth = await requireRolesApi(req, ROLES);
@@ -32,37 +41,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  if (!body || typeof body !== "object") {
-    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
-  }
-
   const parsed = createAccountSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      {
-        error: "Validation failed",
-        details: parsed.error.flatten(),
-      },
+      { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 },
     );
   }
 
-  const {
-    leadId,
-    studentName,
-    studentUsername,
-    studentPin,
-    parentName,
-    parentUsername,
-    parentPin,
-  } = parsed.data;
+  const { leadId, studentName, parentName, mobile, studentPin, parentMobile, parentPin } =
+    parsed.data;
+
+  if (mobile === parentMobile && studentPin === parentPin) {
+    return NextResponse.json(
+      {
+        error: "Use different PINs when student and parent share a mobile number.",
+      },
+      { status: 400 },
+    );
+  }
 
   try {
     const lead = await prisma.lead.findUnique({
       where: { id: leadId },
       select: {
         id: true,
-        name: true,
         phone: true,
         type: true,
         notes: true,
@@ -80,70 +83,64 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const [existingStudentUsername, existingParentUsername, existingMobile] =
+    const [existingStudentUser, existingParentUser, existingStudentAccount, existingParentAccount] =
       await Promise.all([
-        prisma.studentAccount.findUnique({
-          where: { username: studentUsername },
+        prisma.user.findFirst({ where: { mobile, role: "student" }, select: { id: true } }),
+        prisma.user.findFirst({
+          where: { mobile: parentMobile, role: "parent" },
           select: { id: true },
         }),
+        prisma.studentAccount.findUnique({ where: { mobile }, select: { id: true } }),
         prisma.parentAccount.findUnique({
-          where: { username: parentUsername },
-          select: { id: true },
-        }),
-        prisma.studentAccount.findUnique({
-          where: { mobile: lead.phone },
+          where: { mobile: parentMobile },
           select: { id: true },
         }),
       ]);
 
-    if (existingStudentUsername) {
-      return NextResponse.json(
-        {
-          error: "Student username already exists",
-          details: {
-            studentUsername: "Student username already exists.",
-          },
-        },
-        { status: 409 },
-      );
+    if (existingStudentUser || existingStudentAccount) {
+      return NextResponse.json({ error: "Student mobile already exists" }, { status: 409 });
     }
-    if (existingParentUsername) {
-      return NextResponse.json(
-        {
-          error: "Parent username already exists",
-          details: {
-            parentUsername: "Parent username already exists.",
-          },
-        },
-        { status: 409 },
-      );
-    }
-    if (existingMobile) {
-      return NextResponse.json(
-        {
-          error: "Mobile already has a student account",
-          details: {
-            leadId: "A student account already exists for this mobile number.",
-          },
-        },
-        { status: 409 },
-      );
+    if (existingParentUser || existingParentAccount) {
+      return NextResponse.json({ error: "Parent mobile already exists" }, { status: 409 });
     }
 
-    const studentPinHash = await bcrypt.hash(studentPin, 10);
-    const parentPinHash = await bcrypt.hash(parentPin, 10);
+    const studentPinHash = await hashPin(studentPin);
+    const parentPinHash = await hashPin(parentPin);
     const programType = determineProgramTypeFromLead({
       type: lead.type,
       notes: lead.notes,
     });
 
-    const student = await prisma.$transaction(async (tx) => {
-      const createdStudent = await tx.studentAccount.create({
+    const result = await prisma.$transaction(async (tx) => {
+      const studentUser = await tx.user.create({
         data: {
+          name: studentName,
+          mobile,
+          pin: studentPinHash,
+          role: "student",
+          isActive: true,
+          createdBy: auth.payload.sub,
+        },
+      });
+
+      const parentUser = await tx.user.create({
+        data: {
+          name: parentName,
+          mobile: parentMobile,
+          pin: parentPinHash,
+          role: "parent",
+          isActive: true,
+          createdBy: auth.payload.sub,
+        },
+      });
+
+      const studentAccount = await tx.studentAccount.create({
+        data: {
+          userId: studentUser.id,
           studentName,
           parentName,
-          mobile: lead.phone,
-          username: studentUsername,
+          mobile,
+          username: usernameFromMobile("student", mobile),
           pin: studentPinHash,
           role: "student",
           programType,
@@ -154,43 +151,64 @@ export async function POST(req: NextRequest) {
 
       await tx.parentAccount.create({
         data: {
+          userId: parentUser.id,
           name: parentName,
-          mobile: lead.phone,
-          username: parentUsername,
+          mobile: parentMobile,
+          username: usernameFromMobile("parent", parentMobile),
           pin: parentPinHash,
           role: "parent",
-          studentId: createdStudent.id,
+          studentId: studentAccount.id,
           createdBy: auth.payload.sub,
+        },
+      });
+
+      await tx.parent.upsert({
+        where: { id: parentUser.id },
+        update: {
+          name: parentName,
+          phone: parentMobile,
+          phoneNormalized: parentMobile,
+          studentId: studentAccount.id,
+          email: null,
+        },
+        create: {
+          id: parentUser.id,
+          name: parentName,
+          phone: parentMobile,
+          phoneNormalized: parentMobile,
+          studentId: studentAccount.id,
+          email: null,
         },
       });
 
       await tx.lead.update({
         where: { id: lead.id },
         data: {
-          status: "mentor_assigned",
+          status: "account_created",
           notes: appendLeadNote(lead.notes, {
-            text: `Student account created. Username: ${studentUsername}. Parent account created. Username: ${parentUsername}.`,
+            text: `Accounts created. Student mobile: ${mobile}. Parent mobile: ${parentMobile}.`,
             timestamp: new Date().toISOString(),
             addedBy: auth.payload.sub,
           }),
         },
       });
 
-      return createdStudent;
+      return { studentUser, parentUser, studentAccount };
     });
 
     try {
-      await sendCredentials(lead.phone, studentName, studentUsername, studentPin);
+      await sendCredentials(mobile, studentName, mobile, studentPin);
+      await sendCredentials(parentMobile, parentName, parentMobile, parentPin);
     } catch (whatsappError) {
       console.error("[sendCredentials]", whatsappError);
     }
 
     return NextResponse.json({
       success: true,
-      studentAccountId: student.id,
+      studentAccountId: result.studentAccount.id,
       credentials: {
-        student: { username: studentUsername, pin: studentPin },
-        parent: { username: parentUsername, pin: parentPin },
+        student: { mobile, pin: studentPin },
+        parent: { mobile: parentMobile, pin: parentPin },
       },
     });
   } catch (error) {

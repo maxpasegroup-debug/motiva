@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
-import { getBearerToken } from "@/server/auth/http-auth";
+import { getSessionToken } from "@/server/auth/http-auth";
 import { verifyJwt } from "@/server/auth/jwt";
 
-const ADMIN_AUTH_COOKIE = "motiva_admin_auth";
-const USER_AUTH_COOKIE = "motiva_user_auth";
-
 function getAuthPayload(req: NextRequest) {
-  const token =
-    getBearerToken(req) ??
-    req.cookies.get(USER_AUTH_COOKIE)?.value ??
-    req.cookies.get(ADMIN_AUTH_COOKIE)?.value ??
-    null;
+  const token = getSessionToken(req);
   if (!token) return null;
   try {
     return verifyJwt(token);

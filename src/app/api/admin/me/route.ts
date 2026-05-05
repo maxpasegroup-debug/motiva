@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  ensureSeedAdminDb,
-  findAdminById,
-  isDatabaseConfigured,
-  toPublicAdmin,
-} from "@/server/auth/admins-store";
+import prisma from "@/lib/prisma";
 import { getAdminSessionToken } from "@/server/auth/http-auth";
 import { verifyJwt } from "@/server/auth/jwt";
 
@@ -25,20 +20,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  if (isDatabaseConfigured()) {
-    await ensureSeedAdminDb();
-    const admin = await findAdminById(payload.sub);
-    if (!admin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    return NextResponse.json({ admin: toPublicAdmin(admin) });
+  const admin = await prisma.user.findFirst({
+    where: { id: payload.userId, role: "admin", isActive: true },
+    select: { id: true, name: true, mobile: true, role: true },
+  });
+
+  if (!admin) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  return NextResponse.json({
-    admin: {
-      id: payload.sub,
-      email: payload.email,
-      role: payload.role,
-    },
-  });
+  return NextResponse.json({ admin });
 }
+
+export const dynamic = "force-dynamic";

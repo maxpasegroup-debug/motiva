@@ -3,6 +3,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { requireAdminApi } from "@/server/auth/require-admin";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 

@@ -40,18 +40,21 @@ model Admin {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model User {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name         String   @db.VarChar(255)
-  email        String   @unique @db.VarChar(255)
-  username     String?  @unique @db.VarChar(64)
-  mobile       String?  @unique @db.VarChar(16)
-  phone        String?  @db.VarChar(64)
-  pin          String?  @db.Text
-  pinResetRequired Boolean @default(false) @map("pin_reset_required")
-  passwordHash String   @map("password_hash") @db.Text
-  role         String   @default("public") @db.VarChar(32)
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String   @db.VarChar(255)
+  mobile           String?  @db.VarChar(16)
+  email            String?  @unique @db.VarChar(255)
+  username         String?  @unique @db.VarChar(64)
+  phone            String?  @db.VarChar(64)
+  pin              String?  @db.Text
+  role             String   @default("public") @db.VarChar(32)
+  isActive         Boolean  @default(true) @map("is_active")
+  pinResetRequired Boolean  @default(false) @map("pin_reset_required")
+  createdBy        String?  @map("created_by") @db.VarChar(255)
+  profileData      Json?    @map("profile_data")
+  passwordHash     String?  @map("password_hash") @db.Text
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   pinResetRequests PinResetRequest[]
 
@@ -61,8 +64,11 @@ model User {
   taughtStudentAccounts StudentAccount[] @relation("StudentAccountTeacher")
   createdParentAccounts ParentAccount[] @relation("ParentAccountCreatedBy")
   assignedMentorLeads Lead[] @relation("LeadAssignedMentor")
+  studentAccount StudentAccount? @relation("StudentUser")
+  parentAccount ParentAccount? @relation("ParentUser")
 
   @@index([role])
+  @@index([mobile])
   @@map("users")
 }
 
@@ -405,6 +411,7 @@ model Lead {
 
 model StudentAccount {
   id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String?  @unique @map("user_id") @db.Uuid
   studentName     String   @map("student_name") @db.VarChar(255)
   parentName      String   @map("parent_name") @db.VarChar(255)
   mobile          String   @unique @db.VarChar(16)
@@ -426,6 +433,7 @@ model StudentAccount {
   mentor         User?            @relation("StudentAccountMentor", fields: [mentorId], references: [id], onDelete: SetNull)
   teacher        User?            @relation("StudentAccountTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
   creator        User             @relation("StudentAccountCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  user           User?            @relation("StudentUser", fields: [userId], references: [id], onDelete: SetNull)
   parentAccounts ParentAccount[]
   learningPlans  LearningPlan[]
   issues         Issue[]
@@ -442,6 +450,7 @@ model StudentAccount {
 
 model ParentAccount {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String?  @unique @map("user_id") @db.Uuid
   name       String   @db.VarChar(255)
   mobile     String   @unique @db.VarChar(16)
   username   String   @unique @db.VarChar(64)
@@ -454,6 +463,7 @@ model ParentAccount {
 
   student StudentAccount @relation(fields: [studentId], references: [id], onDelete: Cascade)
   creator User           @relation("ParentAccountCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  user    User?          @relation("ParentUser", fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([studentId])
   @@index([createdBy])

@@ -5,10 +5,8 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import prisma from "@/lib/prisma";
 import { getRoleHome, isRole } from "@/lib/roles";
+import { AUTH_COOKIE_NAME } from "@/server/auth/http-auth";
 import { verifyJwt } from "@/server/auth/jwt";
-
-const ADMIN_AUTH_COOKIE = "motiva_admin_auth";
-const USER_AUTH_COOKIE = "motiva_user_auth";
 
 type Session = {
   userId: string;
@@ -23,8 +21,7 @@ export const dynamic = "force-dynamic";
 
 function getSession(): Session | null {
   const store = cookies();
-  const token =
-    store.get(USER_AUTH_COOKIE)?.value ?? store.get(ADMIN_AUTH_COOKIE)?.value;
+  const token = store.get(AUTH_COOKIE_NAME)?.value;
   if (!token) return null;
   try {
     const payload = verifyJwt(token);
@@ -43,14 +40,14 @@ function formatPct(v: number) {
 export default async function Page() {
   const session = getSession();
   if (!session) {
-    redirect("/auth/public/login");
+    redirect("/login");
   }
 
   if (session.role !== "public") {
     if (isRole(session.role)) {
       redirect(getRoleHome(session.role));
     }
-    redirect("/auth/public/login");
+    redirect("/login");
   }
 
   const rows = await prisma.courseEnrollment.findMany({

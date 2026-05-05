@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApi } from "@/server/auth/require-admin";
 import { createProgram, readPrograms } from "@/server/programs/programs-store";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   const auth = await requireAdminApi(req);
   if (!auth.ok) return auth.response;

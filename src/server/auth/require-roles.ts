@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureSeedAdmin } from "@/server/auth/auth-users-store";
+import type { Role } from "@/lib/roles";
 import { getAdminSessionToken } from "@/server/auth/http-auth";
 import { verifyJwt, type JwtPayload } from "@/server/auth/jwt";
-import type { Role } from "@/lib/roles";
-
-async function ensureBootstrap() {
-  await ensureSeedAdmin();
-}
 
 export type RolesAuthResult =
   | { ok: true; payload: JwtPayload }
@@ -16,7 +11,6 @@ export async function requireRolesApi(
   req: NextRequest,
   allowed: readonly Role[],
 ): Promise<RolesAuthResult> {
-  await ensureBootstrap();
   const token = getAdminSessionToken(req);
   if (!token) {
     return {
@@ -24,6 +18,7 @@ export async function requireRolesApi(
       response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
     };
   }
+
   try {
     const payload = verifyJwt(token);
     if (!allowed.includes(payload.role)) {

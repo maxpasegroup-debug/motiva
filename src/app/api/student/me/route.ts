@@ -9,10 +9,16 @@ export async function GET(req: NextRequest) {
   const auth = await requireRolesApi(req, ["student"]);
   if (!auth.ok) return auth.response;
 
+  const user = await prisma.user.findUnique({
+    where: { id: auth.payload.sub },
+    select: { id: true, name: true, mobile: true, role: true, isActive: true },
+  });
+  if (!user) {
+    return NextResponse.json({ error: "Student user not found" }, { status: 404 });
+  }
+
   const student = await prisma.studentAccount.findUnique({
-    where: {
-      id: auth.payload.sub,
-    },
+    where: { userId: user.id },
     include: {
       batch: {
         include: {
@@ -30,8 +36,8 @@ export async function GET(req: NextRequest) {
   });
 
   if (!student) {
-    return NextResponse.json({ error: "Student not found" }, { status: 404 });
+    return NextResponse.json({ error: "Student profile not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ student });
+  return NextResponse.json({ user, student });
 }

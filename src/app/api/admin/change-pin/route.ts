@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     where: { id: user.id },
     data: {
       pin: pinHash,
-      passwordHash: pinHash,
+      passwordHash: null,
       pinResetRequired: false,
     },
   });

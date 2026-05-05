@@ -13,11 +13,11 @@ import {
   markParentNotificationsRead,
 } from "@/server/parents/parents-portal-db";
 
-export async function getParentPortalSnapshot(parentId: string) {
+export async function getParentPortalSnapshot(userId: string) {
   const today = todayDateOnly();
 
   const parent = await prisma.parentAccount.findUnique({
-    where: { id: parentId },
+    where: { userId },
     include: {
       student: {
         include: {
@@ -93,8 +93,8 @@ export async function getParentPortalSnapshot(parentId: string) {
           date: "asc",
         },
       }),
-      listParentNotifications(parentId, 50),
-      countUnreadParentNotifications(parentId),
+      listParentNotifications(userId, 50),
+      countUnreadParentNotifications(userId),
       prisma.user.findMany({
         where: {
           id: {
@@ -156,18 +156,18 @@ export async function getParentPortalSnapshot(parentId: string) {
   };
 }
 
-export async function markParentNotifications(parentId: string, notificationIds: string[]) {
-  await markParentNotificationsRead(parentId, notificationIds);
+export async function markParentNotifications(userId: string, notificationIds: string[]) {
+  await markParentNotificationsRead(userId, notificationIds);
 }
 
-export async function markAllParentNotifications(parentId: string) {
-  await markAllParentNotificationsRead(parentId);
+export async function markAllParentNotifications(userId: string) {
+  await markAllParentNotificationsRead(userId);
 }
 
-export async function getParentChildProgress(parentId: string) {
+export async function getParentChildProgress(userId: string) {
   const parent = await prisma.parentAccount.findUnique({
     where: {
-      id: parentId,
+      userId,
     },
     include: {
       student: {

@@ -2,12 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getRoleHome, type Role } from "@/lib/roles";
-import { getSession } from "@/lib/session";
+import { getRoleHome, isRole, type Role } from "@/lib/roles";
 
 type Props = {
   allow: Role | readonly Role[];
   children: React.ReactNode;
+};
+
+type MeResponse = {
+  userId: string;
+  role: Role;
+  name: string;
+  mobile: string | null;
 };
 
 export function RoleGate({ allow, children }: Props) {
@@ -15,17 +21,41 @@ export function RoleGate({ allow, children }: Props) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const s = getSession();
-    if (!s) {
-      router.replace("/login");
-      return;
+    let cancelled = false;
+
+    async function checkSession() {
+      const res = await fetch("/api/auth/me", {
+        credentials: "include",
+        cache: "no-store",
+      });
+
+      if (cancelled) return;
+
+      if (!res.ok) {
+        router.replace("/login");
+        return;
+      }
+
+      const session = (await res.json().catch(() => null)) as MeResponse | null;
+      if (!session || !isRole(session.role)) {
+        router.replace("/login");
+        return;
+      }
+
+      const allowed = Array.isArray(allow) ? allow : [allow];
+      if (!allowed.includes(session.role)) {
+        router.replace(getRoleHome(session.role));
+        return;
+      }
+
+      setReady(true);
     }
-    const allowed = Array.isArray(allow) ? allow : [allow];
-    if (!allowed.includes(s.role)) {
-      router.replace(getRoleHome(s.role));
-      return;
-    }
-    setReady(true);
+
+    void checkSession();
+
+    return () => {
+      cancelled = true;
+    };
   }, [router, allow]);
 
   if (!ready) {
@@ -34,7 +64,7 @@ export function RoleGate({ allow, children }: Props) {
         className="flex min-h-[50vh] items-center justify-center text-neutral-400"
         aria-busy="true"
       >
-        …
+        ...
       </div>
     );
   }

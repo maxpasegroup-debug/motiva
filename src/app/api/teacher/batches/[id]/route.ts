@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 import { parseTeacherIdFromRequest } from "@/server/auth/teacher-bearer";
 import {
   getAttendanceForDay,
   getOrCreateBatchProgress,
 } from "@/server/attendance/attendance-db";
 import { getBatchStudentIds, verifyTeacherOwnsBatch } from "@/server/batches/batches-db";
-import { findAuthUserById } from "@/server/auth/auth-users-store";
 import { getDatabaseUrl } from "@/server/db/pool";
 
 export const runtime = "nodejs";
@@ -48,17 +48,21 @@ export async function GET(
       attendance_for_day[k] = v;
     });
     const studentIds = await getBatchStudentIds(id);
+    const studentUsers = await prisma.user.findMany({
+      where: { id: { in: studentIds }, role: "student" },
+      select: { id: true, name: true, mobile: true },
+    });
+    const studentMap = new Map(studentUsers.map((user) => [user.id, user]));
 
-    const students = await Promise.all(
-      studentIds.map(async (student_id) => {
-        const u = await findAuthUserById(student_id);
-        return {
-          id: student_id,
-          name: u?.name ?? "—",
-          email: u?.email ?? "",
-        };
-      }),
-    );
+    const students = studentIds.map((student_id) => {
+      const user = studentMap.get(student_id);
+      return {
+        id: student_id,
+        name: user?.name ?? "-",
+        mobile: user?.mobile ?? "",
+        phone: user?.mobile ?? "",
+      };
+    });
 
     return NextResponse.json({
       success: true,

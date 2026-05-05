@@ -1,28 +1,19 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getRoleHome, type Role } from "@/lib/roles";
-import {
-  ADMIN_AUTH_COOKIE_NAME,
-  getBearerToken,
-} from "@/server/auth/http-auth";
+import { AUTH_COOKIE_NAME, getBearerToken } from "@/server/auth/http-auth";
 import { verifyJwtEdge } from "@/server/auth/jwt-edge";
-
-const USER_AUTH_COOKIE_NAME = "motiva_user_auth";
 
 function getSessionToken(req: NextRequest): string | null {
   const bearer = getBearerToken(req);
   if (bearer) return bearer;
-  return (
-    req.cookies.get(ADMIN_AUTH_COOKIE_NAME)?.value ??
-    req.cookies.get(USER_AUTH_COOKIE_NAME)?.value ??
-    null
-  );
+  return req.cookies.get(AUTH_COOKIE_NAME)?.value ?? null;
 }
 
 type Guard = { prefix: string; roles: readonly Role[] };
 
 const PAGE_GUARDS: Guard[] = [
-  { prefix: "/admin/leads", roles: ["admin", "telecounselor"] },
+  { prefix: "/admin/leads", roles: ["admin", "telecounselor", "demo_executive"] },
   {
     prefix: "/admin/admissions/create-account",
     roles: ["admin", "telecounselor"],
@@ -64,7 +55,7 @@ function adminApiAllowedRoles(pathname: string): readonly Role[] {
     pathname === "/api/admin/leads" ||
     pathname.startsWith("/api/admin/leads/")
   ) {
-    return ["admin", "telecounselor"];
+    return ["admin", "telecounselor", "demo_executive"];
   }
   if (
     pathname === "/api/admin/admissions/remedial" ||
@@ -103,14 +94,23 @@ function internalApiAllowedRoles(pathname: string): readonly Role[] {
   return [];
 }
 
+function loginUrlFor(pathname: string, request: NextRequest): URL {
+  if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
+    return new URL("/login", request.url);
+  }
+  return new URL("/login", request.url);
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const adminApi = isProtectedAdminApi(pathname);
   const paymentsApi = pathname.startsWith("/api/payments/");
-  const internalApi = pathname.startsWith("/api/student/") || pathname.startsWith("/api/parent/");
+  const internalApi =
+    pathname.startsWith("/api/student/") || pathname.startsWith("/api/parent/");
   const pageGuard = guardForPath(pathname);
-  const dashboardLegacy = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+  const dashboardLegacy =
+    pathname === "/dashboard" || pathname.startsWith("/dashboard/");
 
   if (!adminApi && !paymentsApi && !internalApi && !pageGuard && !dashboardLegacy) {
     return NextResponse.next();
@@ -121,10 +121,7 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    if (dashboardLegacy) {
-      return NextResponse.redirect(new URL("/auth/public/login", request.url));
-    }
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(loginUrlFor(pathname, request));
   }
 
   let payload: Awaited<ReturnType<typeof verifyJwtEdge>>;
@@ -134,10 +131,7 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    if (dashboardLegacy) {
-      return NextResponse.redirect(new URL("/auth/public/login", request.url));
-    }
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(loginUrlFor(pathname, request));
   }
 
   if (adminApi) {
@@ -165,21 +159,18 @@ export async function middleware(request: NextRequest) {
   }
 
   if (dashboardLegacy) {
+    if (payload.role === "public") {
+      return NextResponse.next();
+    }
     if (payload.role === "student") {
       const suffix = pathname.replace(/^\/dashboard/, "") || "";
-      return NextResponse.redirect(
-        new URL(`/student${suffix}`, request.url),
-      );
+      return NextResponse.redirect(new URL(`/student${suffix}`, request.url));
     }
-    return NextResponse.redirect(
-      new URL(getRoleHome(payload.role), request.url),
-    );
+    return NextResponse.redirect(new URL(getRoleHome(payload.role), request.url));
   }
 
   if (pageGuard && !pageGuard.roles.includes(payload.role)) {
-    return NextResponse.redirect(
-      new URL(getRoleHome(payload.role), request.url),
-    );
+    return NextResponse.redirect(new URL(getRoleHome(payload.role), request.url));
   }
 
   return NextResponse.next();
@@ -188,7 +179,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/api/:path*",
-    "/api/auth/:path*",
     "/admin",
     "/admin/:path*",
     "/api/admin",

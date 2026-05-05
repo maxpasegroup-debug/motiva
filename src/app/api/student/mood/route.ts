@@ -6,14 +6,27 @@ import { requireRolesApi } from "@/server/auth/require-roles";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+async function getStudentAccountId(userId: string) {
+  const student = await prisma.studentAccount.findUnique({
+    where: { userId },
+    select: { id: true },
+  });
+  return student?.id ?? null;
+}
+
 export async function GET(req: NextRequest) {
   const auth = await requireRolesApi(req, ["student"]);
   if (!auth.ok) return auth.response;
 
+  const studentId = await getStudentAccountId(auth.payload.sub);
+  if (!studentId) {
+    return NextResponse.json({ error: "Student profile not found" }, { status: 404 });
+  }
+
   const record = await prisma.studentWellbeing.findUnique({
     where: {
       studentId_date: {
-        studentId: auth.payload.sub,
+        studentId,
         date: todayDateOnly(),
       },
     },
@@ -25,6 +38,11 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await requireRolesApi(req, ["student"]);
   if (!auth.ok) return auth.response;
+
+  const studentId = await getStudentAccountId(auth.payload.sub);
+  if (!studentId) {
+    return NextResponse.json({ error: "Student profile not found" }, { status: 404 });
+  }
 
   let body: unknown;
   try {
@@ -47,7 +65,7 @@ export async function POST(req: NextRequest) {
   const existing = await prisma.studentWellbeing.findUnique({
     where: {
       studentId_date: {
-        studentId: auth.payload.sub,
+        studentId,
         date,
       },
     },
@@ -59,7 +77,7 @@ export async function POST(req: NextRequest) {
 
   const record = await prisma.studentWellbeing.create({
     data: {
-      studentId: auth.payload.sub,
+      studentId,
       rating,
       date,
     },

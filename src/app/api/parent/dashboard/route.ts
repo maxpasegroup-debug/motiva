@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 import { parseParentIdFromRequest } from "@/server/auth/parent-bearer";
 import {
   getOrCreateBatchProgress,
@@ -12,7 +13,6 @@ import {
   getStudentPaymentStatusDb,
   listParentNotifications,
 } from "@/server/parents/parents-portal-db";
-import { findAuthUserById } from "@/server/auth/auth-users-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,7 +41,10 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const studentUser = await findAuthUserById(row.student_id);
+    const studentUser = await prisma.user.findUnique({
+      where: { id: row.student_id },
+      select: { name: true },
+    });
     const studentName = studentUser?.name ?? "Student";
 
     const batch = await getStudentBatchRow(row.student_id);

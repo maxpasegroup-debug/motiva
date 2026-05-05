@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 import { requireAdminApi } from "@/server/auth/require-admin";
-import { findAuthUserById } from "@/server/auth/auth-users-store";
 import {
   getAttendanceSummaryByStudent,
   getOrCreateBatchProgress,
@@ -45,21 +45,24 @@ export async function GET(
     const summaries = await getAttendanceSummaryByStudent(id, batch.duration);
     const sumMap = new Map(summaries.map((s) => [s.student_id, s] as const));
     const roster = await getBatchStudentIds(id);
-    const students = await Promise.all(
-      roster.map(async (student_id) => {
-        const u = await findAuthUserById(student_id);
-        const s = sumMap.get(student_id);
-        const present = s?.present ?? 0;
-        const absent = s?.absent ?? 0;
-        return {
-          student_id,
-          name: u?.name ?? "—",
-          present,
-          absent,
-          attended_label: `${present} / ${batch.duration}`,
-        };
-      }),
-    );
+    const users = await prisma.user.findMany({
+      where: { id: { in: roster }, role: "student" },
+      select: { id: true, name: true },
+    });
+    const userMap = new Map(users.map((user) => [user.id, user]));
+
+    const students = roster.map((student_id) => {
+      const s = sumMap.get(student_id);
+      const present = s?.present ?? 0;
+      const absent = s?.absent ?? 0;
+      return {
+        student_id,
+        name: userMap.get(student_id)?.name ?? "-",
+        present,
+        absent,
+        attended_label: `${present} / ${batch.duration}`,
+      };
+    });
 
     return NextResponse.json({
       success: true,

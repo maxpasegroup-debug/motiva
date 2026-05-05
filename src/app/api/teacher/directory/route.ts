@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 import { parseTeacherIdFromRequest } from "@/server/auth/teacher-bearer";
-import { findAuthUserById } from "@/server/auth/auth-users-store";
 import {
   getBatchStudentIds,
   listBatchesForTeacher,
@@ -36,22 +36,21 @@ export async function GET(req: NextRequest) {
       for (const sid of ids) idSet.add(sid);
     }
 
-    const users: { id: string; name: string; email: string; role: "student" }[] =
-      [];
-    for (const id of Array.from(idSet)) {
-      const u = await findAuthUserById(id);
-      if (u?.role === "student") {
-        users.push({
-          id: u.id,
-          name: u.name,
-          email: u.email,
-          role: "student",
-        });
-      }
-    }
+    const users = await prisma.user.findMany({
+      where: { id: { in: Array.from(idSet) }, role: "student" },
+      select: { id: true, name: true, mobile: true, role: true },
+    });
 
     users.sort((a, b) => a.name.localeCompare(b.name));
-    return NextResponse.json({ users });
+    return NextResponse.json({
+      users: users.map((user) => ({
+        id: user.id,
+        name: user.name,
+        mobile: user.mobile,
+        phone: user.mobile,
+        role: "student",
+      })),
+    });
   } catch (e) {
     console.error("[GET /api/teacher/directory]", e);
     return NextResponse.json(

@@ -2,40 +2,59 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAuthToken } from "@/lib/session";
+import { isRole, type Role } from "@/lib/roles";
 
-function decodePayload(token: string): Record<string, unknown> | null {
-  const parts = token.split(".");
-  if (parts.length < 2) return null;
-  try {
-    const json = atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"));
-    return JSON.parse(json) as Record<string, unknown>;
-  } catch {
-    return null;
+type MeResponse = {
+  role: Role;
+};
+
+function roleDestination(role: Role): string {
+  switch (role) {
+    case "admin":
+      return "/admin";
+    case "mentor":
+      return "/mentor";
+    case "teacher":
+      return "/teacher";
+    case "student":
+      return "/student";
+    case "parent":
+      return "/parent";
+    case "telecounselor":
+    case "demo_executive":
+      return "/admin/leads";
+    case "public":
+      return "/dashboard";
+    default:
+      return "/";
   }
 }
 
 export default function SetNewPinPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
-  const [currentPin, setCurrentPin] = useState("");
+  const [role, setRole] = useState<Role>("public");
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const token = getAuthToken();
-    if (!token) {
-      router.replace("/auth/public/login");
-      return;
+    async function checkSession() {
+      const res = await fetch("/api/auth/me", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        router.replace("/login");
+        return;
+      }
+      const json = (await res.json().catch(() => null)) as MeResponse | null;
+      setRole(isRole(json?.role) ? json.role : "public");
+      setReady(true);
     }
-    const p = decodePayload(token);
-    if (!p || p.pinResetRequired !== true) {
-      router.replace("/dashboard");
-      return;
-    }
-    setReady(true);
+
+    void checkSession();
   }, [router]);
 
   async function onSubmit(e: FormEvent) {
@@ -48,14 +67,11 @@ export default function SetNewPinPage() {
     }
 
     setLoading(true);
-    const token = getAuthToken();
     const res = await fetch("/api/auth/set-new-pin", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({ currentPin, newPin, confirmPin }),
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ newPin, confirmPin }),
     });
 
     if (!res.ok) {
@@ -65,8 +81,8 @@ export default function SetNewPinPage() {
       return;
     }
 
-    setLoading(false);
-    router.push("/dashboard");
+    router.push(roleDestination(role));
+    router.refresh();
   }
 
   if (!ready) return null;
@@ -84,20 +100,12 @@ export default function SetNewPinPage() {
             type="password"
             inputMode="numeric"
             maxLength={4}
-            placeholder="Current PIN"
-            className="w-full rounded-lg border border-neutral-200 px-3 py-2.5"
-            value={currentPin}
-            onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, ""))}
-            required
-          />
-          <input
-            type="password"
-            inputMode="numeric"
-            maxLength={4}
             placeholder="New PIN (4 digits)"
             className="w-full rounded-lg border border-neutral-200 px-3 py-2.5"
             value={newPin}
-            onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ""))}
+            onChange={(e) =>
+              setNewPin(e.target.value.replace(/\D/g, "").slice(0, 4))
+            }
             required
           />
           <input
@@ -107,7 +115,9 @@ export default function SetNewPinPage() {
             placeholder="Confirm new PIN"
             className="w-full rounded-lg border border-neutral-200 px-3 py-2.5"
             value={confirmPin}
-            onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
+            onChange={(e) =>
+              setConfirmPin(e.target.value.replace(/\D/g, "").slice(0, 4))
+            }
             required
           />
 

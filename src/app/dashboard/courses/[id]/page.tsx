@@ -1,18 +1,15 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
+import { AUTH_COOKIE_NAME } from "@/server/auth/http-auth";
 import { verifyJwt } from "@/server/auth/jwt";
 import { DashboardCoursePlayer } from "@/components/courses/DashboardCoursePlayer";
 
 export const dynamic = "force-dynamic";
 
-const ADMIN_AUTH_COOKIE = "motiva_admin_auth";
-const USER_AUTH_COOKIE = "motiva_user_auth";
-
 function getSession() {
   const store = cookies();
-  const token =
-    store.get(USER_AUTH_COOKIE)?.value ?? store.get(ADMIN_AUTH_COOKIE)?.value;
+  const token = store.get(AUTH_COOKIE_NAME)?.value;
   if (!token) return null;
   try {
     return verifyJwt(token);
@@ -28,7 +25,7 @@ export default async function DashboardCoursePlayerPage({
 }) {
   const session = getSession();
   if (!session) {
-    redirect("/auth/public/login");
+    redirect("/login");
   }
 
   const enrollment = await prisma.courseEnrollment.findUnique({

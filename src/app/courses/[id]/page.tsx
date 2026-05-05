@@ -2,17 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
+import { AUTH_COOKIE_NAME } from "@/server/auth/http-auth";
 import { verifyJwt, type JwtPayload } from "@/server/auth/jwt";
+import { EnrollButton } from "@/components/courses/EnrollButton";
 
 export const dynamic = "force-dynamic";
 
-const ADMIN_AUTH_COOKIE = "motiva_admin_auth";
-const USER_AUTH_COOKIE = "motiva_user_auth";
-
 function getTokenPayload(): JwtPayload | null {
   const store = cookies();
-  const token =
-    store.get(USER_AUTH_COOKIE)?.value ?? store.get(ADMIN_AUTH_COOKIE)?.value;
+  const token = store.get(AUTH_COOKIE_NAME)?.value;
   if (!token) return null;
   try {
     return verifyJwt(token);
@@ -174,12 +172,16 @@ export default async function PublicCoursePreviewPage({
               </li>
             ))}
           </ul>
-          <Link
-            href="/auth/public/login"
-            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm"
-          >
-            Sign up to watch this course
-          </Link>
+          {payload ? (
+            <EnrollButton courseId={course.id} />
+          ) : (
+            <Link
+              href="/signup"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm"
+            >
+              Sign up to watch
+            </Link>
+          )}
         </section>
       )}
     </main>

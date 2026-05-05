@@ -23,7 +23,7 @@ export const ROLES: readonly Role[] = [
 
 const ROLE_HOME: Record<Role, string> = {
   admin: "/admin",
-  telecounselor: "/leads",
+  telecounselor: "/admin/leads",
   demo_executive: "/demo",
   mentor: "/mentor",
   teacher: "/teacher",

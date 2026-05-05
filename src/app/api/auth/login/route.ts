@@ -1,119 +1,81 @@
-import bcrypt from "bcrypt";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import prisma from "@/lib/prisma";
 import {
-  ensureSeedAdminDb,
-  isDatabaseConfigured,
-} from "@/server/auth/admins-store";
-import {
-  ensureSeedAdmin,
-  findAuthUserByEmail,
-  findAuthUserById,
-  findAuthUserByPhoneDigits,
-  toPublicUser,
-} from "@/server/auth/auth-users-store";
-import { ADMIN_AUTH_COOKIE_NAME } from "@/server/auth/http-auth";
-import { signJwt } from "@/server/auth/jwt";
-import { getDatabaseUrl } from "@/server/db/pool";
-import {
-  findParentIdByContactEmail,
-  findParentIdByPhoneDigits,
-  normalizePhoneDigits,
-} from "@/server/parents/parents-portal-db";
+  comparePin,
+  isFourDigitPin,
+  issueAuthToken,
+  normalizeMobile,
+  setAuthCookie,
+} from "@/server/auth/unified-auth";
 
-function normalizeEmail(raw: string) {
-  return raw.trim().toLowerCase();
-}
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-async function resolveAuthUserForPortalLogin(loginRaw: string) {
-  const login = loginRaw.trim();
-  if (!login) return null;
+const loginSchema = z.object({
+  mobile: z.string().transform((value) => normalizeMobile(value)).pipe(
+    z.string().regex(/^\d{10}$/, "Mobile must be 10 digits"),
+  ),
+  pin: z.string().refine(isFourDigitPin, "PIN must be exactly 4 digits"),
+});
 
-  if (login.includes("@")) {
-    const e = normalizeEmail(login);
-    let user = await findAuthUserByEmail(e);
-    if (user) return user;
-    if (getDatabaseUrl()) {
-      const parentId = await findParentIdByContactEmail(e);
-      if (parentId) {
-        user = await findAuthUserById(parentId);
-        if (user && user.role === "parent") return user;
-      }
-    }
-    return null;
-  }
-
-  const digits = normalizePhoneDigits(login);
-  if (!digits || !getDatabaseUrl()) return null;
-  const parentId = await findParentIdByPhoneDigits(digits);
-  if (!parentId) return null;
-  const user = await findAuthUserById(parentId);
-  if (user && user.role === "parent") return user;
-  return null;
+function invalidLogin() {
+  return NextResponse.json(
+    { error: "Invalid mobile number or PIN" },
+    { status: 401 },
+  );
 }
 
 export async function POST(req: NextRequest) {
-  const body = (await req.json()) as unknown;
-  if (!body || typeof body !== "object") {
-    return NextResponse.json({ error: "Invalid login details" }, { status: 400 });
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const o = body as Record<string, unknown>;
-  const loginField =
-    typeof o.login === "string"
-      ? o.login
-      : typeof o.email === "string"
-        ? o.email
-        : "";
-  const password = typeof o.password === "string" ? o.password : "";
-
-  if (!loginField || !password) {
+  const parsed = loginSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "Invalid login details" },
-      { status: 401 },
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 400 },
     );
   }
 
-  await ensureSeedAdmin();
-  if (isDatabaseConfigured()) {
-    await ensureSeedAdminDb();
-  }
+  const { mobile, pin } = parsed.data;
 
-  let user = await findAuthUserByEmail(normalizeEmail(loginField));
-  if (!user && !loginField.includes("@")) {
-    const digits = normalizePhoneDigits(loginField);
-    if (digits) {
-      user = await findAuthUserByPhoneDigits(digits);
+  const users = await prisma.user.findMany({
+    where: { mobile, isActive: true },
+    orderBy: { createdAt: "asc" },
+  });
+  const matches = [];
+  for (const candidate of users) {
+    if (await comparePin(pin, candidate.pin)) {
+      matches.push(candidate);
     }
   }
-  if (!user) {
-    user = await resolveAuthUserForPortalLogin(loginField);
-  }
-  if (!user) {
-    return NextResponse.json(
-      { error: "Invalid login details" },
-      { status: 401 },
-    );
+  const user = matches[0] ?? null;
+  if (!user || matches.length > 1) {
+    return invalidLogin();
   }
 
-  const ok = await bcrypt.compare(password, user.passwordHash);
-  if (!ok) {
-    return NextResponse.json(
-      { error: "Invalid login details" },
-      { status: 401 },
-    );
-  }
+  const token = issueAuthToken(user);
 
-  const token = signJwt(user);
-  const res = NextResponse.json({ token, user: toPublicUser(user) });
-  if (user.role === "admin") {
-    res.cookies.set(ADMIN_AUTH_COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
+  if (user.pinResetRequired) {
+    const response = NextResponse.json({
+      requiresPinReset: true,
+      role: user.role,
+      token,
     });
+    setAuthCookie(response, token);
+    return response;
   }
-  return res;
-}
 
+  const response = NextResponse.json({
+    success: true,
+    role: user.role,
+    token,
+  });
+  setAuthCookie(response, token);
+  return response;
+}

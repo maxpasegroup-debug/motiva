@@ -1,9 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { AUTH_COOKIE_NAME } from "@/server/auth/http-auth";
 import { verifyJwt, type JwtPayload } from "@/server/auth/jwt";
-
-const ADMIN_AUTH_COOKIE = "motiva_admin_auth";
-const USER_AUTH_COOKIE = "motiva_user_auth";
 
 export type ParentSession = JwtPayload & {
   userId: string;
@@ -11,8 +9,7 @@ export type ParentSession = JwtPayload & {
 
 export function getParentSession(): ParentSession | null {
   const store = cookies();
-  const token =
-    store.get(USER_AUTH_COOKIE)?.value ?? store.get(ADMIN_AUTH_COOKIE)?.value;
+  const token = store.get(AUTH_COOKIE_NAME)?.value;
 
   if (!token) {
     return null;
