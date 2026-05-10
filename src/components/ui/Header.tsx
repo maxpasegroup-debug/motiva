@@ -3,50 +3,28 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { useLanguage } from "@/components/providers/LanguageProvider";
-import { LanguageToggle } from "@/components/ui/LanguageToggle";
 
 const copy = {
-  en: {
-    programs: "Programs",
-    courses: "Courses",
-    teachers: "Teachers",
-    about: "About",
-    contact: "Contact",
-    enquiry: "Enquire Now",
-    portal: "Portal",
-    menu: "Menu",
-    items: [
-      ["One-to-One Tuition", "/#one-to-one"],
-      ["12 Day Remedial", "/#remedial"],
-      ["25 Day Remedial", "/#remedial"],
-      ["Public Speaking", "/#public-speaking"],
-      ["Career Counseling", "/#career-counseling"],
-    ],
-  },
-  ml: {
-    programs: "പ്രോഗ്രാമുകൾ",
-    courses: "കോഴ്സുകൾ",
-    teachers: "ടീച്ചേഴ്സ്",
-    about: "About",
-    contact: "Contact",
-    enquiry: "എൻക്വയർ",
-    portal: "Portal",
-    menu: "മെനു",
-    items: [
-      ["വൺ-ടു-വൺ ട്യൂഷൻ", "/#one-to-one"],
-      ["12 ദിവസ റിമീഡിയൽ", "/#remedial"],
-      ["25 ദിവസ റിമീഡിയൽ", "/#remedial"],
-      ["പബ്ലിക് സ്പീക്കിംഗ്", "/#public-speaking"],
-      ["കരിയർ കൗൺസലിംഗ്", "/#career-counseling"],
-    ],
-  },
+  programs: "Programs",
+  courses: "Courses",
+  teachers: "Teachers",
+  about: "About",
+  contact: "Contact",
+  enquiry: "Enquire Now",
+  portal: "Portal",
+  menu: "Menu",
+  items: [
+    ["One-to-One Tuition", "/#one-to-one"],
+    ["12 Day Remedial", "/#remedial"],
+    ["25 Day Remedial", "/#remedial"],
+    ["Public Speaking", "/#public-speaking"],
+    ["Career Counseling", "/#career-counseling"],
+  ],
 } as const;
 
 export function Header() {
-  const { locale } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
-  const c = copy[locale];
+  const c = copy;
 
   const navLinkClass =
     "inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-neutral-700 transition-colors duration-200 hover:bg-neutral-100 hover:text-[#0B5ED7]";
@@ -104,7 +82,6 @@ export function Header() {
         </nav>
 
         <div className="flex flex-1 items-center justify-end gap-2 lg:flex-initial">
-          <LanguageToggle variant="header" />
           <Link
             href="/login"
             className="hidden min-h-11 shrink-0 items-center justify-center rounded-lg border border-neutral-200 px-4 py-2 text-sm font-bold text-neutral-700 transition hover:bg-neutral-50 sm:inline-flex"

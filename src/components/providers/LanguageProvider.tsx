@@ -4,9 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
 } from "react";
 import {
   type Locale,
@@ -23,37 +21,20 @@ type LanguageContextValue = {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-function readStoredLocale(): Locale | null {
-  if (typeof window === "undefined") return null;
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (raw === "en" || raw === "ml") return raw;
-  return null;
-}
-
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("ml");
-  const [ready, setReady] = useState(false);
+  const locale: Locale = "en";
 
-  useEffect(() => {
-    const stored = readStoredLocale();
-    if (stored) setLocaleState(stored);
-    setReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!ready) return;
-    document.documentElement.lang = locale === "ml" ? "ml" : "en";
-  }, [locale, ready]);
-
-  const setLocale = useCallback((next: Locale) => {
-    setLocaleState(next);
-    window.localStorage.setItem(STORAGE_KEY, next);
+  const setLocale = useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(STORAGE_KEY, "en");
+      document.documentElement.lang = "en";
+    }
   }, []);
 
   const t = useCallback(
     (key: TranslationKey) =>
-      messages[locale][key] ?? messages.en[key] ?? String(key),
-    [locale],
+      messages.en[key] ?? String(key),
+    [],
   );
 
   const value = useMemo(

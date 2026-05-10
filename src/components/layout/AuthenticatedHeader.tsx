@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
-import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
 import { getAuthToken, getSession } from "@/lib/session";
 import { setUsersMirror, type UserRecord } from "@/lib/users-store";
@@ -68,7 +67,6 @@ export function AuthenticatedHeader() {
               </p>
             ) : null}
           </div>
-          <LanguageToggle />
         </div>
         <RoleSwitcher />
       </div>

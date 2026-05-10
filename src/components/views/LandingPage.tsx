@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { whatsappHref } from "@/components/marketing/whatsapp";
-import { useLanguage } from "@/components/providers/LanguageProvider";
 
 type PublicCourse = {
   id: string;
@@ -41,7 +40,7 @@ const HERO_CLASSROOM_IMAGE =
 
 const copy = {
   en: {
-    eyebrow: "Malayalam-friendly online tuition for Kerala families",
+    eyebrow: "Parent-friendly online tuition for Kerala families",
     heroTitle: "If your child is weak in basics, Motiva rebuilds confidence step by step",
     heroText:
       "We first understand the learning gap, then give personal classes, 12/25 day remedial support, daily parent updates, and a clear progress report parents can trust.",
@@ -123,7 +122,7 @@ const copy = {
     proofEyebrow: "Trust signals",
     proofTitle: "Built for families who need clarity, not confusion",
     proofCards: [
-      ["Malayalam support", "Parent conversations can happen in simple Malayalam."],
+      ["Parent support", "Parent conversations are simple, clear, and direct."],
       ["Human teacher", "Children get attention from real teachers, not only videos."],
       ["WhatsApp first", "Parents can ask questions in the channel they already use."],
       ["Progress record", "Attendance, payments, courses, and updates are tracked."],
@@ -203,137 +202,11 @@ const copy = {
       ["55 sec", "How parents receive progress updates"],
     ],
     footerLine:
-      "Malayalam-friendly online tuition and remedial support for confident Kerala students.",
+      "Online tuition and remedial support for confident Kerala students.",
     navigation: "Navigation",
     legal: "Legal",
     connect: "Connect",
-  },
-  ml: {
-    eyebrow: "കേരളത്തിലെ കുടുംബങ്ങൾക്ക് മലയാളത്തിൽ മനസ്സിലാകുന്ന ഓൺലൈൻ ട്യൂഷൻ",
-    heroTitle: "കുട്ടിയുടെ അടിസ്ഥാനത്തിൽ കുറവ് ഉണ്ടെങ്കിൽ Motiva ആത്മവിശ്വാസം തിരികെ പണിയും",
-    heroText:
-      "ആദ്യം കുട്ടിയുടെ പഠന ഗ്യാപ് മനസ്സിലാക്കും. പിന്നെ വ്യക്തിഗത ക്ലാസ്, 12/25 ദിവസ റിമീഡിയൽ സപ്പോർട്ട്, ദിവസവും രക്ഷിതാവിന് അപ്‌ഡേറ്റ്, വ്യക്തമായ പ്രോഗ്രസ് റിപ്പോർട്ട്.",
-    primaryCta: "ഫ്രീ ലേണിംഗ് ചെക്ക് ബുക്ക് ചെയ്യുക",
-    whatsappCta: "WhatsApp-ൽ ചോദിക്കുക",
-    secondaryCta: "ഓഫറുകൾ കാണുക",
-    heroNote: "അഡ്മിഷൻ സമ്മർദ്ദം ഇല്ല. ആദ്യം കുട്ടിയെ മനസ്സിലാക്കാം.",
-    trust: [
-      ["1:1", "വ്യക്തിഗത അധ്യാപക ശ്രദ്ധ"],
-      ["12/25", "ഫോക്കസ് ചെയ്ത റിമീഡിയൽ പ്ലാൻ"],
-      ["Daily", "രക്ഷിതാവിന് പ്രോഗ്രസ് അപ്‌ഡേറ്റ്"],
-      ["PIN", "ലളിതമായ parent/student login"],
-    ],
-    parentPainTitle: "മാർക്ക്, അടിസ്ഥാന പഠനം, ആത്മവിശ്വാസം എന്നിവയിൽ വിഷമിക്കുന്ന രക്ഷിതാക്കൾക്ക്",
-    parentPainText:
-      "പല കുട്ടികളും മടിയന്മാർ അല്ല. അടിസ്ഥാനങ്ങൾ നഷ്ടപ്പെട്ടു, സംശയം ചോദിക്കാൻ മടി, പിന്നെ ആത്മവിശ്വാസം കുറയുന്നു. Motiva ക്ഷമയുള്ള അധ്യാപകൻ, ചെറിയ പ്ലാൻ, കാണാൻ കഴിയുന്ന പുരോഗതി നൽകുന്നു.",
-    painPoints: [
-      "കുട്ടി മനസ്സിലായി എന്ന് പറയുന്നു, പക്ഷേ പാഠം പിടിക്കുന്നില്ല",
-      "Maths, English, Science അടിസ്ഥാനങ്ങൾ ദുർബലം",
-      "ക്ലാസിൽ എന്ത് നടന്നു എന്ന് രക്ഷിതാവിന് അറിയില്ല",
-      "കുട്ടിക്ക് ശാസനം അല്ല, പ്രോത്സാഹനമാണ് വേണ്ടത്",
-    ],
-    offersEyebrow: "പ്രധാന ഓഫറുകൾ",
-    offersTitle: "ഒരു വ്യക്തമായ പഠന വഴി തിരഞ്ഞെടുക്കുക",
-    offersText:
-      "ആദ്യ തീരുമാനം ലളിതമാക്കുന്നു. ഫ്രീ ലേണിംഗ് ചെക്കിന് ശേഷം ശരിയായ പ്ലാൻ ടീം നിർദ്ദേശിക്കും.",
-    programCta: "ഇതിന് enquiry ചെയ്യുക",
-    bestFor: "ആർക്കാണ് നല്ലത്",
-    includes: "ഉൾപ്പെടുന്നത്",
-    priceLabel: "ഫീസ് വ്യക്തത",
-    offers: [
-      {
-        id: "one-to-one",
-        marker: "1:1",
-        title: "One-to-One Tuition",
-        description:
-          "സ്കൂൾ സിലബസ്, കുട്ടിയുടെ വേഗം, ആത്മവിശ്വാസം എന്നിവ അനുസരിച്ചുള്ള വ്യക്തിഗത ഓൺലൈൻ ക്ലാസ്.",
-        bestFor: "സ്ഥിരമായ subject support",
-        price: "Subject, frequency നോക്കി monthly fee അറിയിക്കും",
-        includes: ["Personal teacher", "Doubt clearing", "Parent follow-up"],
-        interest: "tuition" as ProgramInterest,
-        message: "One-to-One Tuition കുറിച്ച് അറിയണം.",
-      },
-      {
-        id: "remedial-12",
-        marker: "12",
-        title: "12 Day Remedial Plan",
-        description:
-          "കുട്ടിയുടെ അടിസ്ഥാന കുറവുകൾ കണ്ടെത്തി ആദ്യ ആത്മവിശ്വാസം തിരികെ കൊണ്ടുവരുന്ന ചെറിയ ഫോക്കസ് പ്ലാൻ.",
-        bestFor: "വേഗത്തിലുള്ള foundation repair",
-        price: "Learning check കഴിഞ്ഞ് starting fee അറിയിക്കും",
-        includes: ["Gap check", "Daily practice", "Progress summary"],
-        interest: "remedial" as ProgramInterest,
-        message: "12 Day Remedial Plan കുറിച്ച് അറിയണം.",
-      },
-      {
-        id: "remedial-25",
-        marker: "25",
-        title: "25 Day Remedial Plan",
-        description:
-          "കൂടുതൽ സമയം, ആവർത്തനം, correction, parent visibility ആവശ്യമായ കുട്ടികൾക്കുള്ള ഗൗരവമായ support path.",
-        bestFor: "കൂടുതൽ learning gap ഉള്ളവർ",
-        price: "Learning check കഴിഞ്ഞ് plan fee അറിയിക്കും",
-        includes: ["Structured classes", "Teacher correction", "Final report"],
-        interest: "remedial" as ProgramInterest,
-        message: "25 Day Remedial Plan കുറിച്ച് അറിയണം.",
-      },
-    ],
-    reportEyebrow: "രക്ഷിതാവിന് വ്യക്തത",
-    reportTitle: "ഫീസ് അടച്ച ശേഷം രക്ഷിതാവ് ഇരുട്ടിൽ ഇരിക്കരുത്",
-    reportText:
-      "കുട്ടി ക്ലാസിൽ വന്നോ, എന്ത് മെച്ചപ്പെട്ടു, ഇനി എന്ത് practice വേണം - ഇത് വ്യക്തമായി കാണണം.",
-    reportRows: [
-      ["Attendance", "9 / 12 days present"],
-      ["Current focus", "Fractions and word problems"],
-      ["Teacher note", "Examples കൊടുത്താൽ മനസ്സിലാക്കുന്നു, daily practice വേണം"],
-      ["Next action", "ക്ലാസ് കഴിഞ്ഞ് 15 minute home revision"],
-    ],
-    proofEyebrow: "വിശ്വാസം",
-    proofTitle: "കൺഫ്യൂഷൻ അല്ല, വ്യക്തത വേണ്ട കുടുംബങ്ങൾക്ക് വേണ്ടി",
-    proofCards: [
-      ["Malayalam support", "രക്ഷിതാവിനോട് ലളിതമായ മലയാളത്തിൽ സംസാരിക്കാം."],
-      ["Human teacher", "കുട്ടിക്ക് video മാത്രം അല്ല, real teacher attention ലഭിക്കും."],
-      ["WhatsApp first", "രക്ഷിതാക്കൾ ഉപയോഗിക്കുന്ന WhatsApp വഴിയും support."],
-      ["Progress record", "Attendance, payment, course, updates എല്ലാം track ചെയ്യും."],
-    ],
-    teachersEyebrow: "Teachers",
-    teachersTitle: "കുട്ടിയെ പഠിപ്പിക്കുന്നത് ആരാണെന്ന് രക്ഷിതാവിന് കാണാം",
-    loadingTeachers: "Teachers loading...",
-    emptyTeachers: "ടീം teacher profiles ചേർത്താൽ ഇവിടെ കാണാം.",
-    founderEyebrow: "Founder trust",
-    founderQuote: "ഞങ്ങൾ പഠിപ്പിക്കുന്നത് മാത്രം അല്ല. ആത്മവിശ്വാസവും ഭാവിയും പണിയുന്നു.",
-    founderBio:
-      "ക്ഷമയുള്ള teaching, സ്ഥിരമായ encouragement, രക്ഷിതാവിന് മനസ്സിലാകുന്ന clear path - അതിനായാണ് Motiva Edus.",
-    founderLink: "കൂടുതൽ വായിക്കുക",
-    coursesTitle: "Recorded courses",
-    readyTitle: "ഫ്രീ learning check-ൽ നിന്ന് തുടങ്ങാം",
-    readyText:
-      "കുട്ടിയുടെ പേര്, class, ബുദ്ധിമുട്ടുള്ള subject എന്നിവ share ചെയ്യുക. Motiva team call അല്ലെങ്കിൽ WhatsApp വഴി തുടരും.",
-    whatsapp: "WhatsApp",
-    enquirySubmit: "Enquiry അയക്കുക",
-    sending: "അയക്കുന്നു...",
-    success: "നന്ദി. ഞങ്ങൾ ഉടൻ ബന്ധപ്പെടും.",
-    error: "Enquiry അയക്കാൻ കഴിഞ്ഞില്ല.",
-    name: "Parent name",
-    mobile: "Mobile",
-    programInterest: "Support needed",
-    message: "Child class / subject difficulty",
-    namePlaceholder: "നിങ്ങളുടെ പേര്",
-    mobilePlaceholder: "10-digit mobile number",
-    messagePlaceholder: "ഉദാ: Class 8, Maths basics weak",
-    programOptions: [
-      ["tuition", "One-to-One Tuition"],
-      ["remedial", "Remedial Classes"],
-      ["recorded_courses", "Recorded Courses"],
-      ["career_counseling", "Career Counseling"],
-      ["other", "Other"],
-    ] as [ProgramInterest, string][],
-    footerLine:
-      "കേരളത്തിലെ കുട്ടികൾക്ക് മലയാളം-friendly online tuition and remedial support.",
-    navigation: "Navigation",
-    legal: "Legal",
-    connect: "Connect",
-  },
+  }
 } as const;
 
 function formatPrice(price: number): string {
@@ -375,8 +248,7 @@ function TeacherAvatar({
 }
 
 export function LandingPage({ courses }: { courses: PublicCourse[] }) {
-  const { locale } = useLanguage();
-  const c = { ...copy.en, ...copy[locale] } as typeof copy.en;
+  const c = copy.en;
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loadingTeachers, setLoadingTeachers] = useState(true);
   const [founderImageFailed, setFounderImageFailed] = useState(false);
@@ -476,34 +348,20 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
   }
 
   function buildWhatsAppMessage() {
-    const lines =
-      locale === "ml"
-        ? [
-            "Hi Motiva Edus, free learning gap check വേണം.",
-            name ? `Parent: ${name}` : null,
-            mobile ? `Mobile: ${mobile}` : null,
-            childName ? `Child: ${childName}` : null,
-            childClass ? `Class: ${childClass}` : null,
-            subjectConcern ? `Difficulty: ${subjectConcern}` : null,
-            callbackSlot ? `Callback time: ${callbackSlot}` : null,
-            contactPreference ? `Contact: ${contactPreference}` : null,
-            message ? `Note: ${message}` : null,
-          ]
-        : [
-            c.whatsappPrefillIntro,
-            name ? `Parent: ${name}` : null,
-            mobile ? `Mobile: ${mobile}` : null,
-            childName ? `Child: ${childName}` : null,
-            childClass ? `Class: ${childClass}` : null,
-            subjectConcern ? `Difficulty: ${subjectConcern}` : null,
-            callbackSlot ? `Callback time: ${callbackSlot}` : null,
-            contactPreference ? `Contact: ${contactPreference}` : null,
-            message ? `Note: ${message}` : null,
-          ];
+    const lines = [
+      c.whatsappPrefillIntro,
+      name ? `Parent: ${name}` : null,
+      mobile ? `Mobile: ${mobile}` : null,
+      childName ? `Child: ${childName}` : null,
+      childClass ? `Class: ${childClass}` : null,
+      subjectConcern ? `Difficulty: ${subjectConcern}` : null,
+      callbackSlot ? `Callback time: ${callbackSlot}` : null,
+      contactPreference ? `Contact: ${contactPreference}` : null,
+      message ? `Note: ${message}` : null,
+    ];
 
     return lines.filter(Boolean).join("\n");
   }
-
   return (
     <main className="w-full overflow-x-hidden bg-white">
       <section className="relative min-h-[86vh] overflow-hidden bg-[#0A1F33] text-white">
@@ -1181,3 +1039,5 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
     </main>
   );
 }
+
+

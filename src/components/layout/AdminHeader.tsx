@@ -6,7 +6,6 @@ import {
   adminTitleKeyForPath,
 } from "@/components/admin/admin-nav-config";
 import { useLanguage } from "@/components/providers/LanguageProvider";
-import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import {
   clearSession,
   getAuthToken,
@@ -84,7 +83,6 @@ export function AdminHeader() {
         </h1>
 
         <div className="flex shrink-0 items-center gap-4">
-          <LanguageToggle variant="compact" />
           <div className="flex min-w-0 items-center gap-2 border-l border-neutral-200 pl-4">
             <span
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-200 text-xs font-semibold text-gray-700"
