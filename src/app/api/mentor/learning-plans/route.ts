@@ -50,11 +50,14 @@ function parseSubjects(value: unknown) {
     .filter((subject): subject is { subjectName: string; dailyTargetMinutes: number; notes: string } => subject !== null);
 }
 
-async function verifyMentorStudent(studentId: string, mentorId: string) {
+async function verifyMentorStudent(
+  studentId: string,
+  actor: { id: string; role: string },
+) {
   return prisma.studentAccount.findFirst({
     where: {
       id: studentId,
-      mentorId,
+      ...(actor.role === "admin" ? {} : { mentorId: actor.id }),
     },
     select: {
       id: true,
@@ -112,7 +115,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Add at least one subject" }, { status: 400 });
   }
 
-  const student = await verifyMentorStudent(studentId, auth.payload.sub);
+  const student = await verifyMentorStudent(studentId, {
+    id: auth.payload.sub,
+    role: auth.payload.role,
+  });
   if (!student) {
     return NextResponse.json({ error: "Student not found" }, { status: 404 });
   }
@@ -182,7 +188,10 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Learning plan not found" }, { status: 404 });
   }
 
-  const student = await verifyMentorStudent(studentId, auth.payload.sub);
+  const student = await verifyMentorStudent(studentId, {
+    id: auth.payload.sub,
+    role: auth.payload.role,
+  });
   if (!student) {
     return NextResponse.json({ error: "Student not found" }, { status: 404 });
   }

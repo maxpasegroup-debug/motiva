@@ -45,18 +45,36 @@ function assertProductionEnv() {
   }
 }
 
+function runStep(label, command, args) {
+  console.log(`[startup] ${label}...`);
+  const result = spawnSync(command, args, {
+    env: process.env,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
+  if (result.status !== 0) {
+    console.error(`[startup] ${label} failed.`);
+    process.exit(result.status ?? 1);
+  }
+}
+
 function main() {
   assertProductionEnv();
 
   if (shouldEnforceProductionChecks()) {
     const verify = path.join(__dirname, "verify-db.cjs");
-    const db = spawnSync(process.execPath, [verify], {
-      env: process.env,
-      stdio: "inherit",
-    });
-    if (db.status !== 0) {
-      process.exit(db.status ?? 1);
-    }
+    runStep("Checking database connection", process.execPath, [
+      verify,
+      "--connection-only",
+    ]);
+    runStep("Applying Prisma migrations", "npx", ["prisma", "migrate", "deploy"]);
+    runStep("Reconciling Prisma schema", "npx", [
+      "prisma",
+      "db",
+      "push",
+      "--skip-generate",
+    ]);
+    runStep("Verifying database schema", process.execPath, [verify]);
   }
 
   const nextCli = path.join(

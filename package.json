@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "node scripts/railway-start.cjs",
     "lint": "next lint",
-    "health-check": "npx ts-node --project tsconfig.json scripts/health-check.ts",
+    "health-check": "npx tsx scripts/health-check.ts",
     "db:migrate": "node scripts/migrate.cjs",
     "db:seed-admin": "node scripts/seed-admin.cjs",
     "db:verify": "node scripts/verify-db.cjs",
