@@ -195,7 +195,17 @@ export default async function ParentDashboardPage() {
         </div>
 
         <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-neutral-900">Child&apos;s Learning Plan</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-xl font-semibold text-neutral-900">
+              Child&apos;s Learning Plan
+            </h2>
+            <Link
+              href="/parent/learning-report"
+              className="text-sm font-semibold text-neutral-900"
+            >
+              Open report
+            </Link>
+          </div>
           {snapshot.latestPlan ? (
             <div className="mt-5 space-y-4">
               <div className="rounded-2xl bg-neutral-50 p-4 text-sm text-neutral-700">

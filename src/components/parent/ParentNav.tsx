@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/parent", label: "Dashboard" },
   { href: "/parent/child-progress", label: "Child Progress" },
+  { href: "/parent/learning-report", label: "Learning Report" },
   { href: "/parent/notifications", label: "Notifications" },
 ];
 
@@ -14,7 +15,7 @@ export function ParentNav() {
 
   return (
     <nav className="rounded-3xl border border-neutral-200 bg-white p-2 shadow-sm">
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid gap-2 sm:grid-cols-4">
         {LINKS.map((link) => {
           const isActive =
             pathname === link.href || pathname?.startsWith(`${link.href}/`);

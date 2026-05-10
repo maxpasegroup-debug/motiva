@@ -177,6 +177,12 @@ export async function getParentChildProgress(userId: string) {
               progress: true,
             },
           },
+          learningPlans: {
+            orderBy: {
+              updatedAt: "desc",
+            },
+            take: 1,
+          },
         },
       },
     },
@@ -224,6 +230,7 @@ export async function getParentChildProgress(userId: string) {
   return {
     parent,
     child: parent.student,
+    latestPlan: parent.student.learningPlans[0] ?? null,
     attendance,
     mood,
     schedule,

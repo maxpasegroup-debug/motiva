@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRolesApi } from "@/server/auth/require-roles";
+import {
+  createParentNotification,
+  listParentIdsForStudentIds,
+} from "@/server/parents/parents-portal-db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,6 +63,22 @@ async function verifyMentorStudent(studentId: string, mentorId: string) {
   });
 }
 
+async function notifyParentPlanChanged(studentId: string, action: "created" | "updated") {
+  try {
+    const parentIds = await listParentIdsForStudentIds([studentId]);
+    const parentId = parentIds.get(studentId);
+    if (!parentId) return;
+    await createParentNotification(
+      parentId,
+      action === "created"
+        ? "A new learning plan is ready for your child. Please check the parent learning report."
+        : "Your child's learning plan was updated. Please check the parent learning report.",
+    );
+  } catch (error) {
+    console.error("[learning-plans parent notify]", error);
+  }
+}
+
 export async function POST(req: NextRequest) {
   const auth = await requireRolesApi(req, ["mentor", "admin"]);
   if (!auth.ok) return auth.response;
@@ -113,6 +133,8 @@ export async function POST(req: NextRequest) {
       createdBy: auth.payload.sub,
     },
   });
+
+  await notifyParentPlanChanged(studentId, "created");
 
   return NextResponse.json({ plan });
 }
@@ -179,6 +201,8 @@ export async function PUT(req: NextRequest) {
       batchId: student.batchId,
     },
   });
+
+  await notifyParentPlanChanged(studentId, "updated");
 
   return NextResponse.json({ plan: updatedPlan });
 }
