@@ -119,9 +119,15 @@ export async function ensureSeedAdminDb(): Promise<void> {
       const n = await countAdmins();
       if (n > 0) return;
 
-      const bootEmail =
-        process.env.ADMIN_BOOT_EMAIL ?? "admin@motiva.local";
-      const bootPassword = process.env.ADMIN_BOOT_PASSWORD ?? "admin1234";
+      const bootEmail = process.env.ADMIN_BOOT_EMAIL;
+      const bootPassword = process.env.ADMIN_BOOT_PASSWORD;
+
+      if (!bootEmail || !bootPassword) {
+        throw new Error(
+          "ADMIN_BOOT_EMAIL and ADMIN_BOOT_PASSWORD are required to seed the first admin.",
+        );
+      }
+
       const passwordHash = await bcrypt.hash(bootPassword, 10);
       const pool = getPool();
       const nm = adminDisplayName(normalizeEmail(bootEmail));

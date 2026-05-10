@@ -148,8 +148,8 @@ export function AdminSettingsPage() {
           used for login.
         </p>
         <p className="mt-6 text-base text-neutral-600">
-          Default admin access: mobile 9946930723, PIN 1234. Change this PIN after
-          first login.
+          First admin access must be created from secure production environment
+          variables or by an existing admin. No public default admin PIN is enabled.
         </p>
       </Card>
 

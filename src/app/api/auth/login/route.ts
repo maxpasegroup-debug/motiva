@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
+import { authLimiter, rateLimitRequest } from "@/lib/ratelimit";
 import {
   comparePin,
   isFourDigitPin,
@@ -39,6 +40,9 @@ function invalidLogin() {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = await rateLimitRequest(req, authLimiter, "auth-login");
+  if (limited) return limited;
+
   let body: unknown;
   try {
     body = await req.json();

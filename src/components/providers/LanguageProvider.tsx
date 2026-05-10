@@ -31,7 +31,7 @@ function readStoredLocale(): Locale | null {
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("en");
+  const [locale, setLocaleState] = useState<Locale>("ml");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {

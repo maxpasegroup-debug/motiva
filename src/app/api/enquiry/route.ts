@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
+import { publicLimiter, rateLimitRequest } from "@/lib/ratelimit";
 
 const enquirySchema = z.object({
   name: z.string().trim().min(2).max(100),
@@ -12,10 +13,33 @@ const enquirySchema = z.object({
     "career_counseling",
     "other",
   ]),
+  childName: z.string().trim().max(100).optional(),
+  childClass: z.string().trim().max(50).optional(),
+  subjectConcern: z.string().trim().max(160).optional(),
+  callbackSlot: z.string().trim().max(80).optional(),
+  contactPreference: z.enum(["call", "whatsapp", "either"]).optional(),
   message: z.string().max(1000).optional(),
 });
 
+function buildStructuredMessage(input: z.infer<typeof enquirySchema>) {
+  const lines = [
+    input.childName ? `Child: ${input.childName}` : null,
+    input.childClass ? `Class: ${input.childClass}` : null,
+    input.subjectConcern ? `Concern: ${input.subjectConcern}` : null,
+    input.callbackSlot ? `Callback slot: ${input.callbackSlot}` : null,
+    input.contactPreference
+      ? `Contact preference: ${input.contactPreference}`
+      : null,
+    input.message?.trim() ? `Note: ${input.message.trim()}` : null,
+  ].filter(Boolean);
+
+  return lines.length > 0 ? lines.join("\n") : null;
+}
+
 export async function POST(req: NextRequest) {
+  const limited = await rateLimitRequest(req, publicLimiter, "enquiry");
+  if (limited) return limited;
+
   let body: unknown;
   try {
     body = await req.json();
@@ -34,14 +58,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { name, mobile, programInterest, message } = parsed.data;
+  const { name, mobile, programInterest } = parsed.data;
+  const message = buildStructuredMessage(parsed.data);
 
   const enquiry = await prisma.enquiry.create({
     data: {
       name,
       mobile,
       programInterest,
-      message: message?.trim() || null,
+      message,
       status: "new",
     },
   });

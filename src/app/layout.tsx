@@ -14,7 +14,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Motiva Edus",
   description:
-    "Personal mentorship and structured learning—one-to-one tuition, group classes, and programs that build confident students.",
+    "Personal mentorship and structured learning for one-to-one tuition, remedial classes, and programs that build confident students.",
 };
 
 export default function RootLayout({

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { authLimiter, rateLimitRequest } from "@/lib/ratelimit";
 import { getSessionToken } from "@/server/auth/http-auth";
 import { verifyJwt } from "@/server/auth/jwt";
 import { hashPin, isFourDigitPin } from "@/server/auth/unified-auth";
 
 export async function POST(req: NextRequest) {
+  const limited = await rateLimitRequest(req, authLimiter, "set-new-pin");
+  if (limited) return limited;
+
   const token = getSessionToken(req);
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

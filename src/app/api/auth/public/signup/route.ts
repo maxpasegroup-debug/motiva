@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
+import { authLimiter, rateLimitRequest } from "@/lib/ratelimit";
 import {
   hashPin,
   isFourDigitPin,
@@ -26,6 +27,9 @@ const signupSchema = z
   });
 
 export async function POST(req: NextRequest) {
+  const limited = await rateLimitRequest(req, authLimiter, "public-signup");
+  if (limited) return limited;
+
   let body: unknown;
   try {
     body = await req.json();

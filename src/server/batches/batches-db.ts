@@ -2,32 +2,26 @@ import { getPool } from "@/server/db/pool";
 
 let tableReady: Promise<void> | null = null;
 
-async function teardownLmsArtifacts(pool: ReturnType<typeof getPool>): Promise<void> {
-  await pool.query(
-    `ALTER TABLE IF EXISTS batches DROP CONSTRAINT IF EXISTS batches_course_id_fkey`,
-  );
-  await pool.query(`DROP TABLE IF EXISTS course_progress CASCADE`);
-  await pool.query(`DROP TABLE IF EXISTS lessons CASCADE`);
-  await pool.query(`DROP TABLE IF EXISTS courses CASCADE`);
-  await pool.query(`DROP INDEX IF EXISTS idx_batches_course_id`);
-  await pool.query(`ALTER TABLE IF EXISTS batches DROP COLUMN IF EXISTS course_id`);
-}
-
 async function ensureBatchesTables(): Promise<void> {
   const pool = getPool();
-  await teardownLmsArtifacts(pool);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS batches (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name VARCHAR(512) NOT NULL,
       teacher_id VARCHAR(255) NOT NULL,
-      duration INTEGER NOT NULL CHECK (duration IN (12, 25)),
+      duration INTEGER NOT NULL CHECK (duration > 0),
       start_date DATE,
       unlocked_day INTEGER NOT NULL DEFAULT 1,
       completed_days INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  await pool.query(
+    `ALTER TABLE IF EXISTS batches DROP CONSTRAINT IF EXISTS batches_duration_check`,
+  );
+  await pool.query(
+    `ALTER TABLE IF EXISTS batches ADD CONSTRAINT batches_duration_check CHECK (duration > 0)`,
+  );
   await pool.query(
     `CREATE INDEX IF NOT EXISTS idx_batches_teacher_id ON batches (teacher_id)`,
   );
@@ -57,7 +51,7 @@ export type BatchRow = {
   id: string;
   name: string;
   teacher_id: string;
-  duration: 12 | 25;
+  duration: number;
   start_date: Date | null;
   unlocked_day: number;
   completed_days: number;
@@ -67,7 +61,7 @@ export type BatchRow = {
 export async function insertBatch(input: {
   name: string;
   teacher_id: string;
-  duration: 12 | 25;
+  duration: number;
   start_date?: string | null;
 }): Promise<{ id: string }> {
   await ensureTables();
@@ -96,7 +90,7 @@ export async function updateBatch(
   patch: {
     name?: string;
     teacher_id?: string;
-    duration?: 12 | 25;
+    duration?: number;
     start_date?: string | null;
   },
 ): Promise<boolean> {
@@ -281,7 +275,7 @@ export async function teacherMarkDayComplete(
 ): Promise<BatchRow | null> {
   const b = await verifyTeacherOwnsBatch(batchId, teacherId);
   if (!b) return null;
-  const d = b.duration as 12 | 25;
+  const d = b.duration;
   if (b.completed_days >= d) return b;
   if (b.completed_days >= b.unlocked_day) return b;
   const c = b.completed_days + 1;
@@ -299,7 +293,7 @@ export async function teacherUnlockNextDay(
 ): Promise<BatchRow | null> {
   const b = await verifyTeacherOwnsBatch(batchId, teacherId);
   if (!b) return null;
-  const d = b.duration as 12 | 25;
+  const d = b.duration;
   if (b.unlocked_day >= d) return b;
   if (b.completed_days < b.unlocked_day) return b;
   const u = Math.min(b.unlocked_day + 1, d);

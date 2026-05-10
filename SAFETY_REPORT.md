@@ -151,29 +151,19 @@ This report records the pre-change safety baseline. No application logic has bee
 ### Destructive SQL
 
 - `src/server/batches/batches-db.ts`
-  - `teardownLmsArtifacts()` runs before ensuring batch tables.
-  - Destructive statements found:
-    - Line 9: `DROP TABLE IF EXISTS course_progress CASCADE`
-    - Line 10: `DROP TABLE IF EXISTS lessons CASCADE`
-    - Line 11: `DROP TABLE IF EXISTS courses CASCADE`
-    - Line 13: `ALTER TABLE IF EXISTS batches DROP COLUMN IF EXISTS course_id`
-  - Risk: `DROP TABLE IF EXISTS courses CASCADE` can delete the Prisma-backed recorded courses table used by the current course system.
-  - Additional schema drift risk:
-    - Line 24 creates `batches.duration` with `CHECK (duration IN (12, 25))`.
-    - `prisma/schema.prisma` comments indicate duration is intended to be a plain `Int` where any number of days is valid.
+  - Phase 0 update: destructive LMS cleanup was removed.
+  - Phase 0 update: `batches.duration` now uses a positive integer check instead of a 12/25-only constraint.
 
 ### Hardcoded Credentials
 
 - `src/app/api/auth/internal/login/route.ts`
-  - Line 10: `DEFAULT_ADMIN_MOBILE = "9946930723"`
-  - Line 11: `DEFAULT_ADMIN_PIN = "1234"`
-  - Line 41: `ensureMobileAdminAccess()` auto-creates or upgrades this mobile number to admin access.
-  - Line 76: hardcoded local admin email `admin.9946930723@motiva.local`.
-  - Risk: this is effectively a production backdoor if deployed unchanged.
+  - Phase 0 update: legacy internal login redirects to the unified auth endpoint.
+  - Phase 0 update: first-admin bootstrap now requires `ADMIN_BOOT_EMAIL` and `ADMIN_BOOT_PASSWORD`; no fallback password is generated.
 
 ### Related Security Observations
 
-- `src/lib/ratelimit.ts` defines Upstash-backed limiters (`authLimiter`, `publicLimiter`, `apiLimiter`), but no usage was found in the app routes during inspection.
+- `src/lib/ratelimit.ts` defines Upstash-backed limiters (`authLimiter`, `publicLimiter`, `apiLimiter`).
+  - Phase 0 update: auth, enquiry, and payment POST routes now apply these limiters when Upstash is configured.
 - Auth is split across:
   - HttpOnly cookies: `motiva_admin_auth`, `motiva_user_auth`
   - Local storage token: `motiva-auth-token`

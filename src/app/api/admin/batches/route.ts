@@ -10,6 +10,11 @@ import { getDatabaseUrl } from "@/server/db/pool";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+function parseDuration(value: unknown): number {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isSafeInteger(n) && n > 0 ? n : 12;
+}
+
 export async function GET(req: NextRequest) {
   void req;
   const auth = await requireAdminApi(req);
@@ -68,8 +73,7 @@ export async function POST(req: NextRequest) {
   const o = body as Record<string, unknown>;
   const name = typeof o.name === "string" ? o.name.trim() : "";
   const teacher_id = typeof o.teacher_id === "string" ? o.teacher_id : "";
-  const durationRaw = o.duration;
-  const duration = durationRaw === 25 ? 25 : 12;
+  const duration = parseDuration(o.duration);
   const start_date =
     o.start_date === null || o.start_date === undefined
       ? null

@@ -14,6 +14,11 @@ export const dynamic = "force-dynamic";
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+function parseDuration(value: unknown): number | null {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isSafeInteger(n) && n > 0 ? n : null;
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } },
@@ -86,12 +91,13 @@ export async function PATCH(
   const patch: {
     name?: string;
     teacher_id?: string;
-    duration?: 12 | 25;
+    duration?: number;
     start_date?: string | null;
   } = {};
   if (typeof o.name === "string") patch.name = o.name;
   if (typeof o.teacher_id === "string") patch.teacher_id = o.teacher_id;
-  if (o.duration === 12 || o.duration === 25) patch.duration = o.duration;
+  const duration = parseDuration(o.duration);
+  if (duration !== null) patch.duration = duration;
   if (o.start_date === null || typeof o.start_date === "string") {
     patch.start_date = o.start_date as string | null;
   }

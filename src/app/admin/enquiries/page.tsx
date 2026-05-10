@@ -56,6 +56,7 @@ export default function AdminEnquiriesPage() {
                 <th className="px-4 py-3 font-medium">Name</th>
                 <th className="px-4 py-3 font-medium">Mobile</th>
                 <th className="px-4 py-3 font-medium">Program</th>
+                <th className="px-4 py-3 font-medium">Learning Check Details</th>
                 <th className="px-4 py-3 font-medium">Date</th>
                 <th className="px-4 py-3 font-medium">Status</th>
               </tr>
@@ -66,6 +67,9 @@ export default function AdminEnquiriesPage() {
                   <td className="px-4 py-3">{r.name}</td>
                   <td className="px-4 py-3">{r.mobile}</td>
                   <td className="px-4 py-3">{r.programInterest}</td>
+                  <td className="max-w-xs whitespace-pre-line px-4 py-3 text-neutral-700">
+                    {r.message || "No details shared"}
+                  </td>
                   <td className="px-4 py-3">
                     {new Date(r.createdAt).toLocaleString()}
                   </td>

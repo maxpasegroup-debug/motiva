@@ -1,26 +1,26 @@
-# Motiva Edus — Launch Checklist
+# Motiva Edus - Launch Checklist
 
 ## Railway Environment Variables (must be set before going live)
-- DATABASE_URL — Railway Postgres connection string (auto-set if services are linked)
-- JWT_SECRET — random string min 32 characters
-- NEXTAUTH_SECRET — random string min 32 characters
-- NEXTAUTH_URL — https://motivaedus.in or your Railway URL
-- ADMIN_BOOT_EMAIL — first admin email
-- ADMIN_BOOT_PASSWORD — first admin password
-- CLOUDINARY_CLOUD_NAME — from cloudinary.com dashboard
-- CLOUDINARY_API_KEY — from cloudinary.com dashboard
-- CLOUDINARY_API_SECRET — from cloudinary.com dashboard
-- RAZORPAY_KEY_ID — from razorpay.com dashboard (use live key for production)
-- RAZORPAY_KEY_SECRET — from razorpay.com dashboard
-- WHATSAPP_PHONE_NUMBER_ID — from Meta Business dashboard
-- WHATSAPP_ACCESS_TOKEN — from Meta Business dashboard
-- SENTRY_DSN — from sentry.io project settings
-- NEXT_PUBLIC_SENTRY_DSN — same as SENTRY_DSN
-- UPSTASH_REDIS_REST_URL — from upstash.com (optional but recommended)
-- UPSTASH_REDIS_REST_TOKEN — from upstash.com (optional but recommended)
+- DATABASE_URL - Railway Postgres connection string (auto-set if services are linked)
+- JWT_SECRET - random string min 32 characters
+- NEXTAUTH_SECRET - random string min 32 characters
+- NEXTAUTH_URL - https://motivaedus.in or your Railway URL
+- ADMIN_BOOT_EMAIL - first admin email
+- ADMIN_BOOT_PASSWORD - first admin password
+- CLOUDINARY_CLOUD_NAME - from cloudinary.com dashboard
+- CLOUDINARY_API_KEY - from cloudinary.com dashboard
+- CLOUDINARY_API_SECRET - from cloudinary.com dashboard
+- RAZORPAY_KEY_ID - from razorpay.com dashboard (use live key for production)
+- RAZORPAY_KEY_SECRET - from razorpay.com dashboard
+- WHATSAPP_PHONE_NUMBER_ID - from Meta Business dashboard
+- WHATSAPP_ACCESS_TOKEN - from Meta Business dashboard
+- SENTRY_DSN - from sentry.io project settings
+- NEXT_PUBLIC_SENTRY_DSN - same as SENTRY_DSN
+- UPSTASH_REDIS_REST_URL - from upstash.com (required for production rate limiting)
+- UPSTASH_REDIS_REST_TOKEN - from upstash.com (required for production rate limiting)
 
 ## Manual Steps Before Launch
-- [ ] Add icon-192.png and icon-512.png to public/ folder for PWA
+- [x] Add icon-192.png and icon-512.png to public/ folder for PWA
 - [ ] Add a real hero image to public/ if available (currently using gradient fallback)
 - [ ] Add founder photo to public/md.jpg if not already there
 - [ ] Set up Razorpay live account and replace test keys with live keys
@@ -34,22 +34,22 @@
 - [ ] Test Razorpay payment with a real card in test mode before switching to live
 
 ## Pre-Launch Test Checklist (run these on live site)
-- [ ] / — landing page loads, all 6 sections visible, animations work
-- [ ] /courses — public courses grid loads
-- [ ] /auth/public/signup — can create a public account
-- [ ] /auth/public/login — can login, redirects to /dashboard
-- [ ] /login — internal login works for admin username+PIN
-- [ ] /admin — admin dashboard loads
-- [ ] /admin/leads — can create a new lead, advance through pipeline steps
-- [ ] /admin/admissions/remedial — can create remedial admission
-- [ ] /admin/teachers — can add a teacher, photo uploads to Cloudinary
-- [ ] /admin/courses — can create a course with sections and videos
-- [ ] /mentor — mentor dashboard loads with assigned students
-- [ ] /student — student dashboard loads with attendance and courses
-- [ ] /parent — parent dashboard loads with child info
-- [ ] Enquiry form on landing page — submits successfully, appears in /admin/enquiries
-- [ ] Razorpay payment flow — test payment completes, lead status updates
-- [ ] WhatsApp credential delivery — sends message after account creation
+- [ ] / - landing page loads, all 6 sections visible, animations work
+- [ ] /courses - public courses grid loads
+- [ ] /auth/public/signup - can create a public account
+- [ ] /auth/public/login - can login, redirects to /dashboard
+- [ ] /login - internal login works for admin username+PIN
+- [ ] /admin - admin dashboard loads
+- [ ] /admin/leads - can create a new lead, advance through pipeline steps
+- [ ] /admin/admissions/remedial - can create remedial admission
+- [ ] /admin/teachers - can add a teacher, photo uploads to Cloudinary
+- [ ] /admin/courses - can create a course with sections and videos
+- [ ] /mentor - mentor dashboard loads with assigned students
+- [ ] /student - student dashboard loads with attendance and courses
+- [ ] /parent - parent dashboard loads with child info
+- [ ] Enquiry form on landing page - submits successfully, appears in /admin/enquiries
+- [ ] Razorpay payment flow - test payment completes, lead status updates
+- [ ] WhatsApp credential delivery - sends message after account creation
 
 ## Database Tables (21 total)
 admins, admission_requests, batches, batch_students, batch_progress,

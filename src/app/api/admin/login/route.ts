@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { authLimiter, rateLimitRequest } from "@/lib/ratelimit";
 import {
   comparePin,
   issueAuthToken,
@@ -16,6 +17,9 @@ function invalidLogin() {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = await rateLimitRequest(req, authLimiter, "admin-login");
+  if (limited) return limited;
+
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });

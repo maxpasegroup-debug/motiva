@@ -3,8 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { WHATSAPP_NUMBER, whatsappHref } from "@/components/marketing/whatsapp";
+import { whatsappHref } from "@/components/marketing/whatsapp";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 
 type PublicCourse = {
@@ -22,6 +21,15 @@ type Teacher = {
   photo: string | null;
 };
 
+type ProgramInterest =
+  | "tuition"
+  | "remedial"
+  | "recorded_courses"
+  | "career_counseling"
+  | "other";
+
+type ContactPreference = "call" | "whatsapp" | "either";
+
 const FOUNDER = {
   name: "Shafeeque Elettil",
   role: "Managing Director, Motiva Edus",
@@ -29,166 +37,304 @@ const FOUNDER = {
 };
 
 const HERO_CLASSROOM_IMAGE =
-  "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=2200&q=85";
+  "https://images.unsplash.com/photo-1503676382389-4809596d5290?auto=format&fit=crop&w=2200&q=85";
 
 const copy = {
   en: {
-    eyebrow: "Kerala online tuition + remedial support",
-    heroTitle: "Online tuition and confidence-building support for Kerala students",
+    eyebrow: "Malayalam-friendly online tuition for Kerala families",
+    heroTitle: "If your child is weak in basics, Motiva rebuilds confidence step by step",
     heroText:
-      "One-to-one classes, 12/25 day remedial plans, parent updates, and recorded lessons that help children rebuild basics and learn with confidence.",
-    primaryCta: "Book Free Consultation",
-    secondaryCta: "View Courses",
+      "We first understand the learning gap, then give personal classes, 12/25 day remedial support, daily parent updates, and a clear progress report parents can trust.",
+    primaryCta: "Book Free Learning Check",
+    whatsappCta: "Ask on WhatsApp",
+    secondaryCta: "See Offers",
+    heroNote: "No pressure admission. First we understand the child.",
     trust: [
       ["1:1", "Personal teacher attention"],
       ["12/25", "Focused remedial plans"],
-      ["Daily", "Class and progress follow-up"],
-      ["Malayalam", "Parent-friendly communication"],
+      ["Daily", "Parent progress updates"],
+      ["PIN", "Simple parent/student login"],
     ],
-    programsEyebrow: "Programs",
-    programsTitle: "Choose the support your child needs now",
-    programsText:
-      "Keep the offer clear for parents: academic support first, then confidence and career growth as add-ons.",
-    programCta: "Enquire",
-    coursesTitle: "Recorded growth courses",
+    parentPainTitle: "For parents worried about marks, basics, and confidence",
+    parentPainText:
+      "Many children are not lazy. They missed basics, feel shy to ask doubts, and slowly lose confidence. Motiva gives them a patient teacher, a small plan, and visible improvement.",
+    painPoints: [
+      "Child says yes, but does not understand the lesson",
+      "Maths, English, or science basics are weak",
+      "Parent does not know what happened in class",
+      "Student needs encouragement, not scolding",
+    ],
+    offersEyebrow: "Core offers",
+    offersTitle: "Choose one clear support path",
+    offersText:
+      "We keep the first decision simple. After the free learning check, our team recommends the right path.",
+    programCta: "Enquire for this",
+    bestFor: "Best for",
+    includes: "Includes",
+    priceLabel: "Fee clarity",
+    offers: [
+      {
+        id: "one-to-one",
+        marker: "1:1",
+        title: "One-to-One Tuition",
+        description:
+          "Personal online class matched to the student's school syllabus, pace, and confidence level.",
+        bestFor: "Regular subject support",
+        price: "Monthly fee shared after subject and frequency",
+        includes: ["Personal teacher", "Doubt clearing", "Parent follow-up"],
+        interest: "tuition" as ProgramInterest,
+        message: "I want to know about One-to-One Tuition.",
+      },
+      {
+        id: "remedial-12",
+        marker: "12",
+        title: "12 Day Remedial Plan",
+        description:
+          "A short, focused plan to identify weak basics and rebuild the first layer of confidence.",
+        bestFor: "Fast foundation repair",
+        price: "Starting fee shared after learning check",
+        includes: ["Gap check", "Daily practice", "Progress summary"],
+        interest: "remedial" as ProgramInterest,
+        message: "I want to know about the 12 Day Remedial Plan.",
+      },
+      {
+        id: "remedial-25",
+        marker: "25",
+        title: "25 Day Remedial Plan",
+        description:
+          "A deeper support path for students who need more time, repetition, correction, and parent visibility.",
+        bestFor: "Deeper learning gaps",
+        price: "Plan fee shared after learning check",
+        includes: ["Structured classes", "Teacher correction", "Final report"],
+        interest: "remedial" as ProgramInterest,
+        message: "I want to know about the 25 Day Remedial Plan.",
+      },
+    ],
+    reportEyebrow: "Parent visibility",
+    reportTitle: "Parents should not be blind after paying fees",
+    reportText:
+      "Every serious plan should show what the child attended, what improved, and what still needs practice.",
+    reportRows: [
+      ["Attendance", "9 / 12 days present"],
+      ["Current focus", "Fractions and word problems"],
+      ["Teacher note", "Understands with examples, needs daily practice"],
+      ["Next action", "15 minute home revision after class"],
+    ],
+    proofEyebrow: "Trust signals",
+    proofTitle: "Built for families who need clarity, not confusion",
+    proofCards: [
+      ["Malayalam support", "Parent conversations can happen in simple Malayalam."],
+      ["Human teacher", "Children get attention from real teachers, not only videos."],
+      ["WhatsApp first", "Parents can ask questions in the channel they already use."],
+      ["Progress record", "Attendance, payments, courses, and updates are tracked."],
+    ],
     teachersEyebrow: "Teachers",
-    teachersTitle: "Learn with experienced mentors and subject experts",
+    teachersTitle: "Parents can see who teaches their child",
     loadingTeachers: "Loading teachers...",
-    emptyTeachers: "Our expert team is coming soon.",
-    howEyebrow: "How it works",
-    howTitle: "A simple learning path parents can trust",
-    howSteps: [
-      ["Understand", "We listen to the parent and identify the student's learning gaps."],
-      ["Match", "The student is matched with a suitable teacher or remedial plan."],
-      ["Teach", "Classes focus on clarity, practice, correction, and confidence."],
-      ["Update", "Parents get steady follow-up so progress never feels invisible."],
-    ],
-    founderEyebrow: "About the Founder",
-    founderQuote: "We do not just teach. We build confidence and a better future.",
+    emptyTeachers: "Teacher profiles will appear here after the team adds them.",
+    founderEyebrow: "Founder trust",
+    founderQuote: "We do not just teach. We rebuild confidence and a better future.",
     founderBio:
-      "At Motiva Edus, every student matters. Our team is committed to clear teaching, steady encouragement, and practical paths that help learners grow with pride.",
+      "Motiva Edus is built for students who need patient teaching, steady encouragement, and a clear path parents can understand.",
     founderLink: "Read More",
-    readyTitle: "Ready to talk about your child?",
+    coursesTitle: "Recorded courses",
+    readyTitle: "Start with a free learning check",
     readyText:
-      "Share a few details. The Motiva team will continue the conversation on call or WhatsApp.",
+      "Share the child name, class, and subject difficulty. The Motiva team will continue on call or WhatsApp.",
+    funnelEyebrow: "Free learning gap check",
+    funnelPromise:
+      "Takes less than one minute. We use these details only to understand the child and call at a convenient time.",
     whatsapp: "WhatsApp",
+    whatsappAfterSubmit: "Send the same details on WhatsApp",
     enquirySubmit: "Send Enquiry",
     sending: "Sending...",
     success: "Thank you. We will contact you shortly.",
+    submittedTitle: "Learning check request received",
+    submittedText:
+      "Next: our counselor checks the details, calls in your selected time slot, and suggests the right tuition or remedial path.",
+    statusSteps: [
+      "Request received",
+      "Counselor call / WhatsApp reply",
+      "Free learning gap check",
+      "Recommended plan",
+    ],
     error: "Could not send enquiry.",
-    name: "Name",
+    name: "Parent name",
+    childName: "Child name",
+    childClass: "Child class",
+    subjectConcern: "Subject or difficulty",
+    callbackSlot: "Best callback time",
+    contactPreference: "Preferred contact",
     mobile: "Mobile",
-    programInterest: "Program Interest",
-    message: "Message (Optional)",
+    programInterest: "Support needed",
+    message: "Extra note",
     namePlaceholder: "Your name",
+    childNamePlaceholder: "Child name",
+    childClassPlaceholder: "Example: Class 8",
+    subjectConcernPlaceholder: "Example: Maths basics, English reading",
     mobilePlaceholder: "10-digit mobile number",
-    messagePlaceholder: "Tell us what you need help with",
-    footerLine: "Structured online tuition and growth programs for confident students.",
+    messagePlaceholder: "Anything the teacher should know",
+    callbackOptions: [
+      ["morning", "Morning"],
+      ["afternoon", "Afternoon"],
+      ["evening", "Evening"],
+      ["anytime", "Any time"],
+    ] as [string, string][],
+    contactOptions: [
+      ["call", "Call"],
+      ["whatsapp", "WhatsApp"],
+      ["either", "Either"],
+    ] as [ContactPreference, string][],
+    programOptions: [
+      ["tuition", "One-to-One Tuition"],
+      ["remedial", "Remedial Classes"],
+      ["recorded_courses", "Recorded Courses"],
+      ["career_counseling", "Career Counseling"],
+      ["other", "Other"],
+    ] as [ProgramInterest, string][],
+    whatsappPrefillIntro: "Hi Motiva Edus, I want a free learning gap check.",
+    explainersEyebrow: "60 second parent explainers",
+    explainersTitle: "Know the process before you give your number",
+    explainersText:
+      "These short parent-facing explainers make the offer clear before the counselor calls.",
+    explainers: [
+      ["45 sec", "How the free learning gap check works"],
+      ["50 sec", "What happens in a 12 day remedial plan"],
+      ["55 sec", "How parents receive progress updates"],
+    ],
+    footerLine:
+      "Malayalam-friendly online tuition and remedial support for confident Kerala students.",
     navigation: "Navigation",
     legal: "Legal",
     connect: "Connect",
   },
   ml: {
-    eyebrow: "കേരള ഓൺലൈൻ ട്യൂഷൻ + റിമീഡിയൽ സപ്പോർട്ട്",
-    heroTitle: "കേരള വിദ്യാർത്ഥികൾക്കായി ഓൺലൈൻ ട്യൂഷനും ആത്മവിശ്വാസ പിന്തുണയും",
+    eyebrow: "കേരളത്തിലെ കുടുംബങ്ങൾക്ക് മലയാളത്തിൽ മനസ്സിലാകുന്ന ഓൺലൈൻ ട്യൂഷൻ",
+    heroTitle: "കുട്ടിയുടെ അടിസ്ഥാനത്തിൽ കുറവ് ഉണ്ടെങ്കിൽ Motiva ആത്മവിശ്വാസം തിരികെ പണിയും",
     heroText:
-      "വൺ-ടു-വൺ ക്ലാസുകൾ, 12/25 ദിവസ റിമീഡിയൽ പ്ലാനുകൾ, പാരന്റ് അപ്ഡേറ്റുകൾ, റെക്കോർഡഡ് ലെസണുകൾ.",
-    primaryCta: "ഫ്രീ കൺസൾട്ടേഷൻ",
-    secondaryCta: "കോഴ്സുകൾ കാണുക",
+      "ആദ്യം കുട്ടിയുടെ പഠന ഗ്യാപ് മനസ്സിലാക്കും. പിന്നെ വ്യക്തിഗത ക്ലാസ്, 12/25 ദിവസ റിമീഡിയൽ സപ്പോർട്ട്, ദിവസവും രക്ഷിതാവിന് അപ്‌ഡേറ്റ്, വ്യക്തമായ പ്രോഗ്രസ് റിപ്പോർട്ട്.",
+    primaryCta: "ഫ്രീ ലേണിംഗ് ചെക്ക് ബുക്ക് ചെയ്യുക",
+    whatsappCta: "WhatsApp-ൽ ചോദിക്കുക",
+    secondaryCta: "ഓഫറുകൾ കാണുക",
+    heroNote: "അഡ്മിഷൻ സമ്മർദ്ദം ഇല്ല. ആദ്യം കുട്ടിയെ മനസ്സിലാക്കാം.",
     trust: [
-      ["1:1", "വ്യക്തിഗത ശ്രദ്ധ"],
-      ["12/25", "റിമീഡിയൽ പ്ലാനുകൾ"],
-      ["Daily", "പ്രോഗ്രസ് ഫോളോ-അപ്പ്"],
-      ["Malayalam", "പാരന്റ് കമ്മ്യൂണിക്കേഷൻ"],
+      ["1:1", "വ്യക്തിഗത അധ്യാപക ശ്രദ്ധ"],
+      ["12/25", "ഫോക്കസ് ചെയ്ത റിമീഡിയൽ പ്ലാൻ"],
+      ["Daily", "രക്ഷിതാവിന് പ്രോഗ്രസ് അപ്‌ഡേറ്റ്"],
+      ["PIN", "ലളിതമായ parent/student login"],
     ],
-    programsEyebrow: "പ്രോഗ്രാമുകൾ",
-    programsTitle: "നിങ്ങളുടെ കുട്ടിക്ക് ഇപ്പോൾ വേണ്ട പിന്തുണ തിരഞ്ഞെടുക്കുക",
-    programsText:
-      "ആദ്യം അക്കാദമിക് പിന്തുണ, പിന്നെ ആത്മവിശ്വാസവും കരിയർ വളർച്ചയും.",
-    programCta: "എൻക്വയർ",
-    coursesTitle: "റെക്കോർഡഡ് ഗ്രോത്ത് കോഴ്സുകൾ",
-    teachersEyebrow: "ടീച്ചേഴ്സ്",
-    teachersTitle: "അനുഭവസമ്പന്നരായ മെന്റർമാരോടും ടീച്ചർമാരോടും പഠിക്കുക",
-    loadingTeachers: "ടീച്ചർമാർ ലോഡ് ചെയ്യുന്നു...",
-    emptyTeachers: "ഞങ്ങളുടെ ടീം ഉടൻ വരുന്നു.",
-    howEyebrow: "രീതി",
-    howTitle: "പാരന്റുകൾക്ക് വിശ്വസിക്കാവുന്ന ലളിതമായ പഠനപാത",
-    howSteps: [
-      ["Understand", "വിദ്യാർത്ഥിയുടെ പഠനഗ്യാപ്പുകൾ ആദ്യം മനസ്സിലാക്കുന്നു."],
-      ["Match", "അനുയോജ്യമായ ടീച്ചറെയോ റിമീഡിയൽ പ്ലാനെയോ മാച്ച് ചെയ്യുന്നു."],
-      ["Teach", "ക്ലാരിറ്റി, പ്രാക്ടീസ്, കറക്ഷൻ, കോൺഫിഡൻസ് എന്നിവയിൽ ശ്രദ്ധ."],
-      ["Update", "പ്രോഗ്രസ് വ്യക്തമാകാൻ സ്ഥിരമായ പാരന്റ് ഫോളോ-അപ്പ്."],
+    parentPainTitle: "മാർക്ക്, അടിസ്ഥാന പഠനം, ആത്മവിശ്വാസം എന്നിവയിൽ വിഷമിക്കുന്ന രക്ഷിതാക്കൾക്ക്",
+    parentPainText:
+      "പല കുട്ടികളും മടിയന്മാർ അല്ല. അടിസ്ഥാനങ്ങൾ നഷ്ടപ്പെട്ടു, സംശയം ചോദിക്കാൻ മടി, പിന്നെ ആത്മവിശ്വാസം കുറയുന്നു. Motiva ക്ഷമയുള്ള അധ്യാപകൻ, ചെറിയ പ്ലാൻ, കാണാൻ കഴിയുന്ന പുരോഗതി നൽകുന്നു.",
+    painPoints: [
+      "കുട്ടി മനസ്സിലായി എന്ന് പറയുന്നു, പക്ഷേ പാഠം പിടിക്കുന്നില്ല",
+      "Maths, English, Science അടിസ്ഥാനങ്ങൾ ദുർബലം",
+      "ക്ലാസിൽ എന്ത് നടന്നു എന്ന് രക്ഷിതാവിന് അറിയില്ല",
+      "കുട്ടിക്ക് ശാസനം അല്ല, പ്രോത്സാഹനമാണ് വേണ്ടത്",
     ],
-    founderEyebrow: "Founder",
-    founderQuote: "ഞങ്ങൾ പഠിപ്പിക്കുന്നത് മാത്രമല്ല. ആത്മവിശ്വാസവും ഭാവിയും നിർമ്മിക്കുന്നു.",
+    offersEyebrow: "പ്രധാന ഓഫറുകൾ",
+    offersTitle: "ഒരു വ്യക്തമായ പഠന വഴി തിരഞ്ഞെടുക്കുക",
+    offersText:
+      "ആദ്യ തീരുമാനം ലളിതമാക്കുന്നു. ഫ്രീ ലേണിംഗ് ചെക്കിന് ശേഷം ശരിയായ പ്ലാൻ ടീം നിർദ്ദേശിക്കും.",
+    programCta: "ഇതിന് enquiry ചെയ്യുക",
+    bestFor: "ആർക്കാണ് നല്ലത്",
+    includes: "ഉൾപ്പെടുന്നത്",
+    priceLabel: "ഫീസ് വ്യക്തത",
+    offers: [
+      {
+        id: "one-to-one",
+        marker: "1:1",
+        title: "One-to-One Tuition",
+        description:
+          "സ്കൂൾ സിലബസ്, കുട്ടിയുടെ വേഗം, ആത്മവിശ്വാസം എന്നിവ അനുസരിച്ചുള്ള വ്യക്തിഗത ഓൺലൈൻ ക്ലാസ്.",
+        bestFor: "സ്ഥിരമായ subject support",
+        price: "Subject, frequency നോക്കി monthly fee അറിയിക്കും",
+        includes: ["Personal teacher", "Doubt clearing", "Parent follow-up"],
+        interest: "tuition" as ProgramInterest,
+        message: "One-to-One Tuition കുറിച്ച് അറിയണം.",
+      },
+      {
+        id: "remedial-12",
+        marker: "12",
+        title: "12 Day Remedial Plan",
+        description:
+          "കുട്ടിയുടെ അടിസ്ഥാന കുറവുകൾ കണ്ടെത്തി ആദ്യ ആത്മവിശ്വാസം തിരികെ കൊണ്ടുവരുന്ന ചെറിയ ഫോക്കസ് പ്ലാൻ.",
+        bestFor: "വേഗത്തിലുള്ള foundation repair",
+        price: "Learning check കഴിഞ്ഞ് starting fee അറിയിക്കും",
+        includes: ["Gap check", "Daily practice", "Progress summary"],
+        interest: "remedial" as ProgramInterest,
+        message: "12 Day Remedial Plan കുറിച്ച് അറിയണം.",
+      },
+      {
+        id: "remedial-25",
+        marker: "25",
+        title: "25 Day Remedial Plan",
+        description:
+          "കൂടുതൽ സമയം, ആവർത്തനം, correction, parent visibility ആവശ്യമായ കുട്ടികൾക്കുള്ള ഗൗരവമായ support path.",
+        bestFor: "കൂടുതൽ learning gap ഉള്ളവർ",
+        price: "Learning check കഴിഞ്ഞ് plan fee അറിയിക്കും",
+        includes: ["Structured classes", "Teacher correction", "Final report"],
+        interest: "remedial" as ProgramInterest,
+        message: "25 Day Remedial Plan കുറിച്ച് അറിയണം.",
+      },
+    ],
+    reportEyebrow: "രക്ഷിതാവിന് വ്യക്തത",
+    reportTitle: "ഫീസ് അടച്ച ശേഷം രക്ഷിതാവ് ഇരുട്ടിൽ ഇരിക്കരുത്",
+    reportText:
+      "കുട്ടി ക്ലാസിൽ വന്നോ, എന്ത് മെച്ചപ്പെട്ടു, ഇനി എന്ത് practice വേണം - ഇത് വ്യക്തമായി കാണണം.",
+    reportRows: [
+      ["Attendance", "9 / 12 days present"],
+      ["Current focus", "Fractions and word problems"],
+      ["Teacher note", "Examples കൊടുത്താൽ മനസ്സിലാക്കുന്നു, daily practice വേണം"],
+      ["Next action", "ക്ലാസ് കഴിഞ്ഞ് 15 minute home revision"],
+    ],
+    proofEyebrow: "വിശ്വാസം",
+    proofTitle: "കൺഫ്യൂഷൻ അല്ല, വ്യക്തത വേണ്ട കുടുംബങ്ങൾക്ക് വേണ്ടി",
+    proofCards: [
+      ["Malayalam support", "രക്ഷിതാവിനോട് ലളിതമായ മലയാളത്തിൽ സംസാരിക്കാം."],
+      ["Human teacher", "കുട്ടിക്ക് video മാത്രം അല്ല, real teacher attention ലഭിക്കും."],
+      ["WhatsApp first", "രക്ഷിതാക്കൾ ഉപയോഗിക്കുന്ന WhatsApp വഴിയും support."],
+      ["Progress record", "Attendance, payment, course, updates എല്ലാം track ചെയ്യും."],
+    ],
+    teachersEyebrow: "Teachers",
+    teachersTitle: "കുട്ടിയെ പഠിപ്പിക്കുന്നത് ആരാണെന്ന് രക്ഷിതാവിന് കാണാം",
+    loadingTeachers: "Teachers loading...",
+    emptyTeachers: "ടീം teacher profiles ചേർത്താൽ ഇവിടെ കാണാം.",
+    founderEyebrow: "Founder trust",
+    founderQuote: "ഞങ്ങൾ പഠിപ്പിക്കുന്നത് മാത്രം അല്ല. ആത്മവിശ്വാസവും ഭാവിയും പണിയുന്നു.",
     founderBio:
-      "Motiva Edus-ൽ ഓരോ വിദ്യാർത്ഥിയും പ്രധാനമാണ്. വ്യക്തമായ പഠനം, സ്ഥിരമായ പ്രോത്സാഹനം, പ്രായോഗിക വളർച്ചാപാതകൾ എന്നിവയാണ് ഞങ്ങളുടെ ശ്രദ്ധ.",
+      "ക്ഷമയുള്ള teaching, സ്ഥിരമായ encouragement, രക്ഷിതാവിന് മനസ്സിലാകുന്ന clear path - അതിനായാണ് Motiva Edus.",
     founderLink: "കൂടുതൽ വായിക്കുക",
-    readyTitle: "നിങ്ങളുടെ കുട്ടിയെക്കുറിച്ച് സംസാരിക്കാമോ?",
+    coursesTitle: "Recorded courses",
+    readyTitle: "ഫ്രീ learning check-ൽ നിന്ന് തുടങ്ങാം",
     readyText:
-      "കുറച്ച് വിവരങ്ങൾ ഷെയർ ചെയ്യൂ. Motiva ടീം കോൾ അല്ലെങ്കിൽ WhatsApp വഴി തുടരും.",
+      "കുട്ടിയുടെ പേര്, class, ബുദ്ധിമുട്ടുള്ള subject എന്നിവ share ചെയ്യുക. Motiva team call അല്ലെങ്കിൽ WhatsApp വഴി തുടരും.",
     whatsapp: "WhatsApp",
-    enquirySubmit: "എൻക്വയറി അയക്കുക",
+    enquirySubmit: "Enquiry അയക്കുക",
     sending: "അയക്കുന്നു...",
     success: "നന്ദി. ഞങ്ങൾ ഉടൻ ബന്ധപ്പെടും.",
-    error: "എൻക്വയറി അയക്കാൻ കഴിഞ്ഞില്ല.",
-    name: "പേര്",
-    mobile: "മൊബൈൽ",
-    programInterest: "പ്രോഗ്രാം",
-    message: "സന്ദേശം (Optional)",
+    error: "Enquiry അയക്കാൻ കഴിഞ്ഞില്ല.",
+    name: "Parent name",
+    mobile: "Mobile",
+    programInterest: "Support needed",
+    message: "Child class / subject difficulty",
     namePlaceholder: "നിങ്ങളുടെ പേര്",
     mobilePlaceholder: "10-digit mobile number",
-    messagePlaceholder: "നിങ്ങൾക്ക് എന്ത് സഹായമാണ് വേണ്ടത്?",
-    footerLine: "ആത്മവിശ്വാസമുള്ള വിദ്യാർത്ഥികൾക്കായി ഓൺലൈൻ ട്യൂഷനും ഗ്രോത്ത് പ്രോഗ്രാമുകളും.",
+    messagePlaceholder: "ഉദാ: Class 8, Maths basics weak",
+    programOptions: [
+      ["tuition", "One-to-One Tuition"],
+      ["remedial", "Remedial Classes"],
+      ["recorded_courses", "Recorded Courses"],
+      ["career_counseling", "Career Counseling"],
+      ["other", "Other"],
+    ] as [ProgramInterest, string][],
+    footerLine:
+      "കേരളത്തിലെ കുട്ടികൾക്ക് മലയാളം-friendly online tuition and remedial support.",
     navigation: "Navigation",
     legal: "Legal",
     connect: "Connect",
   },
 } as const;
-
-const programOptions = [
-  { value: "tuition", label: "One-to-One Tuition" },
-  { value: "remedial", label: "Remedial Classes" },
-  { value: "recorded_courses", label: "Recorded Courses" },
-  { value: "career_counseling", label: "Career Counseling" },
-  { value: "other", label: "Other" },
-];
-
-const programs = [
-  {
-    id: "one-to-one",
-    marker: "01",
-    title: "One-to-One Tuition",
-    description:
-      "Personal classes matched to the student's pace, school syllabus, and confidence level.",
-    interest: "tuition",
-  },
-  {
-    id: "remedial",
-    marker: "12/25",
-    title: "Remedial Classes",
-    description:
-      "Short, focused programs to rebuild foundations and close learning gaps quickly.",
-    interest: "remedial",
-  },
-  {
-    id: "public-speaking",
-    marker: "SP",
-    title: "Public Speaking",
-    description:
-      "Guided speaking practice for stage confidence, clarity, and self-expression.",
-    interest: "other",
-    message: "I am interested in Public Speaking Training.",
-  },
-  {
-    id: "career-counseling",
-    marker: "CG",
-    title: "Career Counseling",
-    description:
-      "Structured guidance to help students understand options and choose next steps.",
-    interest: "career_counseling",
-  },
-] as const;
 
 function formatPrice(price: number): string {
   if (price <= 0) return "Free";
@@ -211,7 +357,7 @@ function TeacherAvatar({
 
   if (!photo) {
     return (
-      <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#0B5ED7] text-2xl font-bold text-white">
+      <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-[#0B5ED7] text-xl font-bold text-white">
         {initial}
       </div>
     );
@@ -223,21 +369,31 @@ function TeacherAvatar({
       alt={name}
       width={96}
       height={96}
-      className="h-20 w-20 rounded-2xl object-cover"
+      className="h-16 w-16 rounded-lg object-cover"
     />
   );
 }
 
 export function LandingPage({ courses }: { courses: PublicCourse[] }) {
   const { locale } = useLanguage();
-  const c = copy[locale];
+  const c = { ...copy.en, ...copy[locale] } as typeof copy.en;
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loadingTeachers, setLoadingTeachers] = useState(true);
   const [founderImageFailed, setFounderImageFailed] = useState(false);
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
-  const [programInterest, setProgramInterest] = useState("tuition");
+  const [childName, setChildName] = useState("");
+  const [childClass, setChildClass] = useState("");
+  const [subjectConcern, setSubjectConcern] = useState("");
+  const [callbackSlot, setCallbackSlot] = useState("evening");
+  const [contactPreference, setContactPreference] =
+    useState<ContactPreference>("whatsapp");
+  const [programInterest, setProgramInterest] =
+    useState<ProgramInterest>("remedial");
   const [message, setMessage] = useState("");
+  const [submittedEnquiryId, setSubmittedEnquiryId] = useState<string | null>(
+    null,
+  );
   const [sending, setSending] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -267,6 +423,7 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
     setSending(true);
     setSuccessMessage(null);
     setErrorMessage(null);
+    setSubmittedEnquiryId(null);
 
     const response = await fetch("/api/enquiry", {
       method: "POST",
@@ -274,13 +431,18 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
       body: JSON.stringify({
         name,
         mobile,
+        childName,
+        childClass,
+        subjectConcern,
+        callbackSlot,
+        contactPreference,
         programInterest,
         message: message.trim() || undefined,
       }),
     });
 
     const json = (await response.json().catch(() => null)) as
-      | { error?: string }
+      | { error?: string; enquiryId?: string }
       | null;
 
     if (!response.ok) {
@@ -290,37 +452,77 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
     }
 
     setSuccessMessage(c.success);
+    setSubmittedEnquiryId(
+      json && "enquiryId" in json && typeof json.enquiryId === "string"
+        ? json.enquiryId
+        : "sent",
+    );
     setName("");
     setMobile("");
-    setProgramInterest("tuition");
+    setChildName("");
+    setChildClass("");
+    setSubjectConcern("");
+    setCallbackSlot("evening");
+    setContactPreference("whatsapp");
+    setProgramInterest("remedial");
     setMessage("");
     setSending(false);
   }
 
-  function openEnquiry(interest: string, presetMessage?: string) {
+  function openEnquiry(interest: ProgramInterest, presetMessage?: string) {
     setProgramInterest(interest);
-    if (presetMessage) setMessage(presetMessage);
+    if (presetMessage) setSubjectConcern(presetMessage);
     scrollToEnquiry();
+  }
+
+  function buildWhatsAppMessage() {
+    const lines =
+      locale === "ml"
+        ? [
+            "Hi Motiva Edus, free learning gap check വേണം.",
+            name ? `Parent: ${name}` : null,
+            mobile ? `Mobile: ${mobile}` : null,
+            childName ? `Child: ${childName}` : null,
+            childClass ? `Class: ${childClass}` : null,
+            subjectConcern ? `Difficulty: ${subjectConcern}` : null,
+            callbackSlot ? `Callback time: ${callbackSlot}` : null,
+            contactPreference ? `Contact: ${contactPreference}` : null,
+            message ? `Note: ${message}` : null,
+          ]
+        : [
+            c.whatsappPrefillIntro,
+            name ? `Parent: ${name}` : null,
+            mobile ? `Mobile: ${mobile}` : null,
+            childName ? `Child: ${childName}` : null,
+            childClass ? `Class: ${childClass}` : null,
+            subjectConcern ? `Difficulty: ${subjectConcern}` : null,
+            callbackSlot ? `Callback time: ${callbackSlot}` : null,
+            contactPreference ? `Contact: ${contactPreference}` : null,
+            message ? `Note: ${message}` : null,
+          ];
+
+    return lines.filter(Boolean).join("\n");
   }
 
   return (
     <main className="w-full overflow-x-hidden bg-white">
-      <section className="relative min-h-[82vh] overflow-hidden bg-[#091323] text-white">
+      <section className="relative min-h-[86vh] overflow-hidden bg-[#0A1F33] text-white">
         <Image
           src={HERO_CLASSROOM_IMAGE}
           alt=""
           fill
           priority
-          className="object-cover object-center opacity-55"
+          className="object-cover object-center opacity-42"
           sizes="100vw"
         />
         <div
-          className="absolute inset-0 bg-[linear-gradient(90deg,rgba(9,19,35,0.96)_0%,rgba(9,19,35,0.88)_45%,rgba(9,19,35,0.52)_100%)]"
+          className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,31,51,0.98)_0%,rgba(10,31,51,0.92)_52%,rgba(10,31,51,0.58)_100%)]"
           aria-hidden
         />
-        <div className="relative z-10 mx-auto grid min-h-[82vh] w-full max-w-6xl items-center gap-10 px-4 pb-16 pt-24 sm:px-6 lg:grid-cols-[1fr_0.72fr] lg:pt-28">
+
+        <div className="relative z-10 mx-auto grid min-h-[86vh] w-full max-w-6xl items-center gap-10 px-4 pb-14 pt-24 sm:px-6 lg:grid-cols-[1fr_0.68fr] lg:pt-28">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-sm backdrop-blur-md">
+            <div className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold shadow-sm backdrop-blur-md">
               <span className="h-2 w-2 rounded-full bg-[#F26A2E]" aria-hidden />
               {c.eyebrow}
             </div>
@@ -340,28 +542,58 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
               >
                 {c.primaryCta}
               </button>
+              <a
+                href={whatsappHref(c.heroText)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-12 items-center justify-center rounded-lg bg-[#25D366] px-6 py-3 text-base font-bold text-white shadow-lg transition hover:bg-[#20BD5A]"
+              >
+                {c.whatsappCta}
+              </a>
               <Link
-                href="/courses"
-                className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/60 bg-white/10 px-6 py-3 text-base font-bold text-white backdrop-blur-md transition hover:bg-white/20"
+                href="/#programs"
+                className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/55 bg-white/10 px-6 py-3 text-base font-bold text-white backdrop-blur-md transition hover:bg-white/20"
               >
                 {c.secondaryCta}
               </Link>
             </div>
+
+            <p className="mt-4 text-sm font-medium text-white/75">{c.heroNote}</p>
           </div>
 
-          <div className="hidden rounded-xl border border-white/18 bg-white/95 p-5 text-neutral-900 shadow-2xl lg:block">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#0B5ED7]">
-              Student Plan
-            </p>
+          <div className="rounded-xl border border-white/18 bg-white/95 p-5 text-neutral-900 shadow-2xl">
+            <div className="flex items-center gap-4 border-b border-neutral-200 pb-4">
+              {founderImageFailed ? (
+                <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-[#0B5ED7] text-2xl font-bold text-white">
+                  {FOUNDER.name.charAt(0)}
+                </div>
+              ) : (
+                <Image
+                  src={FOUNDER.photoPath}
+                  alt={FOUNDER.name}
+                  width={96}
+                  height={96}
+                  className="h-16 w-16 rounded-lg object-cover"
+                  onError={() => setFounderImageFailed(true)}
+                />
+              )}
+              <div>
+                <p className="text-sm font-bold text-neutral-900">{FOUNDER.name}</p>
+                <p className="mt-1 text-xs font-semibold text-neutral-500">
+                  {FOUNDER.role}
+                </p>
+              </div>
+            </div>
+
             <div className="mt-5 space-y-4">
               {[
-                ["Assess", "Find learning gaps"],
-                ["Plan", "Set class rhythm"],
-                ["Practice", "Correct and rebuild"],
-                ["Report", "Update parents"],
+                ["Check", "Find the real learning gap"],
+                ["Plan", "Choose 1:1, 12 day, or 25 day support"],
+                ["Teach", "Explain, practise, correct"],
+                ["Report", "Keep the parent updated"],
               ].map(([step, text]) => (
                 <div key={step} className="flex gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-sm font-black text-[#F26A2E]">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-xs font-black text-[#F26A2E]">
                     {step.slice(0, 2)}
                   </span>
                   <div>
@@ -378,7 +610,7 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
       <section className="border-y border-neutral-200 bg-neutral-50">
         <div className="mx-auto grid w-full max-w-6xl gap-3 px-4 py-5 sm:px-6 md:grid-cols-4">
           {c.trust.map(([value, label]) => (
-            <div key={label} className="rounded-xl bg-white p-4 shadow-sm">
+            <div key={label} className="rounded-lg bg-white p-4 shadow-sm">
               <p className="text-2xl font-extrabold text-[#0B5ED7]">{value}</p>
               <p className="mt-1 text-sm font-medium leading-5 text-neutral-600">
                 {label}
@@ -388,78 +620,155 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
         </div>
       </section>
 
-      <section id="programs" className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
-        <div className="grid gap-4 lg:grid-cols-[0.72fr_1fr] lg:items-end">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#0B5ED7]">
-              {c.programsEyebrow}
-            </p>
-            <h2 className="mt-3 text-3xl font-bold text-neutral-900 sm:text-4xl">
-              {c.programsTitle}
-            </h2>
-          </div>
-          <p className="max-w-2xl text-base leading-7 text-neutral-600 lg:justify-self-end">
-            {c.programsText}
+      <section className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-neutral-900 sm:text-4xl">
+            {c.parentPainTitle}
+          </h2>
+          <p className="mt-4 text-base leading-7 text-neutral-600">
+            {c.parentPainText}
           </p>
         </div>
-
-        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {programs.map((program, index) => (
-            <motion.article
-              id={program.id}
-              key={program.id}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.35, delay: index * 0.08 }}
-              className="flex h-full flex-col rounded-xl border border-neutral-200 bg-white p-6 shadow-sm"
+        <div className="grid gap-3 sm:grid-cols-2">
+          {c.painPoints.map((point) => (
+            <div
+              key={point}
+              className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-sm font-black text-[#0B5ED7]">
-                {program.marker}
-              </div>
-              <h3 className="mt-5 text-xl font-bold text-neutral-900">
-                {program.title}
-              </h3>
-              <p className="mt-3 flex-1 text-sm leading-6 text-neutral-600">
-                {program.description}
+              <p className="text-sm font-semibold leading-6 text-neutral-800">
+                {point}
               </p>
-              <button
-                type="button"
-                onClick={() =>
-                  openEnquiry(
-                    program.interest,
-                    "message" in program ? program.message : undefined,
-                  )
-                }
-                className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-200 px-4 py-3 text-sm font-bold text-neutral-900 transition hover:bg-neutral-50"
-              >
-                {c.programCta}
-              </button>
-            </motion.article>
+            </div>
           ))}
         </div>
       </section>
 
-      <section className="bg-[#F8FAFC] py-16">
+      <section id="programs" className="bg-[#F8FAFC] py-16">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+          <div className="grid gap-4 lg:grid-cols-[0.72fr_1fr] lg:items-end">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#0B5ED7]">
+                {c.offersEyebrow}
+              </p>
+              <h2 className="mt-3 text-3xl font-bold text-neutral-900 sm:text-4xl">
+                {c.offersTitle}
+              </h2>
+            </div>
+            <p className="max-w-2xl text-base leading-7 text-neutral-600 lg:justify-self-end">
+              {c.offersText}
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-5 lg:grid-cols-3">
+            {c.offers.map((program) => (
+              <article
+                id={program.id}
+                key={program.id}
+                className="flex h-full flex-col rounded-lg border border-neutral-200 bg-white p-6 shadow-sm"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-sm font-black text-[#0B5ED7]">
+                  {program.marker}
+                </div>
+                <h3 className="mt-5 text-xl font-bold text-neutral-900">
+                  {program.title}
+                </h3>
+                <p className="mt-3 text-sm leading-6 text-neutral-600">
+                  {program.description}
+                </p>
+                <div className="mt-5 space-y-4 rounded-lg bg-neutral-50 p-4">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">
+                      {c.bestFor}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-neutral-900">
+                      {program.bestFor}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">
+                      {c.includes}
+                    </p>
+                    <p className="mt-1 text-sm text-neutral-700">
+                      {program.includes.join(" + ")}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">
+                      {c.priceLabel}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-[#0B5ED7]">
+                      {program.price}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openEnquiry(program.interest, program.message)}
+                  className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-[#0B5ED7] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#094fb6]"
+                >
+                  {c.programCta}
+                </button>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#0B5ED7]">
+            {c.reportEyebrow}
+          </p>
+          <h2 className="mt-3 text-3xl font-bold text-neutral-900 sm:text-4xl">
+            {c.reportTitle}
+          </h2>
+          <p className="mt-4 text-base leading-7 text-neutral-600">
+            {c.reportText}
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-lg">
+          <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-500">
+                Sample progress report
+              </p>
+              <p className="mt-1 text-lg font-bold text-neutral-900">
+                12 Day Remedial Plan
+              </p>
+            </div>
+            <span className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700">
+              Active
+            </span>
+          </div>
+          <div className="mt-4 divide-y divide-neutral-100">
+            {c.reportRows.map(([label, value]) => (
+              <div key={label} className="grid gap-1 py-3 sm:grid-cols-[0.36fr_1fr]">
+                <p className="text-sm font-bold text-neutral-500">{label}</p>
+                <p className="text-sm font-semibold leading-6 text-neutral-900">
+                  {value}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-neutral-200 bg-neutral-50 py-16">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#0B5ED7]">
-            {c.howEyebrow}
+            {c.proofEyebrow}
           </p>
           <h2 className="mt-3 max-w-3xl text-3xl font-bold text-neutral-900 sm:text-4xl">
-            {c.howTitle}
+            {c.proofTitle}
           </h2>
           <div className="mt-8 grid gap-4 md:grid-cols-4">
-            {c.howSteps.map(([title, text], index) => (
+            {c.proofCards.map(([title, text]) => (
               <div
                 key={title}
-                className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm"
+                className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm"
               >
-                <p className="text-sm font-black text-[#F26A2E]">
-                  {String(index + 1).padStart(2, "0")}
-                </p>
-                <h3 className="mt-3 text-lg font-bold text-neutral-900">
-                  {title}
-                </h3>
+                <h3 className="text-base font-bold text-neutral-900">{title}</h3>
                 <p className="mt-2 text-sm leading-6 text-neutral-600">{text}</p>
               </div>
             ))}
@@ -467,18 +776,51 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
         </div>
       </section>
 
+      <section id="teachers" className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
+        <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#0B5ED7]">
+          {c.teachersEyebrow}
+        </p>
+        <h2 className="mt-3 max-w-3xl text-3xl font-bold text-neutral-900 sm:text-4xl">
+          {c.teachersTitle}
+        </h2>
+
+        {loadingTeachers ? (
+          <p className="mt-6 text-sm text-neutral-500">{c.loadingTeachers}</p>
+        ) : teachers.length === 0 ? (
+          <div className="mt-6 rounded-lg border border-dashed border-neutral-300 bg-neutral-50 p-6">
+            <p className="text-sm text-neutral-600">{c.emptyTeachers}</p>
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-4 md:grid-cols-3 xl:grid-cols-4">
+            {teachers.map((teacher) => (
+              <article
+                key={teacher.id}
+                className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm"
+              >
+                <TeacherAvatar name={teacher.name} photo={teacher.photo} />
+                <h3 className="mt-4 text-base font-bold text-neutral-900">
+                  {teacher.name}
+                </h3>
+                <p className="mt-1 text-sm font-semibold text-[#0B5ED7]">
+                  {teacher.subject}
+                </p>
+                <p className="mt-3 line-clamp-2 text-sm leading-6 text-neutral-600">
+                  {teacher.bio || "More details coming soon."}
+                </p>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
       {courses.length > 0 ? (
         <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
           <h2 className="text-3xl font-bold text-neutral-900">{c.coursesTitle}</h2>
           <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {courses.map((course, index) => (
-              <motion.article
+            {courses.map((course) => (
+              <article
                 key={course.id}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.35, delay: index * 0.08 }}
-                className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm"
+                className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm"
               >
                 <div className="relative aspect-video bg-neutral-100">
                   {course.thumbnail ? (
@@ -504,62 +846,17 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
                     {c.secondaryCta}
                   </Link>
                 </div>
-              </motion.article>
+              </article>
             ))}
           </div>
         </section>
       ) : null}
 
-      <section id="teachers" className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#0B5ED7]">
-          {c.teachersEyebrow}
-        </p>
-        <h2 className="mt-3 max-w-3xl text-3xl font-bold text-neutral-900 sm:text-4xl">
-          {c.teachersTitle}
-        </h2>
-
-        {loadingTeachers ? (
-          <p className="mt-6 text-sm text-neutral-500">{c.loadingTeachers}</p>
-        ) : teachers.length === 0 ? (
-          <p className="mt-6 text-sm text-neutral-600">{c.emptyTeachers}</p>
-        ) : (
-          <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-            {teachers.map((teacher, index) => (
-              <motion.article
-                key={teacher.id}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.35, delay: index * 0.08 }}
-                className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm"
-              >
-                <TeacherAvatar name={teacher.name} photo={teacher.photo} />
-                <h3 className="mt-4 text-base font-bold text-neutral-900">
-                  {teacher.name}
-                </h3>
-                <p className="mt-1 text-sm text-neutral-500">{teacher.subject}</p>
-                <p
-                  className="mt-3 text-sm leading-6 text-neutral-600"
-                  style={{
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {teacher.bio || "More details coming soon."}
-                </p>
-              </motion.article>
-            ))}
-          </div>
-        )}
-      </section>
-
       <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
-        <div className="grid items-center gap-8 lg:grid-cols-[0.86fr_1.14fr] lg:gap-12">
+        <div className="grid items-center gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:gap-12">
           <div className="flex justify-center lg:justify-start">
             {founderImageFailed ? (
-              <div className="flex h-72 w-72 items-center justify-center rounded-2xl bg-[#0B5ED7] text-7xl font-bold text-white shadow-lg">
+              <div className="flex h-72 w-72 items-center justify-center rounded-lg bg-[#0B5ED7] text-7xl font-bold text-white shadow-lg">
                 {FOUNDER.name.charAt(0)}
               </div>
             ) : (
@@ -568,7 +865,7 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
                 alt={FOUNDER.name}
                 width={420}
                 height={420}
-                className="h-auto w-full max-w-sm rounded-2xl object-cover shadow-xl"
+                className="h-auto w-full max-w-sm rounded-lg object-cover shadow-xl"
                 onError={() => setFounderImageFailed(true)}
               />
             )}
@@ -600,6 +897,44 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
         </div>
       </section>
 
+      <section className="border-y border-neutral-200 bg-[#F8FAFC] py-16">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#0B5ED7]">
+            {c.explainersEyebrow}
+          </p>
+          <div className="mt-3 grid gap-4 lg:grid-cols-[0.72fr_1fr] lg:items-end">
+            <h2 className="text-3xl font-bold text-neutral-900 sm:text-4xl">
+              {c.explainersTitle}
+            </h2>
+            <p className="max-w-2xl text-base leading-7 text-neutral-600 lg:justify-self-end">
+              {c.explainersText}
+            </p>
+          </div>
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            {c.explainers.map(([duration, title], index) => (
+              <div
+                key={title}
+                className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm"
+              >
+                <div className="flex aspect-video items-center justify-center bg-[#0A1F33] text-white">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-white/70 bg-white/10 text-lg font-black">
+                    {index + 1}
+                  </div>
+                </div>
+                <div className="p-5">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#F26A2E]">
+                    {duration}
+                  </p>
+                  <h3 className="mt-2 text-lg font-bold leading-6 text-neutral-900">
+                    {title}
+                  </h3>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="bg-neutral-950 py-16 text-white">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <h2 className="text-3xl font-bold">{c.readyTitle}</h2>
@@ -609,7 +944,7 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <a
-              href={`https://wa.me/${WHATSAPP_NUMBER}`}
+              href={whatsappHref(buildWhatsAppMessage())}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[#25D366] px-6 py-3 text-base font-bold text-white"
@@ -628,8 +963,17 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
           <form
             id="enquiry-form"
             onSubmit={submitEnquiry}
-            className="mt-8 grid gap-4 rounded-xl border border-white/15 bg-white/5 p-5 md:grid-cols-2"
+            className="mt-8 grid gap-4 rounded-lg border border-white/15 bg-white/5 p-5 md:grid-cols-2"
           >
+            <div className="md:col-span-2">
+              <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#8BD7FF]">
+                {c.funnelEyebrow}
+              </p>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/75">
+                {c.funnelPromise}
+              </p>
+            </div>
+
             <label className="flex flex-col gap-2 text-sm font-medium text-white">
               <span>{c.name}</span>
               <input
@@ -638,6 +982,15 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 required
+              />
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-medium text-white">
+              <span>{c.childName}</span>
+              <input
+                className="min-h-11 w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/60"
+                placeholder={c.childNamePlaceholder}
+                value={childName}
+                onChange={(event) => setChildName(event.target.value)}
               />
             </label>
             <label className="flex flex-col gap-2 text-sm font-medium text-white">
@@ -651,15 +1004,65 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
               />
             </label>
             <label className="flex flex-col gap-2 text-sm font-medium text-white">
+              <span>{c.childClass}</span>
+              <input
+                className="min-h-11 w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/60"
+                placeholder={c.childClassPlaceholder}
+                value={childClass}
+                onChange={(event) => setChildClass(event.target.value)}
+              />
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-medium text-white">
               <span>{c.programInterest}</span>
               <select
                 value={programInterest}
-                onChange={(event) => setProgramInterest(event.target.value)}
+                onChange={(event) =>
+                  setProgramInterest(event.target.value as ProgramInterest)
+                }
                 className="min-h-11 w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white"
               >
-                {programOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+                {c.programOptions.map(([value, label]) => (
+                  <option key={value} value={value} className="text-neutral-900">
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-medium text-white">
+              <span>{c.subjectConcern}</span>
+              <input
+                className="min-h-11 w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/60"
+                placeholder={c.subjectConcernPlaceholder}
+                value={subjectConcern}
+                onChange={(event) => setSubjectConcern(event.target.value)}
+              />
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-medium text-white">
+              <span>{c.callbackSlot}</span>
+              <select
+                value={callbackSlot}
+                onChange={(event) => setCallbackSlot(event.target.value)}
+                className="min-h-11 w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white"
+              >
+                {c.callbackOptions.map(([value, label]) => (
+                  <option key={value} value={value} className="text-neutral-900">
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-medium text-white">
+              <span>{c.contactPreference}</span>
+              <select
+                value={contactPreference}
+                onChange={(event) =>
+                  setContactPreference(event.target.value as ContactPreference)
+                }
+                className="min-h-11 w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white"
+              >
+                {c.contactOptions.map(([value, label]) => (
+                  <option key={value} value={value} className="text-neutral-900">
+                    {label}
                   </option>
                 ))}
               </select>
@@ -673,18 +1076,44 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
                 onChange={(event) => setMessage(event.target.value)}
               />
             </label>
-            <button
-              type="submit"
-              disabled={sending}
-              className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-white px-6 py-3 text-base font-bold text-[#0B5ED7] disabled:opacity-60 md:col-span-2"
-            >
-              {sending ? c.sending : c.enquirySubmit}
-            </button>
+            <div className="grid gap-3 md:col-span-2 md:grid-cols-2">
+              <button
+                type="submit"
+                disabled={sending}
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-white px-6 py-3 text-base font-bold text-[#0B5ED7] disabled:opacity-60"
+              >
+                {sending ? c.sending : c.enquirySubmit}
+              </button>
+              <a
+                href={whatsappHref(buildWhatsAppMessage())}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-[#25D366] px-6 py-3 text-base font-bold text-white"
+              >
+                {c.whatsappAfterSubmit}
+              </a>
+            </div>
 
             {successMessage ? (
-              <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 md:col-span-2">
-                {successMessage}
-              </p>
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4 text-emerald-900 md:col-span-2">
+                <p className="text-base font-bold">{c.submittedTitle}</p>
+                <p className="mt-1 text-sm leading-6">{c.submittedText}</p>
+                <ol className="mt-4 grid gap-2 sm:grid-cols-4">
+                  {c.statusSteps.map((step, index) => (
+                    <li
+                      key={step}
+                      className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs font-bold text-emerald-800"
+                    >
+                      {index + 1}. {step}
+                    </li>
+                  ))}
+                </ol>
+                {submittedEnquiryId ? (
+                  <p className="mt-3 text-xs font-semibold text-emerald-700">
+                    {successMessage}
+                  </p>
+                ) : null}
+              </div>
             ) : null}
 
             {errorMessage ? (

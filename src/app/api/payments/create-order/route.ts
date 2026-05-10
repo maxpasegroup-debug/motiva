@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
+import { apiLimiter, rateLimitRequest } from "@/lib/ratelimit";
 import razorpay from "@/lib/razorpay";
 import { requireRolesApi } from "@/server/auth/require-roles";
 
@@ -17,6 +18,9 @@ const createOrderSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const limited = await rateLimitRequest(req, apiLimiter, "payment-create-order");
+  if (limited) return limited;
+
   const auth = await requireRolesApi(req, ROLES);
   if (!auth.ok) return auth.response;
 
