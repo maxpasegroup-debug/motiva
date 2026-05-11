@@ -38,6 +38,16 @@ const FOUNDER = {
 const HERO_CLASSROOM_IMAGE =
   "https://images.unsplash.com/photo-1503676382389-4809596d5290?auto=format&fit=crop&w=2200&q=85";
 
+const HERO_STUDENTS_IMAGE =
+  "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&w=900&q=85";
+
+const LEARNING_IMAGE_1 =
+  "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=800&q=80";
+const LEARNING_IMAGE_2 =
+  "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80";
+const LEARNING_IMAGE_3 =
+  "https://images.unsplash.com/photo-1577896852618-301be0011c6b?auto=format&fit=crop&w=800&q=80";
+
 const copy = {
   en: {
     eyebrow: "Parent-friendly online tuition for Kerala families",
@@ -219,33 +229,6 @@ function scrollToEnquiry() {
   target?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function TeacherAvatar({
-  name,
-  photo,
-}: {
-  name: string;
-  photo: string | null;
-}) {
-  const initial = name.trim().charAt(0).toUpperCase() || "M";
-
-  if (!photo) {
-    return (
-      <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-[#0B5ED7] text-xl font-bold text-white">
-        {initial}
-      </div>
-    );
-  }
-
-  return (
-    <Image
-      src={photo}
-      alt={name}
-      width={96}
-      height={96}
-      className="h-16 w-16 rounded-lg object-cover"
-    />
-  );
-}
 
 export function LandingPage({ courses }: { courses: PublicCourse[] }) {
   const c = copy.en;
@@ -363,6 +346,20 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
     return lines.filter(Boolean).join("\n");
   }
   return (
+    <>
+      <style>{`
+        @keyframes marquee-rtl {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-marquee-rtl {
+          animation: marquee-rtl 35s linear infinite;
+          will-change: transform;
+        }
+        .animate-marquee-rtl:hover {
+          animation-play-state: paused;
+        }
+      `}</style>
     <main className="w-full overflow-x-hidden bg-white">
       <section className="relative min-h-[86vh] overflow-hidden bg-[#0A1F33] text-white">
         <Image
@@ -419,45 +416,28 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
             <p className="mt-4 text-sm font-medium text-white/75">{c.heroNote}</p>
           </div>
 
-          <div className="rounded-xl border border-white/18 bg-white/95 p-5 text-neutral-900 shadow-2xl">
-            <div className="flex items-center gap-4 border-b border-neutral-200 pb-4">
-              {founderImageFailed ? (
-                <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-[#0B5ED7] text-2xl font-bold text-white">
-                  {FOUNDER.name.charAt(0)}
-                </div>
-              ) : (
-                <Image
-                  src={FOUNDER.photoPath}
-                  alt={FOUNDER.name}
-                  width={96}
-                  height={96}
-                  className="h-16 w-16 rounded-lg object-cover"
-                  onError={() => setFounderImageFailed(true)}
-                />
-              )}
-              <div>
-                <p className="text-sm font-bold text-neutral-900">{FOUNDER.name}</p>
-                <p className="mt-1 text-xs font-semibold text-neutral-500">
-                  {FOUNDER.role}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-5 space-y-4">
+          <div className="relative overflow-hidden rounded-xl shadow-2xl" style={{ minHeight: "360px" }}>
+            <Image
+              src={HERO_STUDENTS_IMAGE}
+              alt="Students learning at Motiva Edus"
+              fill
+              className="object-cover object-center"
+              sizes="(max-width: 1024px) 100vw, 40vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0A1F33]/90 via-[#0A1F33]/40 to-transparent" />
+            <div className="absolute bottom-4 left-4 right-4 grid grid-cols-2 gap-2">
               {[
-                ["Check", "Find the real learning gap"],
-                ["Plan", "Choose 1:1, 12 day, or 25 day support"],
-                ["Teach", "Explain, practise, correct"],
-                ["Report", "Keep the parent updated"],
-              ].map(([step, text]) => (
-                <div key={step} className="flex gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-xs font-black text-[#F26A2E]">
-                    {step.slice(0, 2)}
-                  </span>
-                  <div>
-                    <p className="text-sm font-bold">{step}</p>
-                    <p className="text-sm text-neutral-600">{text}</p>
-                  </div>
+                ["1:1", "Personal Teacher"],
+                ["12 / 25", "Day Plans"],
+                ["Daily", "Parent Updates"],
+                ["Free", "Learning Check"],
+              ].map(([value, label]) => (
+                <div
+                  key={label}
+                  className="rounded-lg border border-white/20 bg-white/15 p-2.5 backdrop-blur-md"
+                >
+                  <p className="text-lg font-extrabold text-white">{value}</p>
+                  <p className="text-xs text-white/80">{label}</p>
                 </div>
               ))}
             </div>
@@ -634,43 +614,6 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
         </div>
       </section>
 
-      <section id="teachers" className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#0B5ED7]">
-          {c.teachersEyebrow}
-        </p>
-        <h2 className="mt-3 max-w-3xl text-3xl font-bold text-neutral-900 sm:text-4xl">
-          {c.teachersTitle}
-        </h2>
-
-        {loadingTeachers ? (
-          <p className="mt-6 text-sm text-neutral-500">{c.loadingTeachers}</p>
-        ) : teachers.length === 0 ? (
-          <div className="mt-6 rounded-lg border border-dashed border-neutral-300 bg-neutral-50 p-6">
-            <p className="text-sm text-neutral-600">{c.emptyTeachers}</p>
-          </div>
-        ) : (
-          <div className="mt-8 grid gap-4 md:grid-cols-3 xl:grid-cols-4">
-            {teachers.map((teacher) => (
-              <article
-                key={teacher.id}
-                className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm"
-              >
-                <TeacherAvatar name={teacher.name} photo={teacher.photo} />
-                <h3 className="mt-4 text-base font-bold text-neutral-900">
-                  {teacher.name}
-                </h3>
-                <p className="mt-1 text-sm font-semibold text-[#0B5ED7]">
-                  {teacher.subject}
-                </p>
-                <p className="mt-3 line-clamp-2 text-sm leading-6 text-neutral-600">
-                  {teacher.bio || "More details coming soon."}
-                </p>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-
       {courses.length > 0 ? (
         <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
           <h2 className="text-3xl font-bold text-neutral-900">{c.coursesTitle}</h2>
@@ -755,37 +698,107 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
         </div>
       </section>
 
+      <section id="teachers" className="overflow-hidden border-y border-neutral-200 bg-[#F0F4FF] py-14">
+        <div className="mx-auto mb-8 w-full max-w-6xl px-4 sm:px-6">
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#0B5ED7]">
+            {c.teachersEyebrow}
+          </p>
+          <h2 className="mt-3 max-w-3xl text-3xl font-bold text-neutral-900 sm:text-4xl">
+            {c.teachersTitle}
+          </h2>
+        </div>
+
+        {loadingTeachers ? (
+          <p className="px-6 text-sm text-neutral-500">{c.loadingTeachers}</p>
+        ) : teachers.length === 0 ? (
+          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+            <div className="rounded-lg border border-dashed border-neutral-300 bg-white/60 p-6">
+              <p className="text-sm text-neutral-600">{c.emptyTeachers}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="relative flex overflow-hidden">
+            <div className="animate-marquee-rtl flex gap-5">
+              {[...teachers, ...teachers].map((teacher, idx) => (
+                <div
+                  key={`${teacher.id}-${idx}`}
+                  className="flex w-44 flex-shrink-0 flex-col items-center rounded-xl border border-neutral-200 bg-white p-4 text-center shadow-sm"
+                >
+                  {teacher.photo ? (
+                    <Image
+                      src={teacher.photo}
+                      alt={teacher.name}
+                      width={80}
+                      height={80}
+                      className="h-20 w-20 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#0B5ED7] text-2xl font-bold text-white">
+                      {teacher.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <h3 className="mt-3 text-sm font-bold leading-5 text-neutral-900">
+                    {teacher.name}
+                  </h3>
+                  <p className="mt-1 text-xs font-semibold text-[#0B5ED7]">
+                    {teacher.subject}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+
       <section className="border-y border-neutral-200 bg-[#F8FAFC] py-16">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#0B5ED7]">
-            {c.explainersEyebrow}
+            Learning that matters
           </p>
           <div className="mt-3 grid gap-4 lg:grid-cols-[0.72fr_1fr] lg:items-end">
             <h2 className="text-3xl font-bold text-neutral-900 sm:text-4xl">
-              {c.explainersTitle}
+              Where students rediscover confidence
             </h2>
             <p className="max-w-2xl text-base leading-7 text-neutral-600 lg:justify-self-end">
-              {c.explainersText}
+              Every child learns differently. Motiva teachers take the time to find the right approach —
+              building basics, clearing doubts, and showing visible results to parents.
             </p>
           </div>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {c.explainers.map(([duration, title], index) => (
+            {[
+              {
+                image: LEARNING_IMAGE_1,
+                tag: "1:1 Attention",
+                title: "Every child gets a personal teacher",
+                text: "No batch confusion. The teacher focuses on one child at a time, at their own pace.",
+              },
+              {
+                image: LEARNING_IMAGE_2,
+                tag: "Clear Progress",
+                title: "Parents see what changed each week",
+                text: "Attendance records, teacher notes, and next steps — all in one report.",
+              },
+              {
+                image: LEARNING_IMAGE_3,
+                tag: "Confidence First",
+                title: "From fear to curiosity in small steps",
+                text: "Motiva teachers start with what the student knows, then build steadily forward.",
+              },
+            ].map(({ image, tag, title, text }) => (
               <div
                 key={title}
-                className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm"
+                className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm"
               >
-                <div className="flex aspect-video items-center justify-center bg-[#0A1F33] text-white">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-white/70 bg-white/10 text-lg font-black">
-                    {index + 1}
-                  </div>
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <Image src={image} alt={title} fill className="object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <span className="absolute bottom-3 left-3 rounded-full bg-[#0B5ED7] px-3 py-1 text-xs font-bold text-white">
+                    {tag}
+                  </span>
                 </div>
                 <div className="p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#F26A2E]">
-                    {duration}
-                  </p>
-                  <h3 className="mt-2 text-lg font-bold leading-6 text-neutral-900">
-                    {title}
-                  </h3>
+                  <h3 className="text-base font-bold text-neutral-900">{title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-neutral-600">{text}</p>
                 </div>
               </div>
             ))}
@@ -1037,6 +1050,7 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
         </p>
       </footer>
     </main>
+    </>
   );
 }
 
