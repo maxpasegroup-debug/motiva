@@ -9,7 +9,6 @@ import {
   PanelLeftOpen,
   Search,
 } from "lucide-react";
-import { Breadcrumbs } from "@/components/admin/Breadcrumbs";
 import { CommandPalette } from "@/components/admin/CommandPalette";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { clearSession } from "@/lib/session";
@@ -73,8 +72,10 @@ export function Topbar({
         </button>
 
         <div className="min-w-0 flex-1">
-          <Breadcrumbs />
-          <h1 className="mt-0.5 truncate text-lg font-semibold text-neutral-950">{title}</h1>
+          <h1 className="truncate text-lg font-semibold text-neutral-950">{title}</h1>
+          <p className="mt-0.5 hidden truncate text-xs text-neutral-500 sm:block">
+            Simple daily management for Motiva
+          </p>
         </div>
 
         <button
@@ -83,7 +84,7 @@ export function Topbar({
           className="hidden min-w-[18rem] max-w-md flex-1 items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-left text-sm text-neutral-500 hover:bg-neutral-100 lg:flex"
         >
           <Search className="h-4 w-4 shrink-0" aria-hidden />
-          <span className="truncate">Search students, leads, payments...</span>
+          <span className="truncate">Search admin pages...</span>
         </button>
 
         <NotificationBell />

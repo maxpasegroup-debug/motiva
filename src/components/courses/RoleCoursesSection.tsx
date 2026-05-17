@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { courseIsVisibleToAudience } from "@/lib/recorded-courses";
 
 type Course = {
   id: string;
@@ -29,7 +30,7 @@ export function RoleCoursesSection({
   role,
   heading,
 }: {
-  role: "student" | "parent" | "mentor";
+  role: "student" | "parent" | "mentor" | "teacher";
   heading: string;
 }) {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -71,7 +72,7 @@ export function RoleCoursesSection({
   }, [load]);
 
   const filtered = useMemo(
-    () => courses.filter((c) => c.targetRole === role || c.targetRole === "all"),
+    () => courses.filter((c) => courseIsVisibleToAudience(c.targetRole, role)),
     [courses, role],
   );
 
@@ -137,7 +138,7 @@ export function RoleCoursesSection({
                   {role === "student" ? (
                     <>
                       <p className="text-xs font-medium text-neutral-700">
-                        {enrolled ? `Enrolled • ${progress}%` : "Not enrolled"}
+                        {enrolled ? `Enrolled - ${progress}%` : "Not enrolled"}
                       </p>
                       {enrolled ? (
                         <>
@@ -149,7 +150,7 @@ export function RoleCoursesSection({
                           </div>
                           <Link
                             href={`/dashboard/courses/${course.id}`}
-                            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-50"
+                            className="inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-50 sm:w-auto"
                           >
                             Continue
                           </Link>
@@ -159,7 +160,7 @@ export function RoleCoursesSection({
                           type="button"
                           onClick={() => enroll(course.id)}
                           disabled={busyId === course.id}
-                          className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                          className="inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60 sm:w-auto"
                         >
                           {busyId === course.id ? "Enrolling..." : "Enroll"}
                         </button>
@@ -168,7 +169,7 @@ export function RoleCoursesSection({
                   ) : (
                     <Link
                       href={`/courses/${course.id}`}
-                      className="inline-flex min-h-10 items-center justify-center rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-50"
+                      className="inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-50 sm:w-auto"
                     >
                       View course
                     </Link>

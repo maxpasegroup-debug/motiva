@@ -13,7 +13,7 @@ export function StaffPortalShell({ allow, children }: Props) {
   return (
     <RoleGate allow={allow}>
       <AuthenticatedHeader />
-      <div className="mx-auto w-full max-w-3xl px-4 pb-12 pt-6 sm:px-6 sm:pb-16 sm:pt-8">
+      <div className="mx-auto w-full max-w-6xl px-4 pb-12 pt-6 sm:px-6 sm:pb-16 sm:pt-8">
         {children}
       </div>
     </RoleGate>

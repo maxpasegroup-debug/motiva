@@ -1,4 +1,10 @@
 import Link from "next/link";
+import {
+  BookOpenCheck,
+  ClipboardList,
+  PlayCircle,
+  type LucideIcon,
+} from "lucide-react";
 import { parseLearningPlanSubjects } from "@/lib/mentor";
 import {
   formatPercentage,
@@ -6,6 +12,7 @@ import {
   getAttendanceSquareClass,
 } from "@/lib/portal";
 import { StudentMoodCheckIn } from "@/components/student/StudentMoodCheckIn";
+import { RoleProgramsSection } from "@/components/programs/RoleProgramsSection";
 import { requireStudentSession } from "@/server/student/auth";
 import { getStudentPortalSnapshot } from "@/server/student/data";
 
@@ -39,14 +46,17 @@ export default async function StudentDashboardPage() {
   const recentAbsent = recentRecords.filter((record) => record.status === "absent").length;
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
+    <div className="space-y-5">
+      <section className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm font-medium text-neutral-500">Student Portal</p>
-            <h1 className="mt-2 text-3xl font-bold text-neutral-900">
+            <h1 className="mt-2 text-2xl font-bold text-neutral-900 sm:text-3xl">
               Welcome back, {snapshot.student.studentName}
             </h1>
+            <p className="mt-2 max-w-2xl text-sm text-neutral-600">
+              Join class, check today&apos;s plan, and continue learning from one place.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <span className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700 ring-1 ring-inset ring-sky-200">
@@ -59,7 +69,7 @@ export default async function StudentDashboardPage() {
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           label="Current Day"
           value={
@@ -82,18 +92,27 @@ export default async function StudentDashboardPage() {
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
+      <section className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
+        <h2 className="text-base font-semibold text-neutral-900">Next Actions</h2>
+        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          <ActionLink href="/student/join" label="Join Class" helper="Open today's live class" icon={PlayCircle} />
+          <ActionLink href="/student/my-plan" label="My Plan" helper="Check daily targets" icon={ClipboardList} />
+          <ActionLink href="/student/courses" label="My Courses" helper="Continue recorded lessons" icon={BookOpenCheck} />
+        </div>
+      </section>
+
+      <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-neutral-900">Attendance Heatmap</h2>
+              <h2 className="text-lg font-semibold text-neutral-900">Attendance</h2>
               <p className="mt-1 text-sm text-neutral-500">Your latest 30 attendance entries.</p>
             </div>
-            <Link href="/student/attendance" className="text-sm font-semibold text-neutral-900">
+            <Link href="/student/attendance" className="inline-flex min-h-10 items-center justify-center rounded-lg border border-neutral-200 px-3 text-sm font-semibold text-neutral-900">
               View full history
             </Link>
           </div>
-          <div className="mt-5 grid grid-cols-10 gap-2">
+          <div className="mt-5 grid grid-cols-10 gap-1.5 sm:gap-2">
             {heatmap.map((status, index) => (
               <div
                 key={`attendance-${index}`}
@@ -107,9 +126,9 @@ export default async function StudentDashboardPage() {
           </p>
         </div>
 
-        <div className="space-y-6">
-          <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-neutral-900">Today&apos;s Class</h2>
+        <div className="space-y-5">
+          <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm sm:p-6">
+            <h2 className="text-lg font-semibold text-neutral-900">Today&apos;s Class</h2>
             <div className="mt-4 space-y-3">
               {snapshot.todayClasses.length > 0 ? (
                 snapshot.todayClasses.map((schedule) => (
@@ -136,8 +155,8 @@ export default async function StudentDashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-neutral-900">Daily Mood Check-In</h2>
+          <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm sm:p-6">
+            <h2 className="text-lg font-semibold text-neutral-900">Daily Mood Check-In</h2>
             <p className="mt-1 text-sm text-neutral-500">
               Share how you are feeling today in one tap.
             </p>
@@ -157,16 +176,16 @@ export default async function StudentDashboardPage() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
+      <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-neutral-900">My Learning Plan</h2>
+              <h2 className="text-lg font-semibold text-neutral-900">My Learning Plan</h2>
               <p className="mt-1 text-sm text-neutral-500">
                 Daily targets and goals set by your mentor.
               </p>
             </div>
-            <Link href="/student/my-plan" className="text-sm font-semibold text-neutral-900">
+            <Link href="/student/my-plan" className="inline-flex min-h-10 items-center justify-center rounded-lg border border-neutral-200 px-3 text-sm font-semibold text-neutral-900">
               Open full plan
             </Link>
           </div>
@@ -209,15 +228,15 @@ export default async function StudentDashboardPage() {
           )}
         </div>
 
-        <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
+        <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-neutral-900">My Courses</h2>
+              <h2 className="text-lg font-semibold text-neutral-900">My Courses</h2>
               <p className="mt-1 text-sm text-neutral-500">
                 Continue your enrolled recorded courses.
               </p>
             </div>
-            <Link href="/courses" className="text-sm font-semibold text-neutral-900">
+            <Link href="/courses" className="inline-flex min-h-10 items-center justify-center rounded-lg border border-neutral-200 px-3 text-sm font-semibold text-neutral-900">
               Browse Courses
             </Link>
           </div>
@@ -248,16 +267,45 @@ export default async function StudentDashboardPage() {
           </div>
         </div>
       </section>
+
+      <RoleProgramsSection role="student" heading="Live Programs" />
     </div>
   );
 }
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm">
+    <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
       <p className="text-sm font-medium text-neutral-500">{label}</p>
-      <p className="mt-3 text-2xl font-bold text-neutral-900">{value}</p>
+      <p className="mt-2 text-xl font-bold text-neutral-900 sm:text-2xl">{value}</p>
     </div>
+  );
+}
+
+function ActionLink({
+  href,
+  label,
+  helper,
+  icon: Icon,
+}: {
+  href: string;
+  label: string;
+  helper: string;
+  icon: LucideIcon;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex min-h-20 items-start gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-3 hover:bg-blue-50"
+    >
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-blue-700 ring-1 ring-neutral-200">
+        <Icon className="h-5 w-5" aria-hidden />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold text-neutral-950">{label}</span>
+        <span className="mt-1 block text-xs leading-5 text-neutral-500">{helper}</span>
+      </span>
+    </Link>
   );
 }
 

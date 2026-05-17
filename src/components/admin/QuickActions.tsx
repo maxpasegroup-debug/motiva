@@ -18,40 +18,40 @@ type QuickAction = {
 
 const actions: QuickAction[] = [
   {
-    title: "Add Lead",
+    title: "Add Enquiry",
     href: "/admin/leads",
     icon: PhoneCall,
-    description: "Capture a new enquiry or callback.",
+    description: "Enter a new family call or callback.",
   },
   {
-    title: "Approve Admission",
+    title: "Approve Student",
     href: "/admin/admissions",
     icon: GraduationCap,
-    description: "Move a student into a batch.",
+    description: "Confirm admission and next step.",
   },
   {
     title: "Create Account",
     href: "/admin/admissions/create-account",
     icon: UserPlus,
-    description: "Generate student and parent login.",
+    description: "Make student and parent login.",
   },
   {
     title: "Mark Payment",
     href: "/admin/payments",
     icon: BadgeIndianRupee,
-    description: "Update fee collection status.",
+    description: "Update paid or pending fees.",
   },
   {
     title: "Schedule Class",
     href: "/admin/batches",
     icon: CalendarPlus,
-    description: "Review class and batch plan.",
+    description: "Check batch and class plan.",
   },
   {
-    title: "Send Message",
+    title: "Parents",
     href: "/admin/parents",
     icon: MessageCircle,
-    description: "Reach parent or student quickly.",
+    description: "View parent accounts and contact.",
   },
 ];
 
@@ -61,7 +61,7 @@ export function QuickActions() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-neutral-950">Quick Actions</h2>
-          <p className="mt-1 text-sm text-neutral-500">Common academy operations.</p>
+          <p className="mt-1 text-sm text-neutral-500">The usual office work, one tap away.</p>
         </div>
       </div>
       <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
