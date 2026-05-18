@@ -13,20 +13,24 @@ type AdminUser = {
   createdAt: string;
 };
 
-const ROLES: Role[] = [
-  "admin",
-  "telecounselor",
-  "demo_executive",
-  "administrative_officer",
-  "manager",
-  "academic_coordinator",
-  "hr",
-  "mentor",
-  "teacher",
-  "student",
-  "parent",
-  "public",
+const ROLE_OPTIONS: { value: Role; label: string }[] = [
+  { value: "admin", label: "Admin" },
+  { value: "manager", label: "Manager" },
+  { value: "administrative_officer", label: "Administrative Officer" },
+  { value: "academic_coordinator", label: "Academic Coordinator" },
+  { value: "hr", label: "HR" },
+  { value: "telecounselor", label: "Telecaller" },
+  { value: "demo_executive", label: "Demo Executive" },
+  { value: "mentor", label: "Mentor" },
+  { value: "teacher", label: "Teacher" },
+  { value: "student", label: "Student" },
+  { value: "parent", label: "Parent" },
+  { value: "public", label: "Public User" },
 ];
+
+const ROLE_LABELS = Object.fromEntries(
+  ROLE_OPTIONS.map((option) => [option.value, option.label]),
+) as Record<Role, string>;
 
 function generatePin() {
   return String(Math.floor(Math.random() * 10000)).padStart(4, "0");
@@ -129,9 +133,9 @@ export function AdminUsersPage() {
           onChange={(e) => setRole(e.target.value as Role)}
           className="min-h-11 rounded-lg border border-neutral-300 px-3 text-sm"
         >
-          {ROLES.map((item) => (
-            <option key={item} value={item}>
-              {item}
+          {ROLE_OPTIONS.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
             </option>
           ))}
         </select>
@@ -173,7 +177,7 @@ export function AdminUsersPage() {
                 <td className="px-4 py-3 text-neutral-700">{user.mobile ?? "-"}</td>
                 <td className="px-4 py-3">
                   <span className="rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-700">
-                    {user.role}
+                    {ROLE_LABELS[user.role] ?? user.role}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-neutral-700">
