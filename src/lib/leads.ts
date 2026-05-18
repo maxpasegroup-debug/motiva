@@ -11,6 +11,7 @@ export const LEAD_STATUSES = [
   "admission",
   "payment_pending",
   "payment_confirmed",
+  "account_created",
   "mentor_assigned",
   "closed_won",
   "closed_lost",
@@ -40,6 +41,7 @@ export const STATUS_BADGE_CLASS: Record<LeadStatus, string> = {
   admission: "bg-teal-100 text-teal-700 ring-1 ring-inset ring-teal-200",
   payment_pending: "bg-orange-100 text-orange-700 ring-1 ring-inset ring-orange-200",
   payment_confirmed: "bg-green-100 text-green-700 ring-1 ring-inset ring-green-200",
+  account_created: "bg-cyan-100 text-cyan-700 ring-1 ring-inset ring-cyan-200",
   mentor_assigned: "bg-emerald-100 text-emerald-700 ring-1 ring-inset ring-emerald-200",
   closed_won: "bg-green-900 text-green-50 ring-1 ring-inset ring-green-950/30",
   closed_lost: "bg-red-100 text-red-700 ring-1 ring-inset ring-red-200",
@@ -56,6 +58,7 @@ export const STATUS_LABEL: Record<LeadStatus, string> = {
   admission: "Admission Confirmed",
   payment_pending: "Payment Pending",
   payment_confirmed: "Payment Confirmed",
+  account_created: "Account Created",
   mentor_assigned: "Mentor Assigned",
   closed_won: "Closed Won",
   closed_lost: "Closed Lost",
@@ -72,6 +75,7 @@ export type LeadStep = {
     | "admission"
     | "payment_pending"
     | "payment_confirmed"
+    | "account_created"
     | "mentor_assigned";
   label: string;
 };
@@ -84,6 +88,7 @@ export const LEAD_PIPELINE_STEPS: LeadStep[] = [
   { key: "admission", label: "Admission Confirmed" },
   { key: "payment_pending", label: "Payment Pending" },
   { key: "payment_confirmed", label: "Payment Confirmed" },
+  { key: "account_created", label: "Account Created" },
   { key: "mentor_assigned", label: "Mentor Assigned" },
 ];
 
@@ -96,8 +101,9 @@ const PROGRESS_RANK: Record<LeadStatus, number> = {
   admission: 5,
   payment_pending: 6,
   payment_confirmed: 7,
-  mentor_assigned: 8,
-  closed_won: 9,
+  account_created: 8,
+  mentor_assigned: 9,
+  closed_won: 10,
   closed_lost: -1,
   demo: 2,
   closed: -1,
@@ -116,6 +122,7 @@ export function normalizeLeadStatus(value: string | null | undefined): LeadStatu
     case "admission":
     case "payment_pending":
     case "payment_confirmed":
+    case "account_created":
     case "mentor_assigned":
     case "closed_won":
     case "closed_lost":
@@ -134,14 +141,15 @@ export function getLeadStepIndex(
   const status = normalizeLeadStatus(statusInput);
   const flowType = normalizeLeadFlowType(flowTypeInput);
   if (status === "closed_lost" || status === "closed") return -1;
-  if (status === "closed_won") return 7;
+  if (status === "closed_won") return 8;
   if (flowType === "remedial") {
     if (status === "new") return 0;
     if (status === "contacted") return 0;
     if (status === "admission") return 4;
     if (status === "payment_pending") return 5;
     if (status === "payment_confirmed") return 6;
-    if (status === "mentor_assigned") return 7;
+    if (status === "account_created") return 7;
+    if (status === "mentor_assigned") return 8;
   }
   switch (status) {
     case "contacted":
@@ -159,8 +167,10 @@ export function getLeadStepIndex(
       return 5;
     case "payment_confirmed":
       return 6;
-    case "mentor_assigned":
+    case "account_created":
       return 7;
+    case "mentor_assigned":
+      return 8;
     default:
       return 0;
   }
@@ -182,7 +192,8 @@ export function getNextLeadStatus(
   if (status === "counseling") return "admission";
   if (status === "admission") return "payment_pending";
   if (status === "payment_pending") return "payment_confirmed";
-  if (status === "payment_confirmed") return "mentor_assigned";
+  if (status === "payment_confirmed") return "account_created";
+  if (status === "account_created") return "mentor_assigned";
   return null;
 }
 
@@ -202,6 +213,7 @@ export function getAdvanceButtonLabel(
   if (status === "counseling") return "Confirm Admission";
   if (status === "admission") return "Mark Payment Pending";
   if (status === "payment_pending") return "Process Payment";
+  if (status === "account_created") return "Assign Mentor";
   return null;
 }
 
@@ -225,6 +237,7 @@ export function getLegacyLeadStatus(statusInput: string | null | undefined): "ne
     status === "admission" ||
     status === "payment_pending" ||
     status === "payment_confirmed" ||
+    status === "account_created" ||
     status === "mentor_assigned" ||
     status === "closed_won"
   ) {

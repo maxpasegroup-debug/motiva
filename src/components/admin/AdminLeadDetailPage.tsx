@@ -195,6 +195,13 @@ export function AdminLeadDetailPage({ initialLead }: Props) {
                 Create Student Account
               </Button>
             </>
+          ) : status === "account_created" ? (
+            <Button
+              href={`/admin/admissions/assign-mentor/${lead.id}`}
+              className="min-h-11 sm:w-auto"
+            >
+              Assign Mentor
+            </Button>
           ) : status === "mentor_assigned" ? (
             <div className="inline-flex min-h-11 items-center rounded-xl bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
               Completed

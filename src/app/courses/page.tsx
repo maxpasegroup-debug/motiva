@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
+import { courseIsVisibleToAudience } from "@/lib/recorded-courses";
 
 export const dynamic = "force-dynamic";
 
@@ -10,10 +11,10 @@ function formatPrice(price: number) {
 }
 
 export default async function PublicCoursesPage() {
-  const courses = await prisma.course.findMany({
-    where: { status: "published", targetRole: "public" },
+  const courses = (await prisma.course.findMany({
+    where: { status: "published" },
     orderBy: { createdAt: "desc" },
-  });
+  })).filter((course) => courseIsVisibleToAudience(course.targetRole, "public"));
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">

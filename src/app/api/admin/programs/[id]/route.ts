@@ -20,6 +20,14 @@ export async function PATCH(
   if (typeof o.image_path === "string") patch.image_path = o.image_path;
   if (typeof o.description === "string") patch.description = o.description;
   if (typeof o.is_active === "boolean") patch.is_active = o.is_active;
+  if ("audience_roles" in o || "audienceRoles" in o) {
+    patch.audience_roles =
+      typeof o.audience_roles === "string" || Array.isArray(o.audience_roles)
+        ? o.audience_roles
+        : typeof o.audienceRoles === "string" || Array.isArray(o.audienceRoles)
+          ? o.audienceRoles
+          : "public";
+  }
 
   const program = await updateProgram(params.id, patch);
   if (!program) {

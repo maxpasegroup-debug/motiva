@@ -3,7 +3,15 @@ import type { Role } from "@/lib/roles";
 
 export type AdminRole = Extract<
   Role,
-  "admin" | "telecounselor" | "demo_executive" | "mentor" | "teacher"
+  | "admin"
+  | "telecounselor"
+  | "demo_executive"
+  | "administrative_officer"
+  | "manager"
+  | "academic_coordinator"
+  | "hr"
+  | "mentor"
+  | "teacher"
 >;
 
 export type AdminNavItem = {
@@ -31,41 +39,63 @@ export const ADMIN_ROLES: AdminRole[] = [
   "admin",
   "telecounselor",
   "demo_executive",
+  "administrative_officer",
+  "manager",
+  "academic_coordinator",
+  "hr",
   "mentor",
   "teacher",
 ];
 
 const everyone: AdminRole[] = ADMIN_ROLES;
 const adminOnly: AdminRole[] = ["admin"];
-const admissionsRoles: AdminRole[] = ["admin", "telecounselor", "demo_executive"];
-const academicRoles: AdminRole[] = ["admin", "mentor", "teacher"];
+const admissionsRoles: AdminRole[] = [
+  "admin",
+  "telecounselor",
+  "administrative_officer",
+  "manager",
+];
+const academicRoles: AdminRole[] = [
+  "admin",
+  "manager",
+  "academic_coordinator",
+  "mentor",
+  "teacher",
+];
+const moneyRoles: AdminRole[] = [
+  "admin",
+  "manager",
+  "administrative_officer",
+  "telecounselor",
+];
+const staffRoles: AdminRole[] = ["admin", "manager", "hr"];
 
 const rolesByHref: Record<string, AdminRole[]> = {
   "/admin": everyone,
-  "/admin/enquiries": ["admin", "telecounselor"],
+  "/admin/enquiries": admissionsRoles,
   "/admin/admissions": admissionsRoles,
-  "/admin/students": ["admin", "mentor", "teacher"],
-  "/admin/payments": adminOnly,
+  "/admin/students": ["admin", "manager", "administrative_officer", "academic_coordinator", "mentor", "teacher"],
+  "/admin/payments": moneyRoles,
   "/admin/batches": academicRoles,
   "/admin/attendance": academicRoles,
-  "/admin/teachers": ["admin", "teacher"],
-  "/admin/courses": adminOnly,
-  "/admin/users": adminOnly,
-  "/admin/reports": adminOnly,
-  "/admin/settings": adminOnly,
+  "/admin/teachers": ["admin", "manager", "academic_coordinator", "hr", "teacher"],
+  "/admin/courses": ["admin", "manager", "academic_coordinator"],
+  "/admin/users": staffRoles,
+  "/admin/reports": ["admin", "manager", "administrative_officer", "academic_coordinator"],
+  "/admin/settings": ["admin", "manager", "administrative_officer"],
 };
 
 const hiddenChildren: Record<string, AdminNavChild[]> = {
   "/admin/admissions": [
-    { title: "Remedial Admission", href: "/admin/admissions/remedial", roles: ["admin", "telecounselor"] },
-    { title: "Create Student Login", href: "/admin/admissions/create-account", roles: ["admin", "telecounselor"] },
+    { title: "Remedial Admission", href: "/admin/admissions/remedial", roles: admissionsRoles },
+    { title: "Create Student Login", href: "/admin/admissions/create-account", roles: admissionsRoles },
   ],
   "/admin/batches": [
     { title: "Live Classes", href: "/admin/classes", roles: academicRoles },
   ],
   "/admin/courses": [
     { title: "New Recorded Course", href: "/admin/courses/new", roles: adminOnly },
-    { title: "Website Programs", href: "/admin/programs", roles: adminOnly },
+    { title: "Website Programs", href: "/admin/programs", roles: ["admin", "manager"] },
   ],
 };
 

@@ -12,17 +12,66 @@ function getSessionToken(req: NextRequest): string | null {
 
 type Guard = { prefix: string; roles: readonly Role[] };
 
+const adminPortalRoles: readonly Role[] = [
+  "admin",
+  "telecounselor",
+  "demo_executive",
+  "administrative_officer",
+  "manager",
+  "academic_coordinator",
+  "hr",
+  "mentor",
+  "teacher",
+];
+
+const admissionsRoles: readonly Role[] = [
+  "admin",
+  "telecounselor",
+  "administrative_officer",
+  "manager",
+];
+
+const academicRoles: readonly Role[] = [
+  "admin",
+  "manager",
+  "academic_coordinator",
+  "teacher",
+  "mentor",
+];
+
+const moneyRoles: readonly Role[] = [
+  "admin",
+  "manager",
+  "administrative_officer",
+  "telecounselor",
+];
+
+const staffRoles: readonly Role[] = ["admin", "manager", "hr"];
+
 const PAGE_GUARDS: Guard[] = [
-  { prefix: "/admin/leads", roles: ["admin", "telecounselor", "demo_executive"] },
+  { prefix: "/admin/leads", roles: admissionsRoles },
+  { prefix: "/admin/enquiries", roles: admissionsRoles },
+  { prefix: "/admin/admissions", roles: admissionsRoles },
+  { prefix: "/admin/students", roles: [...academicRoles, "administrative_officer"] },
+  { prefix: "/admin/parents", roles: ["admin", "manager", "administrative_officer"] },
+  { prefix: "/admin/payments", roles: moneyRoles },
+  { prefix: "/admin/batches", roles: academicRoles },
+  { prefix: "/admin/classes", roles: academicRoles },
+  { prefix: "/admin/attendance", roles: academicRoles },
+  { prefix: "/admin/teachers", roles: ["admin", "manager", "academic_coordinator", "hr", "teacher"] },
+  { prefix: "/admin/courses", roles: ["admin", "manager", "academic_coordinator"] },
+  { prefix: "/admin/users", roles: staffRoles },
+  { prefix: "/admin/reports", roles: ["admin", "manager", "administrative_officer", "academic_coordinator"] },
+  { prefix: "/admin/settings", roles: ["admin", "manager", "administrative_officer"] },
   {
     prefix: "/admin/admissions/create-account",
-    roles: ["admin", "telecounselor"],
+    roles: admissionsRoles,
   },
   {
     prefix: "/admin/admissions/remedial",
-    roles: ["admin", "telecounselor"],
+    roles: admissionsRoles,
   },
-  { prefix: "/admin", roles: ["admin"] },
+  { prefix: "/admin", roles: adminPortalRoles },
   { prefix: "/mentor", roles: ["mentor"] },
   { prefix: "/teacher", roles: ["teacher"] },
   { prefix: "/student", roles: ["student"] },
@@ -51,23 +100,44 @@ function isProtectedAdminApi(pathname: string): boolean {
 }
 
 function adminApiAllowedRoles(pathname: string): readonly Role[] {
+  if (pathname === "/api/admin/me" || pathname === "/api/admin/logout") {
+    return adminPortalRoles;
+  }
+  if (pathname === "/api/admin/users" || pathname.startsWith("/api/admin/users/")) {
+    return staffRoles;
+  }
+  if (pathname === "/api/admin/enquiries" || pathname.startsWith("/api/admin/enquiries/")) {
+    return admissionsRoles;
+  }
+  if (pathname === "/api/admin/admissions" || pathname.startsWith("/api/admin/admissions/")) {
+    return admissionsRoles;
+  }
+  if (pathname === "/api/admin/parents/register") {
+    return admissionsRoles;
+  }
+  if (pathname === "/api/admin/batches" || pathname.startsWith("/api/admin/batches/")) {
+    return [...academicRoles, ...admissionsRoles];
+  }
+  if (pathname === "/api/admin/teachers" || pathname.startsWith("/api/admin/teachers/")) {
+    return ["admin", "manager", "academic_coordinator", "hr"];
+  }
+  if (pathname === "/api/admin/reports" || pathname.startsWith("/api/admin/reports/")) {
+    return ["admin", "manager", "administrative_officer", "academic_coordinator"];
+  }
+  if (pathname === "/api/admin/students" || pathname.startsWith("/api/admin/students/")) {
+    return [...academicRoles, "administrative_officer", ...moneyRoles];
+  }
+  if (pathname === "/api/admin/courses" || pathname.startsWith("/api/admin/courses/")) {
+    return ["admin", "manager", "academic_coordinator"];
+  }
+  if (pathname === "/api/admin/programs" || pathname.startsWith("/api/admin/programs/")) {
+    return ["admin", "manager"];
+  }
   if (
     pathname === "/api/admin/leads" ||
     pathname.startsWith("/api/admin/leads/")
   ) {
-    return ["admin", "telecounselor", "demo_executive"];
-  }
-  if (
-    pathname === "/api/admin/admissions/remedial" ||
-    pathname.startsWith("/api/admin/admissions/remedial/")
-  ) {
-    return ["admin", "telecounselor"];
-  }
-  if (
-    pathname === "/api/admin/admissions/create-account" ||
-    pathname.startsWith("/api/admin/admissions/create-account/")
-  ) {
-    return ["admin", "telecounselor"];
+    return admissionsRoles;
   }
   return ["admin"];
 }
@@ -79,7 +149,7 @@ function paymentsApiAllowedRoles(pathname: string): readonly Role[] {
     pathname === "/api/payments/verify" ||
     pathname.startsWith("/api/payments/verify/")
   ) {
-    return ["admin", "telecounselor"];
+    return moneyRoles;
   }
   return [];
 }

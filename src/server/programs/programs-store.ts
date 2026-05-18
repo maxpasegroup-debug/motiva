@@ -1,5 +1,11 @@
 import fs from "fs/promises";
 import path from "path";
+import {
+  courseIsVisibleToAudience,
+  formatCourseAudience,
+  serializeCourseAudience,
+  type CourseAudienceRole,
+} from "@/lib/recorded-courses";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const PROGRAMS_FILE = path.join(DATA_DIR, "programs.json");
@@ -11,9 +17,10 @@ export type Program = {
   description: string;
   image_path: string;
   is_active: boolean;
+  audience_roles: string;
 };
 
-export type ProgramPublic = Omit<Program, "is_active">;
+export type ProgramPublic = Omit<Program, "is_active"> & { audience_label: string };
 
 function newId() {
   return typeof crypto !== "undefined" && crypto.randomUUID
@@ -60,13 +67,25 @@ function migrateLegacyRow(o: Record<string, unknown>): Program | null {
     description,
     image_path,
     is_active: o.is_active,
+    audience_roles:
+      typeof o.audience_roles === "string"
+        ? o.audience_roles
+        : "public",
   };
 }
 
 function normalizeProgram(x: unknown): Program | null {
   if (!x || typeof x !== "object") return null;
   const o = x as Record<string, unknown>;
-  if (isStoredProgram(o)) return o;
+  if (isStoredProgram(o)) {
+    return {
+      ...o,
+      audience_roles:
+        typeof o.audience_roles === "string"
+          ? serializeCourseAudience(o.audience_roles)
+          : "public",
+    };
+  }
   return migrateLegacyRow(o);
 }
 
@@ -115,15 +134,19 @@ export async function readPrograms(): Promise<Program[]> {
   }
 }
 
-export async function listActivePrograms(): Promise<ProgramPublic[]> {
+export async function listActivePrograms(
+  audience: CourseAudienceRole | "all" = "public",
+): Promise<ProgramPublic[]> {
   const rows = await readPrograms();
   return rows
-    .filter((p) => p.is_active)
-    .map(({ id, title, description, image_path }) => ({
+    .filter((p) => p.is_active && courseIsVisibleToAudience(p.audience_roles, audience))
+    .map(({ id, title, description, image_path, audience_roles }) => ({
       id,
       title,
       description,
       image_path,
+      audience_roles,
+      audience_label: formatCourseAudience(audience_roles),
     }));
 }
 
@@ -136,6 +159,7 @@ export async function createProgram(input: {
   description: string;
   image_path: string;
   is_active: boolean;
+  audience_roles?: unknown;
 }): Promise<Program> {
   const rows = await readPrograms();
   const row: Program = {
@@ -144,6 +168,7 @@ export async function createProgram(input: {
     description: input.description.trim(),
     image_path: input.image_path.trim(),
     is_active: input.is_active,
+    audience_roles: serializeCourseAudience(input.audience_roles),
   };
   rows.push(row);
   await writePrograms(rows);
@@ -152,9 +177,9 @@ export async function createProgram(input: {
 
 export async function updateProgram(
   id: string,
-  patch: Partial<
-    Pick<Program, "title" | "description" | "image_path" | "is_active">
-  >,
+  patch: Partial<Pick<Program, "title" | "description" | "image_path" | "is_active">> & {
+    audience_roles?: unknown;
+  },
 ): Promise<Program | null> {
   const rows = await readPrograms();
   const idx = rows.findIndex((p) => p.id === id);
@@ -177,6 +202,9 @@ export async function updateProgram(
       : {}),
     ...(patch.image_path !== undefined ? { image_path: nextImage } : {}),
     ...(patch.is_active !== undefined ? { is_active: patch.is_active } : {}),
+    ...(patch.audience_roles !== undefined
+      ? { audience_roles: serializeCourseAudience(patch.audience_roles) }
+      : {}),
   };
   rows[idx] = next;
   await writePrograms(rows);

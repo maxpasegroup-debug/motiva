@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import {
   COURSE_STATUSES,
-  isTargetRole,
+  serializeCourseAudience,
 } from "@/lib/recorded-courses";
 import { requireAdminApi } from "@/server/auth/require-admin";
 
@@ -67,7 +67,9 @@ export async function PUT(req: NextRequest, context: Ctx) {
   const description =
     typeof b.description === "string" ? b.description : existing.description;
   const targetRole =
-    typeof b.targetRole === "string" ? b.targetRole.trim() : existing.targetRole;
+    b.targetRoles !== undefined || b.targetRole !== undefined
+      ? serializeCourseAudience(b.targetRoles ?? b.targetRole)
+      : existing.targetRole;
   const status =
     typeof b.status === "string" ? b.status.trim() : existing.status;
   const price =
@@ -79,12 +81,6 @@ export async function PUT(req: NextRequest, context: Ctx) {
   if (!thumbnail) {
     return NextResponse.json(
       { error: "thumbnail is required" },
-      { status: 400 },
-    );
-  }
-  if (!isTargetRole(targetRole)) {
-    return NextResponse.json(
-      { error: "targetRole is invalid" },
       { status: 400 },
     );
   }

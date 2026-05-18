@@ -9,6 +9,10 @@ const LISTABLE_ROLES: readonly Role[] = [
   "parent",
   "telecounselor",
   "demo_executive",
+  "administrative_officer",
+  "manager",
+  "academic_coordinator",
+  "hr",
   "mentor",
 ];
 

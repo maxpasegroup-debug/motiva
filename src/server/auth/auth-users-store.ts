@@ -43,6 +43,10 @@ function isValidRole(r: unknown): r is Role {
     r === "admin" ||
     r === "telecounselor" ||
     r === "demo_executive" ||
+    r === "administrative_officer" ||
+    r === "manager" ||
+    r === "academic_coordinator" ||
+    r === "hr" ||
     r === "mentor" ||
     r === "teacher" ||
     r === "student" ||
@@ -135,6 +139,10 @@ export function isCreatableRole(role: Role) {
     role === "parent" ||
     role === "telecounselor" ||
     role === "demo_executive" ||
+    role === "administrative_officer" ||
+    role === "manager" ||
+    role === "academic_coordinator" ||
+    role === "hr" ||
     role === "mentor"
   );
 }

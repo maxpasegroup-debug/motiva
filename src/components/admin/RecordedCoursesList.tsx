@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useLanguage } from "@/components/providers/LanguageProvider";
+import { formatCourseAudience } from "@/lib/recorded-courses";
 import { getAuthToken } from "@/lib/session";
 
 type CourseRow = {
@@ -136,7 +137,7 @@ export function RecordedCoursesList() {
                     </span>
                   </div>
                   <p className="mt-1 text-sm text-neutral-500">
-                    {c.targetRole} · {c.price <= 0 ? t("admin_recorded_free") : `₹${c.price}`} · {c._count.sections} sections
+                    {formatCourseAudience(c.targetRole)} · {c.price <= 0 ? t("admin_recorded_free") : `₹${c.price}`} · {c._count.sections} sections
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Link

@@ -38,6 +38,10 @@ function isUserRecord(x: unknown): x is UserRecord {
     o.role === "parent" ||
     o.role === "telecounselor" ||
     o.role === "demo_executive" ||
+    o.role === "administrative_officer" ||
+    o.role === "manager" ||
+    o.role === "academic_coordinator" ||
+    o.role === "hr" ||
     o.role === "mentor"
   );
 }

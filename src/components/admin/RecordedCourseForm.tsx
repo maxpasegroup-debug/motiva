@@ -7,7 +7,11 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useLanguage } from "@/components/providers/LanguageProvider";
-import { COURSE_TARGET_ROLES } from "@/lib/recorded-courses";
+import {
+  COURSE_TARGET_ROLES,
+  parseCourseAudience,
+  type CourseAudienceRole,
+} from "@/lib/recorded-courses";
 import { getAuthToken } from "@/lib/session";
 
 type Props = { mode: "new" | "edit"; courseId?: string };
@@ -23,7 +27,7 @@ export function RecordedCourseForm({ mode, courseId }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [thumbnail, setThumbnail] = useState("");
-  const [targetRole, setTargetRole] = useState<string>("public");
+  const [targetRoles, setTargetRoles] = useState<CourseAudienceRole[]>(["public"]);
   const [price, setPrice] = useState(0);
   const [status, setStatus] = useState<"draft" | "published">("draft");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -58,7 +62,7 @@ export function RecordedCourseForm({ mode, courseId }: Props) {
     setTitle(c.title);
     setDescription(c.description);
     setThumbnail(c.thumbnail);
-    setTargetRole(c.targetRole);
+    setTargetRoles(parseCourseAudience(c.targetRole));
     setPrice(c.price);
     setStatus(c.status === "published" ? "published" : "draft");
     setPreviewUrl(c.thumbnail);
@@ -138,7 +142,7 @@ export function RecordedCourseForm({ mode, courseId }: Props) {
       title: title.trim(),
       description: description.trim(),
       thumbnail: th,
-      targetRole,
+      targetRoles,
       price: Math.max(0, price),
       status,
     };
@@ -276,21 +280,43 @@ export function RecordedCourseForm({ mode, courseId }: Props) {
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-neutral-700" htmlFor="rc-role">
+            <label className="mb-2 block text-sm font-medium text-neutral-700" htmlFor="rc-role">
               {t("admin_recorded_target_role")}
             </label>
-            <select
-              id="rc-role"
-              className="w-full rounded-xl border border-neutral-200 px-3 py-2.5"
-              value={targetRole}
-              onChange={(e) => setTargetRole(e.target.value)}
-            >
-              {COURSE_TARGET_ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
+            <div id="rc-role" className="grid gap-2 sm:grid-cols-2">
+              {COURSE_TARGET_ROLES.filter((role) => role !== "all").map((role) => {
+                const checked = targetRoles.includes(role);
+                return (
+                  <label
+                    key={role}
+                    className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium ${
+                      checked
+                        ? "border-primary bg-blue-50 text-primary"
+                        : "border-neutral-200 text-neutral-700"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(event) => {
+                        setTargetRoles((current) => {
+                          const next = event.target.checked
+                            ? [...current, role]
+                            : current.filter((item) => item !== role);
+                          return next.length > 0 ? next : ["public"];
+                        });
+                      }}
+                      className="h-4 w-4"
+                    />
+                    <span className="capitalize">{role}</span>
+                  </label>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-xs text-neutral-500">
+              Public makes the course available to guest users and the landing page. Select
+              student, parent, teacher, or mentor to show it inside those dashboards.
+            </p>
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-neutral-700" htmlFor="rc-price">

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { RoleCoursesSection } from "@/components/courses/RoleCoursesSection";
+import { RoleProgramsSection } from "@/components/programs/RoleProgramsSection";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { getAuthToken } from "@/lib/session";
 
@@ -333,6 +334,7 @@ export function ParentDashboardPage() {
       ) : null}
 
       <RoleCoursesSection role="parent" heading="Courses" />
+      <RoleProgramsSection role="parent" heading="Live Programs" />
     </div>
   );
 }

@@ -10,6 +10,12 @@ import {
 } from "react";
 import { Card } from "@/components/ui/Card";
 import { useLanguage } from "@/components/providers/LanguageProvider";
+import {
+  COURSE_TARGET_ROLES,
+  formatCourseAudience,
+  parseCourseAudience,
+  type CourseAudienceRole,
+} from "@/lib/recorded-courses";
 import { getAuthToken } from "@/lib/session";
 
 type Program = {
@@ -18,6 +24,7 @@ type Program = {
   description: string;
   image_path: string;
   is_active: boolean;
+  audience_roles: string;
 };
 
 export function AdminProgramsPage() {
@@ -34,6 +41,7 @@ export function AdminProgramsPage() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isActive, setIsActive] = useState(true);
+  const [audienceRoles, setAudienceRoles] = useState<CourseAudienceRole[]>(["public"]);
   const previewRevokeRef = useRef<string | null>(null);
 
   const refresh = useCallback(async () => {
@@ -77,6 +85,7 @@ export function AdminProgramsPage() {
     setPendingFile(null);
     setPreviewUrl(null);
     setIsActive(true);
+    setAudienceRoles(["public"]);
   }
 
   function startEdit(p: Program) {
@@ -88,6 +97,7 @@ export function AdminProgramsPage() {
     setPendingFile(null);
     setPreviewUrl(p.image_path || null);
     setIsActive(p.is_active);
+    setAudienceRoles(parseCourseAudience(p.audience_roles));
   }
 
   useEffect(() => {
@@ -165,6 +175,7 @@ export function AdminProgramsPage() {
             description,
             image_path: path,
             is_active: isActive,
+            audience_roles: audienceRoles,
           }),
         });
         if (!res.ok) {
@@ -184,6 +195,7 @@ export function AdminProgramsPage() {
             description,
             image_path: path,
             is_active: isActive,
+            audience_roles: audienceRoles,
           }),
         });
         if (!res.ok) {
@@ -292,6 +304,42 @@ export function AdminProgramsPage() {
             {t("admin_programs_active")}
           </label>
 
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-neutral-700">
+              Live program visibility
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {COURSE_TARGET_ROLES.filter((role) => role !== "all").map((role) => {
+                const checked = audienceRoles.includes(role);
+                return (
+                  <label
+                    key={role}
+                    className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium ${
+                      checked
+                        ? "border-primary bg-blue-50 text-primary"
+                        : "border-neutral-200 text-neutral-700"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(event) => {
+                        setAudienceRoles((current) => {
+                          const next = event.target.checked
+                            ? [...current, role]
+                            : current.filter((item) => item !== role);
+                          return next.length > 0 ? next : ["public"];
+                        });
+                      }}
+                      className="h-4 w-4"
+                    />
+                    <span className="capitalize">{role}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
           {error ? (
             <p className="text-sm font-medium text-red-600">{error}</p>
           ) : null}
@@ -361,6 +409,8 @@ export function AdminProgramsPage() {
                           {p.is_active
                             ? t("admin_programs_status_on")
                             : t("admin_programs_status_off")}
+                          {" · "}
+                          {formatCourseAudience(p.audience_roles)}
                         </p>
                       </div>
                     </div>

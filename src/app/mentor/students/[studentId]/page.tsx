@@ -7,6 +7,7 @@ import {
 } from "@/lib/mentor";
 import { requireMentorSession } from "@/server/mentor/auth";
 import { getMentorStudentDetail } from "@/server/mentor/data";
+import prisma from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,18 @@ export default async function MentorStudentDetailPage({
   searchParams?: { tab?: string };
 }) {
   const session = requireMentorSession();
-  const detail = await getMentorStudentDetail(session.userId, params.studentId);
+  const [detail, teachers, batches] = await Promise.all([
+    getMentorStudentDetail(session.userId, params.studentId),
+    prisma.user.findMany({
+      where: { role: "teacher", isActive: true },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.batch.findMany({
+      select: { id: true, name: true, duration: true },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
 
   if (!detail) {
     redirect("/mentor");
@@ -47,7 +59,9 @@ export default async function MentorStudentDetailPage({
         programType: detail.student.programType,
         mobile: detail.student.mobile,
         admissionStatus: detail.student.admissionStatus,
+        teacherId: detail.student.teacherId ?? "",
         teacherName: detail.student.teacher?.name ?? "Not assigned",
+        batchId: detail.student.batchId ?? "",
         batchName: detail.student.batch?.name ?? "Not assigned",
         parentName: primaryParent?.name ?? detail.student.parentName,
         parentMobile: primaryParent?.mobile ?? "Not available",
@@ -79,6 +93,8 @@ export default async function MentorStudentDetailPage({
         createdAt: formatDate(issue.createdAt),
         timelineCount: parseIssueTimeline(issue.timeline).length,
       }))}
+      teachers={teachers}
+      batches={batches}
     />
   );
 }

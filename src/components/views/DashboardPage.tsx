@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { RoleCoursesSection } from "@/components/courses/RoleCoursesSection";
+import { RoleProgramsSection } from "@/components/programs/RoleProgramsSection";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { clearSession, getAuthToken } from "@/lib/session";
 
@@ -118,6 +119,7 @@ export function DashboardPage() {
       </section>
 
       <RoleCoursesSection role="student" heading="My Courses" />
+      <RoleProgramsSection role="student" heading="Live Programs" />
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         {MENU.map(({ href, emoji, labelKey }) => (

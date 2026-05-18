@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
   const title = typeof o.title === "string" ? o.title : "";
   const description = typeof o.description === "string" ? o.description : "";
   const image_path = typeof o.image_path === "string" ? o.image_path : "";
+  const audience_roles = o.audience_roles ?? o.audienceRoles ?? ["public"];
 
   if (!title.trim()) {
     return NextResponse.json({ error: "Title required" }, { status: 400 });
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
     description,
     image_path,
     is_active,
+    audience_roles,
   });
 
   return NextResponse.json({ program }, { status: 201 });

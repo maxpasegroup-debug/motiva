@@ -16,6 +16,10 @@ const allowedRoles: Role[] = [
   "admin",
   "telecounselor",
   "demo_executive",
+  "administrative_officer",
+  "manager",
+  "academic_coordinator",
+  "hr",
   "mentor",
   "teacher",
 ];

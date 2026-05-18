@@ -3,6 +3,7 @@
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { Card } from "@/components/ui/Card";
 import { RoleCoursesSection } from "@/components/courses/RoleCoursesSection";
+import { RoleProgramsSection } from "@/components/programs/RoleProgramsSection";
 
 export function MentorDashboardPage() {
   const { t } = useLanguage();
@@ -18,6 +19,7 @@ export function MentorDashboardPage() {
         </ul>
       </Card>
       <RoleCoursesSection role="mentor" heading="Courses" />
+      <RoleProgramsSection role="mentor" heading="Live Programs" />
     </div>
   );
 }

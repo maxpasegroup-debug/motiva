@@ -8,6 +8,7 @@ import {
   getIssueStatusClasses,
   humanizeSnakeCase,
 } from "@/lib/mentor";
+import { MentorAllocationForm } from "@/components/mentor/MentorAllocationForm";
 
 type OverviewStudent = {
   id: string;
@@ -16,7 +17,9 @@ type OverviewStudent = {
   mobile: string;
   admissionStatus: string;
   teacherName: string;
+  teacherId: string;
   batchName: string;
+  batchId: string;
   parentName: string;
   parentMobile: string;
   learningPlanStatus: string;
@@ -60,6 +63,8 @@ type Props = {
   };
   learningPlan: LearningPlanView | null;
   issues: IssueRow[];
+  teachers: { id: string; name: string }[];
+  batches: { id: string; name: string; duration: number }[];
 };
 
 const TAB_OPTIONS = [
@@ -75,6 +80,8 @@ export function MentorStudentDetailView({
   attendance,
   learningPlan,
   issues,
+  teachers,
+  batches,
 }: Props) {
   const defaultTab = TAB_OPTIONS.some((tab) => tab.key === initialTab)
     ? initialTab
@@ -235,22 +242,31 @@ export function MentorStudentDetailView({
     }
 
     return (
-      <section className="grid gap-4 md:grid-cols-2">
-        <InfoCard label="Student Name" value={student.studentName} />
-        <InfoCard label="Program Type" value={student.programType} />
-        <InfoCard label="Mobile" value={student.mobile} />
-        <InfoCard label="Admission Status" value={humanizeSnakeCase(student.admissionStatus)} />
-        <InfoCard label="Assigned Teacher" value={student.teacherName} />
-        <InfoCard label="Batch" value={student.batchName} />
-        <InfoCard label="Parent Name" value={student.parentName} />
-        <InfoCard label="Parent Mobile" value={student.parentMobile} />
-        <InfoCard
-          label="Learning Plan Status"
-          value={humanizeSnakeCase(student.learningPlanStatus)}
+      <section className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <InfoCard label="Student Name" value={student.studentName} />
+          <InfoCard label="Program Type" value={student.programType} />
+          <InfoCard label="Mobile" value={student.mobile} />
+          <InfoCard label="Admission Status" value={humanizeSnakeCase(student.admissionStatus)} />
+          <InfoCard label="Assigned Teacher" value={student.teacherName} />
+          <InfoCard label="Batch" value={student.batchName} />
+          <InfoCard label="Parent Name" value={student.parentName} />
+          <InfoCard label="Parent Mobile" value={student.parentMobile} />
+          <InfoCard
+            label="Learning Plan Status"
+            value={humanizeSnakeCase(student.learningPlanStatus)}
+          />
+        </div>
+        <MentorAllocationForm
+          studentId={student.id}
+          currentTeacherId={student.teacherId}
+          currentBatchId={student.batchId}
+          teachers={teachers}
+          batches={batches}
         />
       </section>
     );
-  }, [activeTab, attendance, issues, learningPlan, student]);
+  }, [activeTab, attendance, batches, issues, learningPlan, student, teachers]);
 
   return (
     <div className="space-y-6">

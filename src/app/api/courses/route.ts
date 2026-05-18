@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { courseIsVisibleToAudience } from "@/lib/recorded-courses";
+import type { CourseAudienceRole } from "@/lib/recorded-courses";
 import { isRole } from "@/lib/roles";
 import { getSessionToken } from "@/server/auth/http-auth";
 import { verifyJwt } from "@/server/auth/jwt";
@@ -14,6 +16,19 @@ function getAuthPayload(req: NextRequest) {
   }
 }
 
+function roleToCourseAudience(role: string): CourseAudienceRole | "all" {
+  if (
+    role === "student" ||
+    role === "parent" ||
+    role === "teacher" ||
+    role === "mentor" ||
+    role === "public"
+  ) {
+    return role;
+  }
+  return "all";
+}
+
 export async function GET(req: NextRequest) {
   const payload = getAuthPayload(req);
 
@@ -22,10 +37,9 @@ export async function GET(req: NextRequest) {
     roles = Array.from(new Set(["public", "all", payload.role]));
   }
 
-  const courses = await prisma.course.findMany({
+  const courses = (await prisma.course.findMany({
     where: {
       status: "published",
-      targetRole: { in: roles },
     },
     orderBy: { createdAt: "desc" },
     include: {
@@ -34,7 +48,14 @@ export async function GET(req: NextRequest) {
         include: { videos: { orderBy: { order: "asc" } } },
       },
     },
-  });
+  })).filter((course) =>
+    roles.some((role) =>
+      courseIsVisibleToAudience(
+        course.targetRole,
+        roleToCourseAudience(role),
+      ),
+    ),
+  );
 
   return NextResponse.json({ courses });
 }

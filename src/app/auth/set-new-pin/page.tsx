@@ -21,8 +21,15 @@ function roleDestination(role: Role): string {
     case "parent":
       return "/parent";
     case "telecounselor":
+      return "/admin/admissions";
+    case "administrative_officer":
+    case "manager":
+    case "academic_coordinator":
+      return "/admin";
+    case "hr":
+      return "/admin/users";
     case "demo_executive":
-      return "/admin/leads";
+      return "/demo";
     case "public":
       return "/dashboard";
     default:
