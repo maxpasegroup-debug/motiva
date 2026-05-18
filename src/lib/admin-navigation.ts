@@ -41,7 +41,7 @@ const academicRoles: AdminRole[] = ["admin", "mentor", "teacher"];
 
 export const ADMIN_NAVIGATION: AdminNavGroup[] = [
   {
-    title: "Daily Work",
+    title: "Menu",
     items: [
       {
         title: "Today",
@@ -55,7 +55,7 @@ export const ADMIN_NAVIGATION: AdminNavGroup[] = [
         ],
       },
       {
-        title: "Admissions",
+        title: "Enquiries",
         href: "/admin/leads",
         icon: "Handshake",
         roles: admissionsRoles,
@@ -68,23 +68,28 @@ export const ADMIN_NAVIGATION: AdminNavGroup[] = [
         ],
       },
       {
-        title: "Students & Classes",
+        title: "Students",
         href: "/admin/students",
-        icon: "GraduationCap",
-        roles: academicRoles,
+        icon: "UsersRound",
+        roles: ["admin", "mentor", "teacher"],
         children: [
           { title: "All Students", href: "/admin/students", roles: ["admin", "mentor", "teacher"] },
           { title: "Parents", href: "/admin/parents", roles: adminOnly },
+          { title: "Student Payments", href: "/admin/payments", roles: adminOnly },
+        ],
+      },
+      {
+        title: "Classes",
+        href: "/admin/batches",
+        icon: "GraduationCap",
+        roles: academicRoles,
+        children: [
           { title: "Batches", href: "/admin/batches", roles: academicRoles },
+          { title: "Live Classes", href: "/admin/classes", roles: academicRoles },
           { title: "Teachers", href: "/admin/teachers", roles: ["admin", "teacher"] },
           { title: "Mentor Work", href: "/mentor", roles: ["admin", "mentor"] },
         ],
       },
-    ],
-  },
-  {
-    title: "Office",
-    items: [
       {
         title: "Money",
         href: "/admin/payments",
@@ -97,23 +102,15 @@ export const ADMIN_NAVIGATION: AdminNavGroup[] = [
         ],
       },
       {
-        title: "Courses & Website",
-        href: "/admin/courses",
-        icon: "BookOpenCheck",
-        roles: adminOnly,
-        children: [
-          { title: "Recorded Courses", href: "/admin/courses", roles: adminOnly },
-          { title: "Add Recorded Course", href: "/admin/courses/new", roles: adminOnly },
-          { title: "Website Programs", href: "/admin/programs", roles: adminOnly },
-        ],
-      },
-      {
-        title: "Manage",
+        title: "Settings",
         href: "/admin/users",
         icon: "Settings",
         roles: adminOnly,
         children: [
           { title: "Users & PIN", href: "/admin/users", roles: adminOnly },
+          { title: "Recorded Courses", href: "/admin/courses", roles: adminOnly },
+          { title: "Add Recorded Course", href: "/admin/courses/new", roles: adminOnly },
+          { title: "Website Programs", href: "/admin/programs", roles: adminOnly },
           { title: "Settings", href: "/admin/settings", roles: adminOnly },
           { title: "Reports", href: "/admin/reports", roles: adminOnly },
         ],

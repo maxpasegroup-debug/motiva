@@ -70,42 +70,19 @@ function NavItem({
   const activeChild = item.children?.some((child) => isAdminPathActive(pathname, child.href));
 
   return (
-    <div>
-      <Link
-        href={item.href}
-        onClick={onClose}
-        className={`flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors ${
-          active || activeChild
-            ? "bg-neutral-950 text-white"
-            : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950"
-        }`}
-        title={collapsed ? item.title : undefined}
-      >
-        <Icon className="h-4 w-4 shrink-0" aria-hidden />
-        {!collapsed ? <span className="truncate">{item.title}</span> : null}
-      </Link>
-      {!collapsed && item.children && (active || activeChild) ? (
-        <div className="mt-1 space-y-1 pl-7">
-          {item.children.map((child) => {
-            const childActive = isAdminPathActive(pathname, child.href);
-            return (
-              <Link
-                key={`${item.title}-${child.title}`}
-                href={child.href}
-                onClick={onClose}
-                className={`block rounded-md px-3 py-2 text-sm transition-colors ${
-                  childActive
-                    ? "bg-blue-50 font-medium text-blue-700"
-                    : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
-                }`}
-              >
-                {child.title}
-              </Link>
-            );
-          })}
-        </div>
-      ) : null}
-    </div>
+    <Link
+      href={item.href}
+      onClick={onClose}
+      className={`flex min-h-12 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-colors ${
+        active || activeChild
+          ? "bg-neutral-950 text-white"
+          : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950"
+      }`}
+      title={collapsed ? item.title : undefined}
+    >
+      <Icon className="h-5 w-5 shrink-0" aria-hidden />
+      {!collapsed ? <span className="truncate">{item.title}</span> : null}
+    </Link>
   );
 }
 
@@ -153,15 +130,10 @@ export function Sidebar({ role, open, collapsed, onClose }: SidebarProps) {
           </button>
         </div>
         <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
-          <div className="space-y-5">
+          <div className="space-y-2">
             {groups.map((group) => (
               <section key={group.title}>
-                {!collapsed ? (
-                  <h2 className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
-                    {group.title}
-                  </h2>
-                ) : null}
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {group.items.map((item) => (
                     <NavItem
                       key={item.title}
@@ -175,6 +147,13 @@ export function Sidebar({ role, open, collapsed, onClose }: SidebarProps) {
             ))}
           </div>
         </nav>
+        {!collapsed ? (
+          <div className="border-t border-neutral-200 px-4 py-4">
+            <p className="text-xs leading-5 text-neutral-500">
+              Use search for course, report, website, and settings pages.
+            </p>
+          </div>
+        ) : null}
       </aside>
     </>
   );
