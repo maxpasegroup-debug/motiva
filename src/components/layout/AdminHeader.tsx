@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  adminTitleKeyForPath,
+  adminTitleForPath,
 } from "@/components/admin/admin-nav-config";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import {
@@ -30,7 +30,7 @@ export function AdminHeader() {
   const { t } = useLanguage();
   const pathname = usePathname();
   const router = useRouter();
-  const titleKey = useMemo(() => adminTitleKeyForPath(pathname), [pathname]);
+  const title = useMemo(() => adminTitleForPath(pathname), [pathname]);
   const [displayName, setDisplayName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
 
@@ -79,7 +79,7 @@ export function AdminHeader() {
     <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center border-b border-neutral-200 bg-white px-6">
       <div className="flex w-full min-w-0 items-center justify-between gap-4">
         <h1 className="truncate text-xl font-semibold text-gray-800">
-          {t(titleKey)}
+          {title}
         </h1>
 
         <div className="flex shrink-0 items-center gap-4">

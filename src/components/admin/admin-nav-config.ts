@@ -1,44 +1,139 @@
-import type { TranslationKey } from "@/lib/i18n";
+export type AdminNavSection =
+  | "main"
+  | "students"
+  | "classes"
+  | "courses"
+  | "staff"
+  | "reports"
+  | "settings";
 
 export type AdminNavItem = {
+  label: string;
   href: string;
-  labelKey: TranslationKey;
   icon: string;
+  description: string;
+  section: AdminNavSection;
+  sectionLabel: string;
+  badgeKey?: "enquiries";
 };
 
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
-  { href: "/admin/dashboard", labelKey: "admin_nav_dashboard", icon: "Chart" },
-  { href: "/admin/admissions", labelKey: "admin_nav_admissions", icon: "In" },
   {
-    href: "/admin/admissions/remedial",
-    labelKey: "admin_nav_remedial_admission",
-    icon: "Med",
+    label: "Home",
+    href: "/admin",
+    icon: "🏠",
+    description: "Today's summary - students, payments, enquiries",
+    section: "main",
+    sectionLabel: "Main",
   },
   {
-    href: "/admin/admissions/create-account",
-    labelKey: "admin_nav_create_account",
-    icon: "Key",
+    label: "Enquiries",
+    href: "/admin/enquiries",
+    icon: "📋",
+    description: "People who asked about joining",
+    section: "students",
+    sectionLabel: "Students & Admissions",
+    badgeKey: "enquiries",
   },
-  { href: "/admin/users", labelKey: "admin_nav_users", icon: "Users" },
-  { href: "/admin/students", labelKey: "admin_nav_students", icon: "Stu" },
-  { href: "/admin/parents", labelKey: "admin_nav_parents", icon: "Par" },
-  { href: "/admin/teachers", labelKey: "admin_nav_teachers", icon: "Teach" },
-  { href: "/admin/batches", labelKey: "admin_nav_batches", icon: "Batch" },
-  { href: "/admin/programs", labelKey: "admin_nav_programs", icon: "Prog" },
-  { href: "/admin/courses", labelKey: "admin_nav_courses", icon: "Course" },
-  { href: "/admin/enquiries", labelKey: "admin_nav_enquiries", icon: "Mail" },
-  { href: "/admin/payments", labelKey: "admin_nav_payments", icon: "Pay" },
-  { href: "/admin/reports", labelKey: "admin_nav_reports", icon: "Rpt" },
-  { href: "/admin/settings", labelKey: "admin_nav_settings", icon: "Set" },
+  {
+    label: "Admissions",
+    href: "/admin/admissions",
+    icon: "🧑‍🎓",
+    description: "Add new student, create login",
+    section: "students",
+    sectionLabel: "Students & Admissions",
+  },
+  {
+    label: "All Students",
+    href: "/admin/students",
+    icon: "👨‍👩‍👧",
+    description: "View, search, manage students",
+    section: "students",
+    sectionLabel: "Students & Admissions",
+  },
+  {
+    label: "Payments",
+    href: "/admin/payments",
+    icon: "💳",
+    description: "Fee collection and payment status",
+    section: "students",
+    sectionLabel: "Students & Admissions",
+  },
+  {
+    label: "Batches",
+    href: "/admin/batches",
+    icon: "📅",
+    description: "Class groups and schedules",
+    section: "classes",
+    sectionLabel: "Classes & Teaching",
+  },
+  {
+    label: "Attendance",
+    href: "/admin/attendance",
+    icon: "✅",
+    description: "Daily attendance reports",
+    section: "classes",
+    sectionLabel: "Classes & Teaching",
+  },
+  {
+    label: "Teachers",
+    href: "/admin/teachers",
+    icon: "👨‍🏫",
+    description: "Add or remove teachers",
+    section: "classes",
+    sectionLabel: "Classes & Teaching",
+  },
+  {
+    label: "Recorded Courses",
+    href: "/admin/courses",
+    icon: "🎬",
+    description: "Upload and manage video courses",
+    section: "courses",
+    sectionLabel: "Courses",
+  },
+  {
+    label: "Staff Logins",
+    href: "/admin/users",
+    icon: "👥",
+    description: "Add staff, reset PIN, turn off access",
+    section: "staff",
+    sectionLabel: "Staff & Access",
+  },
+  {
+    label: "Reset PIN",
+    href: "/admin/users?action=reset-pin",
+    icon: "🔑",
+    description: "Reset login PIN for any user",
+    section: "staff",
+    sectionLabel: "Staff & Access",
+  },
+  {
+    label: "Reports",
+    href: "/admin/reports",
+    icon: "📊",
+    description: "Attendance, payments, student progress",
+    section: "reports",
+    sectionLabel: "Reports",
+  },
+  {
+    label: "Settings",
+    href: "/admin/settings",
+    icon: "⚙️",
+    description: "Academy name, WhatsApp number, logo",
+    section: "settings",
+    sectionLabel: "Settings",
+  },
 ];
 
-export function adminTitleKeyForPath(pathname: string | null): TranslationKey {
-  if (!pathname) return "admin_nav_dashboard";
-  const sorted = [...ADMIN_NAV_ITEMS].sort(
-    (a, b) => b.href.length - a.href.length,
-  );
-  const hit = sorted.find(
-    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
-  );
-  return hit?.labelKey ?? "admin_nav_dashboard";
+export function adminTitleForPath(pathname: string | null): string {
+  if (!pathname || pathname === "/admin" || pathname === "/admin/dashboard") {
+    return "Home";
+  }
+  const sorted = [...ADMIN_NAV_ITEMS].sort((a, b) => b.href.length - a.href.length);
+  const hit = sorted.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
+  return hit?.label ?? "Home";
+}
+
+export function adminTitleKeyForPath(): "admin_nav_home" {
+  return "admin_nav_home";
 }
