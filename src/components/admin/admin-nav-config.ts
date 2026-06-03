@@ -27,10 +27,10 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     sectionLabel: "Main",
   },
   {
-    label: "Enquiries",
+    label: "Leads",
     href: "/admin/enquiries",
     icon: "📋",
-    description: "People who asked about joining",
+    description: "Create, track, and manage leads",
     section: "students",
     sectionLabel: "Students & Admissions",
     badgeKey: "enquiries",

@@ -10,6 +10,15 @@ import { getAuthToken } from "@/lib/session";
 
 type ClassDuration = 12 | 25;
 
+type ApiTeacherUser = {
+  id: string;
+  name: string;
+  email?: string | null;
+  mobile?: string | null;
+  role?: string;
+  isActive?: boolean;
+};
+
 type ApiBatch = {
   id: string;
   name: string;
@@ -97,6 +106,38 @@ export function AdminClassesPage() {
 
   const token = getAuthToken();
 
+  const loadTeachers = useCallback(async () => {
+    const fallbackTeachers = listTeachers();
+    setTeachers(fallbackTeachers);
+
+    if (!token) return;
+
+    try {
+      const res = await fetch("/api/users?role=teacher", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        users?: ApiTeacherUser[];
+      };
+      if (!res.ok) return;
+
+      const apiTeachers = (json.users ?? [])
+        .filter((user) => user.isActive !== false)
+        .map((user) => ({
+          id: user.id,
+          name: user.name,
+          email: user.email ?? user.mobile ?? "",
+        }))
+        .filter((teacher) => teacher.id && teacher.name);
+
+      if (apiTeachers.length > 0 || fallbackTeachers.length === 0) {
+        setTeachers(apiTeachers);
+      }
+    } catch {
+      setTeachers(fallbackTeachers);
+    }
+  }, [token]);
+
   const loadBatches = useCallback(async () => {
     if (!token) {
       setBatches([]);
@@ -123,15 +164,15 @@ export function AdminClassesPage() {
     }
   }, [token, t]);
 
-  function refreshUsers() {
-    setTeachers(listTeachers());
+  const refreshUsers = useCallback(() => {
+    void loadTeachers();
     setStudents(listStudents());
-  }
+  }, [loadTeachers]);
 
   useEffect(() => {
     refreshUsers();
     void loadBatches();
-  }, [loadBatches]);
+  }, [loadBatches, refreshUsers]);
 
   useEffect(() => {
     function onUsersUpdated() {
@@ -140,7 +181,7 @@ export function AdminClassesPage() {
     window.addEventListener("motiva-users-updated", onUsersUpdated);
     return () =>
       window.removeEventListener("motiva-users-updated", onUsersUpdated);
-  }, []);
+  }, [refreshUsers]);
 
   const previewName = useMemo(() => {
     if (!teacherId) return "";

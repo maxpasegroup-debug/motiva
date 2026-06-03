@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 import { requireAdminApi } from "@/server/auth/require-admin";
 import {
   deleteBatchById,
@@ -95,7 +96,7 @@ export async function PATCH(
     start_date?: string | null;
   } = {};
   if (typeof o.name === "string") patch.name = o.name;
-  if (typeof o.teacher_id === "string") patch.teacher_id = o.teacher_id;
+  if (typeof o.teacher_id === "string") patch.teacher_id = o.teacher_id.trim();
   const duration = parseDuration(o.duration);
   if (duration !== null) patch.duration = duration;
   if (o.start_date === null || typeof o.start_date === "string") {
@@ -106,6 +107,24 @@ export async function PATCH(
     const existing = await getBatchById(id);
     if (!existing) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    if (patch.teacher_id !== undefined) {
+      if (!UUID_RE.test(patch.teacher_id)) {
+        return NextResponse.json(
+          { error: "Invalid teacher_id" },
+          { status: 400 },
+        );
+      }
+      const teacher = await prisma.user.findFirst({
+        where: { id: patch.teacher_id, role: "teacher", isActive: true },
+        select: { id: true },
+      });
+      if (!teacher) {
+        return NextResponse.json(
+          { error: "Teacher not found" },
+          { status: 404 },
+        );
+      }
     }
     await updateBatch(id, patch);
     const batch = await getBatchById(id);

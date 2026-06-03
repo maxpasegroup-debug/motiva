@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 import { requireAdminApi } from "@/server/auth/require-admin";
 import {
   countPresentOnDay,
@@ -9,6 +10,9 @@ import { getDatabaseUrl } from "@/server/db/pool";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
 
 function parseDuration(value: unknown): number {
   const n = typeof value === "number" ? value : Number(value);
@@ -72,7 +76,8 @@ export async function POST(req: NextRequest) {
   }
   const o = body as Record<string, unknown>;
   const name = typeof o.name === "string" ? o.name.trim() : "";
-  const teacher_id = typeof o.teacher_id === "string" ? o.teacher_id : "";
+  const teacher_id =
+    typeof o.teacher_id === "string" ? o.teacher_id.trim() : "";
   const duration = parseDuration(o.duration);
   const start_date =
     o.start_date === null || o.start_date === undefined
@@ -88,7 +93,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (!UUID_RE.test(teacher_id)) {
+    return NextResponse.json({ error: "Invalid teacher_id" }, { status: 400 });
+  }
+
   try {
+    const teacher = await prisma.user.findFirst({
+      where: { id: teacher_id, role: "teacher", isActive: true },
+      select: { id: true },
+    });
+    if (!teacher) {
+      return NextResponse.json({ error: "Teacher not found" }, { status: 404 });
+    }
+
     const { id } = await insertBatch({
       name,
       teacher_id,

@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
     select: {
       id: true,
       name: true,
+      email: true,
       mobile: true,
       role: true,
       isActive: true,
@@ -41,6 +42,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     users: users.map((user) => ({
       ...user,
+      email: user.email ?? "",
       phone: user.mobile,
     })),
   });
