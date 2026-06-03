@@ -36,12 +36,12 @@ export default async function AssignMentorPage({
       },
     }),
     prisma.user.findMany({
-      where: { role: "mentor" },
+      where: { role: "mentor", isActive: true },
       select: { id: true, name: true, email: true, mobile: true },
       orderBy: { name: "asc" },
     }),
     prisma.user.findMany({
-      where: { role: "teacher" },
+      where: { role: "teacher", isActive: true },
       select: { id: true, name: true, email: true },
       orderBy: { name: "asc" },
     }),

@@ -240,6 +240,34 @@ export async function setBatchStudents(
   }
 }
 
+export async function assignStudentToBatchRoster(
+  studentUserId: string,
+  batchId: string,
+): Promise<void> {
+  await ensureTables();
+  const sid = studentUserId.trim();
+  if (!sid) return;
+
+  const pool = getPool();
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(`DELETE FROM batch_students WHERE student_id = $1`, [
+      sid,
+    ]);
+    await client.query(
+      `INSERT INTO batch_students (student_id, batch_id) VALUES ($1, $2)`,
+      [sid, batchId],
+    );
+    await client.query("COMMIT");
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
 export async function getStudentBatchRow(
   studentId: string,
 ): Promise<BatchRow | null> {

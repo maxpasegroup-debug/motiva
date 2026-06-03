@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRolesApi } from "@/server/auth/require-roles";
+import { assignStudentToBatchRoster } from "@/server/batches/batches-db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,7 +48,7 @@ export async function PUT(req: NextRequest, context: Ctx) {
         id: studentId,
         ...(auth.payload.role === "admin" ? {} : { mentorId: auth.payload.sub }),
       },
-      select: { id: true, studentName: true },
+      select: { id: true, userId: true, studentName: true },
     }),
     prisma.user.findFirst({
       where: { id: teacherId, role: "teacher", isActive: true },
@@ -68,11 +69,18 @@ export async function PUT(req: NextRequest, context: Ctx) {
   if (!batch) {
     return NextResponse.json({ error: "Batch not found" }, { status: 404 });
   }
+  if (!student.userId) {
+    return NextResponse.json(
+      { error: "Student login not found for batch roster" },
+      { status: 400 },
+    );
+  }
 
   await prisma.studentAccount.update({
     where: { id: student.id },
     data: { teacherId, batchId },
   });
+  await assignStudentToBatchRoster(student.userId, batchId);
 
   return NextResponse.json({
     success: true,

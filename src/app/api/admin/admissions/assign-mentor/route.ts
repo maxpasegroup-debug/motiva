@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { appendLeadNote } from "@/lib/leads";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
 import { requireAdminApi } from "@/server/auth/require-admin";
+import { assignStudentToBatchRoster } from "@/server/batches/batches-db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -78,15 +79,15 @@ export async function POST(req: NextRequest) {
       }),
       prisma.studentAccount.findUnique({
         where: { id: studentAccountId },
-        select: { id: true, studentName: true, programType: true },
+        select: { id: true, userId: true, studentName: true, programType: true },
       }),
       prisma.user.findUnique({
         where: { id: mentorId },
-        select: { id: true, name: true, mobile: true },
+        select: { id: true, name: true, mobile: true, role: true, isActive: true },
       }),
       prisma.user.findUnique({
         where: { id: teacherId },
-        select: { id: true, name: true },
+        select: { id: true, name: true, role: true, isActive: true },
       }),
       batchId
         ? prisma.batch.findUnique({
@@ -105,10 +106,10 @@ export async function POST(req: NextRequest) {
         { status: 404 },
       );
     }
-    if (!mentor) {
+    if (!mentor || mentor.role !== "mentor" || !mentor.isActive) {
       return NextResponse.json({ error: "Mentor not found" }, { status: 404 });
     }
-    if (!teacher) {
+    if (!teacher || teacher.role !== "teacher" || !teacher.isActive) {
       return NextResponse.json(
         { error: "Teacher not found" },
         { status: 404 },
@@ -117,6 +118,13 @@ export async function POST(req: NextRequest) {
     if (batchId && !batch) {
       return NextResponse.json({ error: "Batch not found" }, { status: 404 });
     }
+    if (batchId && !studentAccount.userId) {
+      return NextResponse.json(
+        { error: "Student login not found for batch roster" },
+        { status: 400 },
+      );
+    }
+    const studentUserId = studentAccount.userId ?? "";
 
     const noteParts = [
       `Mentor assigned: ${mentor.name}.`,
@@ -147,6 +155,10 @@ export async function POST(req: NextRequest) {
         },
       }),
     ]);
+
+    if (batchId) {
+      await assignStudentToBatchRoster(studentUserId, batchId);
+    }
 
     if (mentor.mobile) {
       try {
