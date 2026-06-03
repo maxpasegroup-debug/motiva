@@ -12,6 +12,9 @@ type Teacher = {
   id: string;
   name: string;
   subject: string;
+  loginUserId?: string | null;
+  loginMobile?: string | null;
+  loginIsActive?: boolean;
   bio: string | null;
   photo: string | null;
   displayOrder: number;
@@ -27,6 +30,9 @@ export function TeacherProfileForm({ mode, teacherId }: Props) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [subject, setSubject] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [pin, setPin] = useState("");
+  const [hasLogin, setHasLogin] = useState(false);
   const [bio, setBio] = useState("");
   const [photo, setPhoto] = useState("");
   const [displayOrder, setDisplayOrder] = useState(0);
@@ -52,6 +58,8 @@ export function TeacherProfileForm({ mode, teacherId }: Props) {
     const { teacher } = (await res.json()) as { teacher: Teacher };
     setName(teacher.name);
     setSubject(teacher.subject);
+    setMobile(teacher.loginMobile ?? "");
+    setHasLogin(Boolean(teacher.loginUserId && teacher.loginIsActive));
     setBio(teacher.bio ?? "");
     setPhoto(teacher.photo ?? "");
     setDisplayOrder(teacher.displayOrder);
@@ -103,8 +111,13 @@ export function TeacherProfileForm({ mode, teacherId }: Props) {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    const needsLogin = mode === "new" || !hasLogin;
     if (!name.trim() || !subject.trim()) {
       setError("Name and subject are required.");
+      return;
+    }
+    if (needsLogin && (!mobile.trim() || !/^\d{4}$/.test(pin))) {
+      setError("Mobile and a 4-digit PIN are required for teacher login.");
       return;
     }
 
@@ -118,6 +131,8 @@ export function TeacherProfileForm({ mode, teacherId }: Props) {
     const body = {
       name: name.trim(),
       subject: subject.trim(),
+      mobile: needsLogin ? mobile.trim() : undefined,
+      pin: needsLogin ? pin : undefined,
       bio: bio.trim(),
       photo: photoUrl || null,
       displayOrder: Number.isFinite(displayOrder) ? displayOrder : 0,
@@ -161,8 +176,12 @@ export function TeacherProfileForm({ mode, teacherId }: Props) {
           ← Back to teachers
         </Link>
         <h1 className="text-2xl font-bold text-neutral-900">
-          {mode === "new" ? "Add teacher profile" : "Edit teacher profile"}
+          {mode === "new" ? "Add teacher" : "Edit teacher"}
         </h1>
+        <p className="text-sm leading-6 text-neutral-600">
+          Teachers need a login before they can be assigned to batches and run
+          sessions from the teacher dashboard.
+        </p>
       </div>
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
@@ -189,6 +208,59 @@ export function TeacherProfileForm({ mode, teacherId }: Props) {
             onChange={(e) => setSubject(e.target.value)}
             required
           />
+        </div>
+        <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-bold text-blue-950">Teacher login</p>
+              <p className="mt-1 text-xs leading-5 text-blue-800">
+                This login is what makes the teacher appear in the batch
+                assignment dropdown.
+              </p>
+            </div>
+            {hasLogin ? (
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
+                Login ready
+              </span>
+            ) : (
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+                Login needed
+              </span>
+            )}
+          </div>
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="block text-sm font-medium text-neutral-700">
+              Mobile
+              <input
+                inputMode="tel"
+                className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2.5 disabled:bg-neutral-100"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                disabled={hasLogin}
+                required={mode === "new" || !hasLogin}
+                placeholder="10-digit mobile"
+              />
+            </label>
+            <label className="block text-sm font-medium text-neutral-700">
+              {hasLogin ? "PIN" : "4-digit PIN"}
+              <input
+                inputMode="numeric"
+                maxLength={4}
+                className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2.5 disabled:bg-neutral-100"
+                value={hasLogin ? "****" : pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                disabled={hasLogin}
+                required={mode === "new" || !hasLogin}
+                placeholder="1234"
+              />
+            </label>
+          </div>
+          {mode === "edit" && !hasLogin ? (
+            <p className="mt-3 text-xs leading-5 text-amber-800">
+              This teacher profile was created without a login. Add mobile and
+              PIN once, then save; the teacher will become selectable in Batches.
+            </p>
+          ) : null}
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-neutral-700">

@@ -9,6 +9,9 @@ type Teacher = {
   id: string;
   name: string;
   subject: string;
+  loginUserId?: string | null;
+  loginMobile?: string | null;
+  loginIsActive?: boolean;
   bio: string | null;
   photo: string | null;
   displayOrder: number;
@@ -122,6 +125,7 @@ export function AdminTeachersManagerPage() {
                 <th className="px-4 py-3 font-medium">Photo</th>
                 <th className="px-4 py-3 font-medium">Name</th>
                 <th className="px-4 py-3 font-medium">Subject</th>
+                <th className="px-4 py-3 font-medium">Batch login</th>
                 <th className="px-4 py-3 font-medium">Visible</th>
                 <th className="px-4 py-3 font-medium">Order</th>
                 <th className="px-4 py-3 font-medium">Actions</th>
@@ -145,6 +149,27 @@ export function AdminTeachersManagerPage() {
                   </td>
                   <td className="px-4 py-3 font-medium text-neutral-900">{t.name}</td>
                   <td className="px-4 py-3">{t.subject}</td>
+                  <td className="px-4 py-3">
+                    {t.loginUserId && t.loginIsActive ? (
+                      <div>
+                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+                          Ready
+                        </span>
+                        <p className="mt-1 text-xs text-neutral-500">
+                          {t.loginMobile}
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+                          Needs login
+                        </span>
+                        <p className="mt-1 text-xs text-neutral-500">
+                          Edit and add mobile/PIN
+                        </p>
+                      </div>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <button
                       type="button"
