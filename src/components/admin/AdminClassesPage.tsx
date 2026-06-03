@@ -19,6 +19,15 @@ type ApiTeacherUser = {
   isActive?: boolean;
 };
 
+type TeacherProfile = {
+  id: string;
+  name: string;
+  subject: string;
+  loginUserId?: string | null;
+  loginMobile?: string | null;
+  loginIsActive?: boolean;
+};
+
 type ApiBatch = {
   id: string;
   name: string;
@@ -56,6 +65,10 @@ function teacherName(teachers: TeacherRecord[], id: string) {
   return teachers.find((t) => t.id === id)?.name ?? "—";
 }
 
+function authHeaders(token: string | null): Record<string, string> {
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 function TrashIcon() {
   return (
     <svg
@@ -76,6 +89,7 @@ export function AdminClassesPage() {
   const { t } = useLanguage();
   const [batches, setBatches] = useState<ApiBatch[]>([]);
   const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
+  const [teacherProfiles, setTeacherProfiles] = useState<TeacherProfile[]>([]);
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [listError, setListError] = useState<string | null>(null);
 
@@ -110,11 +124,9 @@ export function AdminClassesPage() {
     const fallbackTeachers = listTeachers();
     setTeachers(fallbackTeachers);
 
-    if (!token) return;
-
     try {
       const res = await fetch("/api/users?role=teacher", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: authHeaders(token),
       });
       const json = (await res.json().catch(() => ({}))) as {
         users?: ApiTeacherUser[];
@@ -138,14 +150,26 @@ export function AdminClassesPage() {
     }
   }, [token]);
 
-  const loadBatches = useCallback(async () => {
-    if (!token) {
-      setBatches([]);
-      return;
+  const loadTeacherProfiles = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/teachers", {
+        headers: authHeaders(token),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        teachers?: TeacherProfile[];
+      };
+      if (res.ok) {
+        setTeacherProfiles(json.teachers ?? []);
+      }
+    } catch {
+      setTeacherProfiles([]);
     }
+  }, [token]);
+
+  const loadBatches = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/batches", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: authHeaders(token),
       });
       const json = (await res.json().catch(() => ({}))) as {
         batches?: ApiBatch[];
@@ -166,8 +190,9 @@ export function AdminClassesPage() {
 
   const refreshUsers = useCallback(() => {
     void loadTeachers();
+    void loadTeacherProfiles();
     setStudents(listStudents());
-  }, [loadTeachers]);
+  }, [loadTeacherProfiles, loadTeachers]);
 
   useEffect(() => {
     refreshUsers();
@@ -191,13 +216,13 @@ export function AdminClassesPage() {
   }, [teacherId, duration, batches]);
 
   useEffect(() => {
-    if (!assignBatchId || !token) {
+    if (!assignBatchId) {
       setSelectedStudentIds(new Set());
       return;
     }
     (async () => {
       const res = await fetch(`/api/admin/batches/${assignBatchId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: authHeaders(token),
       });
       const json = (await res.json().catch(() => ({}))) as {
         student_ids?: string[];
@@ -207,14 +232,14 @@ export function AdminClassesPage() {
   }, [assignBatchId, token]);
 
   useEffect(() => {
-    if (!editBatchId || !token) {
+    if (!editBatchId) {
       setEditName("");
       setEditTeacherId("");
       return;
     }
     (async () => {
       const res = await fetch(`/api/admin/batches/${editBatchId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: authHeaders(token),
       });
       const json = (await res.json().catch(() => ({}))) as {
         batch?: ApiBatch;
@@ -229,7 +254,6 @@ export function AdminClassesPage() {
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
     setCreateError(null);
-    if (!token) return;
     if (!teacherId) {
       setCreateError(t("admin_teacher_pick_required"));
       return;
@@ -242,8 +266,8 @@ export function AdminClassesPage() {
     const res = await fetch("/api/admin/batches", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        ...authHeaders(token),
       },
       body: JSON.stringify({
         name,
@@ -272,12 +296,12 @@ export function AdminClassesPage() {
   }
 
   async function handleSaveAssignments() {
-    if (!assignBatchId || !token) return;
+    if (!assignBatchId) return;
     const res = await fetch(`/api/admin/batches/${assignBatchId}/students`, {
       method: "PUT",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        ...authHeaders(token),
       },
       body: JSON.stringify({ student_ids: Array.from(selectedStudentIds) }),
     });
@@ -288,11 +312,10 @@ export function AdminClassesPage() {
   }
 
   async function handleDeleteBatch(id: string) {
-    if (!token) return;
     if (!window.confirm(t("admin_batches_delete_confirm"))) return;
     await fetch(`/api/admin/batches/${id}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: authHeaders(token),
     });
     if (assignBatchId === id) setAssignBatchId("");
     if (editBatchId === id) setEditBatchId(null);
@@ -300,14 +323,13 @@ export function AdminClassesPage() {
   }
 
   async function openAttendanceReport(batchId: string) {
-    if (!token) return;
     setReportBatchId(batchId);
     setReportLoading(true);
     setReport(null);
     try {
       const res = await fetch(
         `/api/admin/batches/${batchId}/attendance-report`,
-        { headers: { Authorization: `Bearer ${token}` } },
+        { headers: authHeaders(token) },
       );
       const json = (await res.json().catch(() => ({}))) as {
         success?: boolean;
@@ -329,13 +351,13 @@ export function AdminClassesPage() {
 
   async function handleSaveEdit(e: FormEvent) {
     e.preventDefault();
-    if (!editBatchId || !token) return;
+    if (!editBatchId) return;
     setEditSaved(false);
     const res = await fetch(`/api/admin/batches/${editBatchId}`, {
       method: "PATCH",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        ...authHeaders(token),
       },
       body: JSON.stringify({
         name: editName.trim(),
@@ -347,6 +369,10 @@ export function AdminClassesPage() {
       await loadBatches();
     }
   }
+
+  const teacherProfilesWithoutLogin = teacherProfiles.filter(
+    (profile) => !profile.loginUserId || !profile.loginIsActive,
+  );
 
   return (
     <div className="space-y-10">
@@ -443,6 +469,29 @@ export function AdminClassesPage() {
               <p className="text-sm text-accent" role="alert">
                 {createError}
               </p>
+            ) : null}
+
+            {teachers.length === 0 && teacherProfilesWithoutLogin.length > 0 ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+                <p className="font-semibold">
+                  Teacher profiles exist, but no batch-ready teacher login was found.
+                </p>
+                <p className="mt-1">
+                  Edit each teacher and add mobile + 4-digit PIN. Then they will
+                  appear in this dropdown.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {teacherProfilesWithoutLogin.map((profile) => (
+                    <a
+                      key={profile.id}
+                      href={`/admin/teachers/${profile.id}/edit`}
+                      className="rounded-lg bg-white px-3 py-1 text-xs font-bold text-amber-900 ring-1 ring-amber-200"
+                    >
+                      Fix {profile.name}
+                    </a>
+                  ))}
+                </div>
+              </div>
             ) : null}
 
             <Button
