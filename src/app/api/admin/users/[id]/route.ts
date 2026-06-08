@@ -47,7 +47,41 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
   }
 
   if (typeof body.isActive === "boolean") {
+    if (id === auth.payload.userId && body.isActive === false) {
+      return NextResponse.json(
+        { error: "You cannot deactivate your own account" },
+        { status: 400 },
+      );
+    }
     data.isActive = body.isActive;
+  }
+
+  if (data.mobile || data.role) {
+    const current = await prisma.user.findUnique({
+      where: { id },
+      select: { mobile: true, role: true },
+    });
+    if (!current) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+    const nextMobile = data.mobile ?? current.mobile;
+    const nextRole = data.role ?? current.role;
+    if (nextMobile) {
+      const duplicate = await prisma.user.findFirst({
+        where: {
+          id: { not: id },
+          mobile: nextMobile,
+          role: nextRole,
+        },
+        select: { id: true },
+      });
+      if (duplicate) {
+        return NextResponse.json(
+          { error: "Another user already has this mobile and role" },
+          { status: 409 },
+        );
+      }
+    }
   }
 
   const user = await prisma.user.update({

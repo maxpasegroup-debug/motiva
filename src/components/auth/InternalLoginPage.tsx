@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { SecretInput } from "@/components/auth/SecretInput";
 import { saveSessionToken } from "@/lib/session";
 
 type LoginResponse = {
@@ -115,8 +116,7 @@ export function InternalLoginPage() {
 
           <label className="flex flex-col gap-2 text-sm font-medium text-neutral-700">
             <span>PIN</span>
-            <input
-              type="password"
+            <SecretInput
               inputMode="numeric"
               pattern="[0-9]{4}"
               maxLength={4}

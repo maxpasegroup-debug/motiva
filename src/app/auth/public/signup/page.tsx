@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { SecretInput } from "@/components/auth/SecretInput";
 
 export default function PublicSignupPage() {
   const router = useRouter();
@@ -91,9 +92,8 @@ export default function PublicSignupPage() {
             >
               4-digit PIN
             </label>
-            <input
+            <SecretInput
               id="pin"
-              type="password"
               inputMode="numeric"
               maxLength={4}
               className="w-full rounded-lg border border-neutral-200 px-3 py-2.5"
@@ -111,9 +111,8 @@ export default function PublicSignupPage() {
             >
               Confirm PIN
             </label>
-            <input
+            <SecretInput
               id="confirmPin"
-              type="password"
               inputMode="numeric"
               maxLength={4}
               className="w-full rounded-lg border border-neutral-200 px-3 py-2.5"

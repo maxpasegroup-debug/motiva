@@ -28,10 +28,6 @@ const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: "public", label: "Public User" },
 ];
 
-const ROLE_LABELS = Object.fromEntries(
-  ROLE_OPTIONS.map((option) => [option.value, option.label]),
-) as Record<Role, string>;
-
 function generatePin() {
   return String(Math.floor(Math.random() * 10000)).padStart(4, "0");
 }
@@ -45,6 +41,7 @@ export function AdminUsersPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [oneTimePin, setOneTimePin] = useState<{ name: string; pin: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState<Record<string, Partial<AdminUser>>>({});
 
   async function loadUsers() {
     const res = await fetch("/api/admin/users", { cache: "no-store" });
@@ -107,6 +104,53 @@ export function AdminUsersPage() {
     }
   }
 
+  function editValue(user: AdminUser, key: keyof AdminUser) {
+    return editing[user.id]?.[key] ?? user[key];
+  }
+
+  function patchDraft(userId: string, patch: Partial<AdminUser>) {
+    setEditing((current) => ({
+      ...current,
+      [userId]: {
+        ...current[userId],
+        ...patch,
+      },
+    }));
+  }
+
+  async function saveUserAccess(user: AdminUser) {
+    const draft = editing[user.id] ?? {};
+    const payload = {
+      name: typeof draft.name === "string" ? draft.name : user.name,
+      mobile: typeof draft.mobile === "string" ? draft.mobile : user.mobile,
+      role: (draft.role ?? user.role) as Role,
+      isActive:
+        typeof draft.isActive === "boolean" ? draft.isActive : user.isActive,
+    };
+
+    setBusy(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) throw new Error(body?.error ?? "Could not update login access");
+      setEditing((current) => {
+        const next = { ...current };
+        delete next[user.id];
+        return next;
+      });
+      await loadUsers();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Could not update login access");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <main className="space-y-6">
       <div>
@@ -159,7 +203,7 @@ export function AdminUsersPage() {
       {message ? <p className="text-sm font-medium text-accent">{message}</p> : null}
 
       <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white shadow-sm">
-        <table className="w-full min-w-[760px] text-left text-sm">
+        <table className="w-full min-w-[980px] text-left text-sm">
           <thead className="bg-neutral-50 text-xs uppercase text-neutral-500">
             <tr>
               <th className="px-4 py-3">Name</th>
@@ -173,29 +217,75 @@ export function AdminUsersPage() {
           <tbody className="divide-y divide-neutral-100">
             {users.map((user) => (
               <tr key={user.id}>
-                <td className="px-4 py-3 font-medium text-neutral-900">{user.name}</td>
-                <td className="px-4 py-3 text-neutral-700">{user.mobile ?? "-"}</td>
-                <td className="px-4 py-3">
-                  <span className="rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-700">
-                    {ROLE_LABELS[user.role] ?? user.role}
-                  </span>
+                <td className="px-4 py-3 font-medium text-neutral-900">
+                  <input
+                    value={String(editValue(user, "name") ?? "")}
+                    onChange={(e) => patchDraft(user.id, { name: e.target.value })}
+                    className="min-h-10 w-44 rounded-lg border border-neutral-200 px-3 text-sm"
+                  />
                 </td>
                 <td className="px-4 py-3 text-neutral-700">
-                  {user.isActive ? "Active" : "Inactive"}
-                  {user.pinResetRequired ? " - reset required" : ""}
+                  <input
+                    value={String(editValue(user, "mobile") ?? "")}
+                    onChange={(e) =>
+                      patchDraft(user.id, {
+                        mobile: e.target.value.replace(/\D/g, "").slice(0, 10),
+                      })
+                    }
+                    inputMode="numeric"
+                    className="min-h-10 w-32 rounded-lg border border-neutral-200 px-3 text-sm"
+                  />
+                </td>
+                <td className="px-4 py-3">
+                  <select
+                    value={String(editValue(user, "role"))}
+                    onChange={(e) => patchDraft(user.id, { role: e.target.value as Role })}
+                    className="min-h-10 w-44 rounded-lg border border-neutral-200 px-3 text-sm"
+                  >
+                    {ROLE_OPTIONS.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td className="px-4 py-3 text-neutral-700">
+                  <select
+                    value={String(editValue(user, "isActive"))}
+                    onChange={(e) =>
+                      patchDraft(user.id, { isActive: e.target.value === "true" })
+                    }
+                    className="min-h-10 w-36 rounded-lg border border-neutral-200 px-3 text-sm"
+                  >
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                  </select>
+                  {user.pinResetRequired ? (
+                    <p className="mt-1 text-xs text-amber-700">PIN reset required</p>
+                  ) : null}
                 </td>
                 <td className="px-4 py-3 text-neutral-700">
                   {new Date(user.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={() => resetPin(user)}
-                    disabled={busy}
-                    className="rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 disabled:opacity-70"
-                  >
-                    Reset PIN
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => saveUserAccess(user)}
+                      disabled={busy}
+                      className="rounded-lg bg-neutral-900 px-3 py-2 text-xs font-semibold text-white hover:bg-neutral-800 disabled:opacity-70"
+                    >
+                      Save Access
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => resetPin(user)}
+                      disabled={busy}
+                      className="rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 disabled:opacity-70"
+                    >
+                      Reset PIN
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

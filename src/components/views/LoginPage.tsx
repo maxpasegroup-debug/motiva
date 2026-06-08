@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { SecretInput } from "@/components/auth/SecretInput";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -71,8 +72,7 @@ export function LoginPage() {
 
           <label className="block text-left text-sm font-medium text-neutral-700">
             <span className="mb-2 block">PIN or password</span>
-            <input
-              type="password"
+            <SecretInput
               name="credential"
               autoComplete="current-password"
               placeholder="PIN or password"

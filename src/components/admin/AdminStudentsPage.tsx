@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -103,7 +104,15 @@ export function AdminStudentsPage() {
 
   return (
     <div className="space-y-8">
-      <p className="text-sm text-neutral-600">Create student login credentials</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-neutral-600">Create student login credentials</p>
+        <Link
+          href="/admin/students/new"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
+        >
+          Add Student Account
+        </Link>
+      </div>
 
       <Card className="p-6 shadow-md sm:p-8">
         <h2 className="mb-6 text-lg font-semibold text-foreground">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { SecretInput } from "@/components/auth/SecretInput";
 import { saveSessionToken } from "@/lib/session";
 
 export default function PublicLoginPage() {
@@ -80,9 +81,8 @@ export default function PublicLoginPage() {
             >
               4-digit PIN
             </label>
-            <input
+            <SecretInput
               id="pin"
-              type="password"
               inputMode="numeric"
               maxLength={4}
               className="w-full rounded-lg border border-neutral-200 px-3 py-2.5"

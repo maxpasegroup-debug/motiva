@@ -61,9 +61,27 @@ export function MentorDashboardView({
   return (
     <div className="space-y-5">
       <section className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm sm:p-6">
-        <p className="text-sm font-medium text-blue-700">Mentor Portal</p>
-        <h1 className="mt-2 text-2xl font-bold text-neutral-900 sm:text-3xl">{heading}</h1>
-        <p className="mt-2 max-w-2xl text-sm text-neutral-600">{subheading}</p>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-sm font-medium text-blue-700">Mentor Portal</p>
+            <h1 className="mt-2 text-2xl font-bold text-neutral-900 sm:text-3xl">{heading}</h1>
+            <p className="mt-2 max-w-2xl text-sm text-neutral-600">{subheading}</p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Link
+              href="/admin/students/new"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800"
+            >
+              Add Student
+            </Link>
+            <Link
+              href="/admin/teachers/new"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50"
+            >
+              Add Teacher
+            </Link>
+          </div>
+        </div>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
