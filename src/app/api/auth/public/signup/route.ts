@@ -27,6 +27,20 @@ const signupSchema = z
   });
 
 export async function POST(req: NextRequest) {
+  if (!process.env.DATABASE_URL?.trim()) {
+    return NextResponse.json(
+      { error: "Signup storage is not configured" },
+      { status: 503 },
+    );
+  }
+
+  if (!process.env.JWT_SECRET?.trim()) {
+    return NextResponse.json(
+      { error: "Authentication is not configured" },
+      { status: 503 },
+    );
+  }
+
   const limited = await rateLimitRequest(req, authLimiter, "public-signup");
   if (limited) return limited;
 
@@ -47,33 +61,43 @@ export async function POST(req: NextRequest) {
 
   const { name, mobile, pin } = parsed.data;
 
-  const existing = await prisma.user.findFirst({ where: { mobile, role: "public" } });
-  if (existing) {
+  try {
+    const existing = await prisma.user.findFirst({
+      where: { mobile, role: "public" },
+    });
+    if (existing) {
+      return NextResponse.json(
+        { error: "Mobile number already exists" },
+        { status: 409 },
+      );
+    }
+
+    const pinHash = await hashPin(pin);
+    const user = await prisma.user.create({
+      data: {
+        name,
+        mobile,
+        pin: pinHash,
+        role: "public",
+        isActive: true,
+        pinResetRequired: false,
+      },
+    });
+
+    const token = issueAuthToken(user);
+    const response = NextResponse.json(
+      { success: true, role: "public", token },
+      { status: 201 },
+    );
+    setAuthCookie(response, token);
+    return response;
+  } catch (error) {
+    console.error("[POST /api/auth/public/signup]", error);
     return NextResponse.json(
-      { error: "Mobile number already exists" },
-      { status: 409 },
+      { error: "Could not create account" },
+      { status: 500 },
     );
   }
-
-  const pinHash = await hashPin(pin);
-  const user = await prisma.user.create({
-    data: {
-      name,
-      mobile,
-      pin: pinHash,
-      role: "public",
-      isActive: true,
-      pinResetRequired: false,
-    },
-  });
-
-  const token = issueAuthToken(user);
-  const response = NextResponse.json(
-    { success: true, role: "public", token },
-    { status: 201 },
-  );
-  setAuthCookie(response, token);
-  return response;
 }
 
 export const dynamic = "force-dynamic";
