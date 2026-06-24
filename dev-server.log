@@ -8,81 +8,16 @@
     · instrumentationHook
 
  ✓ Starting...
- ✓ Ready in 4.1s
+ ✓ Ready in 13.7s
  ○ Compiling / ...
- ✓ Compiled / in 10.6s (649 modules)
- ✓ Compiled in 1505ms (289 modules)
- GET / 500 in 12183ms
- ✓ Compiled in 152ms (275 modules)
- GET / 500 in 226ms
- ○ Compiling /favicon.ico ...
- ✓ Compiled /favicon.ico in 1024ms (383 modules)
- GET /favicon.ico 200 in 1176ms
- GET / 500 in 874ms
- GET / 500 in 304ms
- ✓ Compiled in 1719ms (640 modules)
- GET / 200 in 900ms
- GET / 200 in 123ms
- GET / 200 in 446ms
- GET / 200 in 93ms
- ✓ Compiled /favicon.ico in 463ms (383 modules)
- GET /favicon.ico 200 in 651ms
- GET /favicon.ico 200 in 44ms
- GET /favicon.ico 200 in 42ms
- GET / 200 in 4329ms
- GET /favicon.ico 200 in 372ms
+ ✓ Compiled / in 19.2s (649 modules)
+ GET / 200 in 20337ms
+ ✓ Compiled in 1667ms (289 modules)
+ ✓ Compiled in 187ms (275 modules)
+ GET / 200 in 166ms
  ○ Compiling /src/middleware ...
- ✓ Compiled /src/middleware in 7.2s (139 modules)
+ ✓ Compiled /src/middleware in 1390ms (139 modules)
  ○ Compiling /api/teachers ...
- ✓ Compiled /api/teachers in 5.7s (697 modules)
- GET /api/teachers 500 in 6921ms
- GET /api/teachers 500 in 7238ms
- GET /api/teachers 500 in 994ms
- GET /api/teachers 500 in 1141ms
- GET /api/teachers 500 in 482ms
- GET /api/teachers 500 in 911ms
- GET /api/teachers 500 in 292ms
- GET /api/teachers 500 in 245ms
- GET / 200 in 449ms
- ○ Compiling /courses ...
- ✓ Compiled /courses in 5.5s (700 modules)
- GET / 200 in 297ms
- GET /favicon.ico 200 in 211ms
- GET /api/teachers 500 in 188ms
- GET /api/teachers 500 in 76ms
- GET / 200 in 1333ms
- GET /api/teachers 500 in 146ms
- GET /api/teachers 500 in 85ms
- ✓ Compiled in 3.5s (657 modules)
- GET /courses 200 in 1778ms
- GET /courses 200 in 200ms
- ✓ Compiled in 1236ms (290 modules)
- ✓ Compiled in 756ms (290 modules)
- ✓ Compiled /favicon.ico in 290ms (399 modules)
- GET /favicon.ico 200 in 513ms
- GET /favicon.ico 200 in 58ms
- ○ Compiling /courses/[id] ...
- ✓ Compiled /courses/[id] in 3.2s (508 modules)
- ✓ Compiled in 407ms (278 modules)
- GET /courses 200 in 5757ms
- GET /api/courses 200 in 5894ms
- GET /courses/test-id 200 in 13282ms
- ✓ Compiled in 4.4s (781 modules)
- ✓ Compiled in 1133ms (781 modules)
- GET / 200 in 197ms
- GET /courses 200 in 204ms
- ○ Compiling /api/teachers ...
- ✓ Compiled /api/teachers in 1753ms (395 modules)
- GET /api/teachers 500 in 2133ms
- GET /api/teachers 500 in 92ms
- GET /api/teachers 500 in 73ms
- GET /api/teachers 500 in 88ms
- ○ Compiling /about ...
- ✓ Compiled /about in 2.5s (682 modules)
- GET /api/teachers 500 in 270ms
- GET /api/teachers 500 in 281ms
- GET /api/teachers 500 in 85ms
- GET /api/teachers 500 in 50ms
- ○ Compiling /api/enquiry ...
- ✓ Compiled /api/enquiry in 2.3s (484 modules)
- POST /api/enquiry 500 in 2705ms
+ ✓ Compiled /api/teachers in 1196ms (102 modules)
+ GET /api/teachers 500 in 1849ms
+ GET /api/teachers 500 in 62ms
