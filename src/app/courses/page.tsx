@@ -11,10 +11,15 @@ function formatPrice(price: number) {
 }
 
 export default async function PublicCoursesPage() {
-  const courses = (await prisma.course.findMany({
-    where: { status: "published" },
-    orderBy: { createdAt: "desc" },
-  })).filter((course) => courseIsVisibleToAudience(course.targetRole, "public"));
+  const hasDatabaseUrl = Boolean(process.env.DATABASE_URL?.trim());
+  const courses = !hasDatabaseUrl && process.env.NODE_ENV !== "production"
+    ? []
+    : (await prisma.course.findMany({
+        where: { status: "published" },
+        orderBy: { createdAt: "desc" },
+      })).filter((course) =>
+        courseIsVisibleToAudience(course.targetRole, "public"),
+      );
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">

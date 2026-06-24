@@ -30,6 +30,12 @@ function roleToCourseAudience(role: string): CourseAudienceRole | "all" {
 }
 
 export async function GET(req: NextRequest) {
+  const hasDatabaseUrl = Boolean(process.env.DATABASE_URL?.trim());
+
+  if (!hasDatabaseUrl && process.env.NODE_ENV !== "production") {
+    return NextResponse.json({ courses: [] });
+  }
+
   const payload = getAuthPayload(req);
 
   let roles: string[] = ["public"];

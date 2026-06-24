@@ -47,16 +47,19 @@ export default async function PublicCoursePreviewPage({
   params: { id: string };
 }) {
   const payload = getTokenPayload();
+  const hasDatabaseUrl = Boolean(process.env.DATABASE_URL?.trim());
 
-  const course = await prisma.course.findFirst({
-    where: { id: params.id, status: "published" },
-    include: {
-      sections: {
-        orderBy: { order: "asc" },
-        include: { videos: { orderBy: { order: "asc" } } },
-      },
-    },
-  });
+  const course = !hasDatabaseUrl && process.env.NODE_ENV !== "production"
+    ? null
+    : await prisma.course.findFirst({
+        where: { id: params.id, status: "published" },
+        include: {
+          sections: {
+            orderBy: { order: "asc" },
+            include: { videos: { orderBy: { order: "asc" } } },
+          },
+        },
+      });
 
   if (!course) {
     return (
@@ -66,7 +69,7 @@ export default async function PublicCoursePreviewPage({
     );
   }
 
-  const enrollment = payload
+  const enrollment = payload && hasDatabaseUrl
     ? await prisma.courseEnrollment.findUnique({
         where: {
           userId_courseId: {
