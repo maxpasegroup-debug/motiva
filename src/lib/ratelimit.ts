@@ -3,28 +3,56 @@ import { Redis } from "@upstash/redis";
 import { NextRequest, NextResponse } from "next/server";
 
 export type AppRateLimiter = Ratelimit | null;
+export type AppRateLimiterGetter = () => AppRateLimiter;
 
-const redis =
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-    ? Redis.fromEnv()
-    : null;
+let _redis: Redis | null | undefined = undefined;
 
-function createLimiter(limit: number): AppRateLimiter {
-  if (!redis) {
+function getRedis(): Redis | null {
+  if (_redis !== undefined) return _redis;
+
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (!url || !token || !url.startsWith("https")) {
+    _redis = null;
     return null;
   }
 
-  return new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(limit, "60 s"),
-    analytics: true,
-    prefix: "motiva:ratelimit",
-  });
+  try {
+    _redis = Redis.fromEnv();
+  } catch {
+    _redis = null;
+  }
+
+  return _redis;
 }
 
-export const authLimiter = createLimiter(10);
-export const publicLimiter = createLimiter(30);
-export const apiLimiter = createLimiter(100);
+function createLimiter(limit: number): AppRateLimiterGetter {
+  let _limiter: AppRateLimiter | undefined = undefined;
+
+  return () => {
+    if (_limiter !== undefined) return _limiter;
+
+    const redis = getRedis();
+    if (!redis) {
+      _limiter = null;
+      return null;
+    }
+
+    _limiter = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(limit, "60 s"),
+      analytics: true,
+      prefix: "motiva:ratelimit",
+    });
+
+    return _limiter;
+  };
+}
+
+export const authLimiter: AppRateLimiterGetter = createLimiter(10);
+export const publicLimiter: AppRateLimiterGetter = createLimiter(30);
+export const apiLimiter: AppRateLimiterGetter = createLimiter(100);
 
 function clientIdentifier(req: NextRequest): string {
   const forwardedFor = req.headers.get("x-forwarded-for");
@@ -39,12 +67,13 @@ function clientIdentifier(req: NextRequest): string {
 
 export async function rateLimitRequest(
   req: NextRequest,
-  limiter: AppRateLimiter,
+  limiter: AppRateLimiter | AppRateLimiterGetter,
   scope: string,
 ): Promise<NextResponse | null> {
-  if (!limiter) return null;
+  const resolved = typeof limiter === "function" ? limiter() : limiter;
+  if (!resolved) return null;
 
-  const result = await limiter.limit(`${scope}:${clientIdentifier(req)}`);
+  const result = await resolved.limit(`${scope}:${clientIdentifier(req)}`);
   if (result.success) return null;
 
   return NextResponse.json(
