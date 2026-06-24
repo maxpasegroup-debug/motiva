@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { AdmissionPageContent } from "@/components/views/AdmissionPage";
 
+export const dynamic = "force-dynamic";
+
 export default function AdmissionPage() {
   return (
     <Suspense

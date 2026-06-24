@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   description: "Get in touch with Motiva Edus via WhatsApp.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function Page() {
   return <ContactPage />;
 }

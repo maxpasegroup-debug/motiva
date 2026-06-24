@@ -7,6 +7,8 @@ export const metadata: Metadata = {
     "One-to-one tuition, remedial programs, parenting, happiness, and career counseling at Motiva Edus.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function Page() {
   return <ProgramsMarketingPage />;
 }

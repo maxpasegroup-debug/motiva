@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   title: "Edit teacher — Motiva Edus",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function Page({ params }: Props) {
   return <TeacherProfileForm mode="edit" teacherId={params.id} />;
 }
