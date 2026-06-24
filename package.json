@@ -9,6 +9,7 @@
     "start": "node scripts/railway-start.cjs",
     "lint": "next lint",
     "health-check": "npx tsx scripts/health-check.ts",
+    "seed:admin": "tsx prisma/seed-admin.ts",
     "db:migrate": "node scripts/migrate.cjs",
     "db:seed-admin": "node scripts/seed-admin.cjs",
     "db:verify": "node scripts/verify-db.cjs",
