@@ -44,8 +44,8 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/35 px-4 pt-20">
-      <div className="w-full max-w-xl overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-2xl">
+    <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/35 px-3 pt-16 sm:px-4 sm:pt-20">
+      <div className="max-h-[82vh] w-full max-w-xl overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-2xl">
         <div className="flex items-center gap-3 border-b border-neutral-200 px-4 py-3">
           <Search className="h-5 w-5 text-neutral-400" aria-hidden />
           <input
@@ -64,7 +64,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
             <X className="h-5 w-5" aria-hidden />
           </button>
         </div>
-        <div className="max-h-96 overflow-y-auto p-2">
+        <div className="max-h-[60vh] overflow-y-auto p-2 sm:max-h-96">
           {filtered.map((command, index) => (
             <Link
               key={`${command.href}-${index}`}

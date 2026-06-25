@@ -24,7 +24,7 @@ export function NotificationBell() {
         <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" />
       </button>
       {open ? (
-        <div className="absolute right-0 top-12 z-50 w-72 rounded-lg border border-neutral-200 bg-white p-2 shadow-xl">
+        <div className="fixed left-3 right-3 top-16 z-50 rounded-lg border border-neutral-200 bg-white p-2 shadow-xl sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-72">
           <div className="px-3 py-2 text-sm font-semibold text-neutral-950">Notifications</div>
           <div className="space-y-1">
             {notifications.map((notification) => (

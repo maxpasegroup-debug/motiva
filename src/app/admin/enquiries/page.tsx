@@ -396,10 +396,10 @@ export default function AdminEnquiriesPage() {
       {showCreate ? (
         <form
           onSubmit={handleCreateLead}
-          className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm"
+          className="rounded-lg border border-neutral-200 bg-white p-3 shadow-sm sm:p-4"
         >
-          <div className="grid gap-3 lg:grid-cols-6">
-            <label className="lg:col-span-2">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+            <label className="md:col-span-2 xl:col-span-2">
               <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-neutral-500">
                 Student or parent name
               </span>
@@ -412,7 +412,7 @@ export default function AdminEnquiriesPage() {
                 className="min-h-11 w-full rounded-lg border border-neutral-300 px-3 text-sm outline-none ring-blue-600/20 focus:border-blue-600 focus:ring-2"
               />
             </label>
-            <label>
+            <label className="md:col-span-1">
               <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-neutral-500">
                 Phone
               </span>
@@ -425,7 +425,7 @@ export default function AdminEnquiriesPage() {
                 className="min-h-11 w-full rounded-lg border border-neutral-300 px-3 text-sm outline-none ring-blue-600/20 focus:border-blue-600 focus:ring-2"
               />
             </label>
-            <label>
+            <label className="md:col-span-2 xl:col-span-1">
               <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-neutral-500">
                 Brand and program
               </span>
@@ -455,7 +455,7 @@ export default function AdminEnquiriesPage() {
                 ))}
               </select>
             </label>
-            <label>
+            <label className="md:col-span-1">
               <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-neutral-500">
                 Owner
               </span>
@@ -471,7 +471,7 @@ export default function AdminEnquiriesPage() {
                 className="min-h-11 w-full rounded-lg border border-neutral-300 px-3 text-sm outline-none ring-blue-600/20 focus:border-blue-600 focus:ring-2"
               />
             </label>
-            <label>
+            <label className="md:col-span-2 xl:col-span-1">
               <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-neutral-500">
                 Need / subject
               </span>
@@ -495,12 +495,12 @@ export default function AdminEnquiriesPage() {
                 setCreateForm((form) => ({ ...form, note: event.target.value }))
               }
               placeholder="Call notes, source, preferred timing, fee discussion..."
-              className="min-h-20 flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none ring-blue-600/20 focus:border-blue-600 focus:ring-2"
+              className="min-h-24 flex-1 rounded-lg border border-neutral-300 px-3 py-3 text-sm leading-6 outline-none ring-blue-600/20 focus:border-blue-600 focus:ring-2"
             />
             <button
               type="submit"
               disabled={createBusy}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 lg:self-start"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 lg:self-start"
             >
               <CheckCircle2 className="h-4 w-4" aria-hidden />
               Save Enquiry
