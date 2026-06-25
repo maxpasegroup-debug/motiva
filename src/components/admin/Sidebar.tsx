@@ -67,10 +67,10 @@ function MobileNavItem({
   onClick?: () => void;
 }) {
   const label =
-    item.title === "All Students"
+    item.title === "Students"
       ? "Students"
-      : item.title === "Recorded Courses"
-        ? "Courses"
+      : item.title === "Recorded Lessons"
+        ? "Lessons"
         : item.title;
 
   return (
@@ -94,7 +94,7 @@ export function Sidebar({ role, open, collapsed, onClose }: SidebarProps) {
   const [moreOpen, setMoreOpen] = useState(false);
   const groups = getAdminNavigationForRole(role);
   const items = groups.flatMap((group) => group.items);
-  const bottomLabels = new Set(["Home", "Admissions", "All Students", "Recorded Courses"]);
+  const bottomLabels = new Set(["Today", "Enquiries", "Admissions", "Students"]);
   const bottomItems = items.filter((item) => bottomLabels.has(item.title));
   const moreItems = items.filter((item) => !bottomLabels.has(item.title));
   const moreActive = moreItems.some((item) => isAdminPathActive(pathname, item.href));

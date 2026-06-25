@@ -214,10 +214,10 @@ export function AdminDashboardPage() {
           <div className="max-w-2xl">
             <p className="text-sm font-medium text-blue-700">Today</p>
             <h2 className="mt-1 text-2xl font-semibold tracking-normal text-neutral-950">
-              What needs attention at Motiva?
+              What needs attention today?
             </h2>
             <p className="mt-2 text-sm leading-6 text-neutral-600">
-              A simple daily view for enquiries, admissions, fees, and classes.
+              A simple daily view for enquiries, admissions, fees, classes, and students.
             </p>
           </div>
           <button
@@ -232,28 +232,28 @@ export function AdminDashboardPage() {
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatsCard
-          label="New Enquiries"
+          label="Enquiries"
           value={String(newLeads)}
           helper="Call or follow up"
           icon={Handshake}
           tone={newLeads > 0 ? "blue" : "green"}
         />
         <StatsCard
-          label="Admissions Pending"
+          label="Admissions"
           value={String(stats.pendingAdmissions)}
           helper="Approve or update"
           icon={GraduationCap}
           tone={stats.pendingAdmissions > 0 ? "orange" : "green"}
         />
         <StatsCard
-          label="Fees Pending"
+          label="Fees"
           value={String(stats.pendingPayments)}
           helper="Collection follow-up"
           icon={BadgeIndianRupee}
           tone={stats.pendingPayments > 0 ? "red" : "green"}
         />
         <StatsCard
-          label="Classes Today"
+          label="Classes"
           value={String(stats.activeBatches)}
           helper="Running batches"
           icon={CalendarClock}
@@ -271,9 +271,9 @@ export function AdminDashboardPage() {
           >
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-base font-semibold text-neutral-950">Needs Attention</h2>
+                <h2 className="text-base font-semibold text-neutral-950">Do This First</h2>
                 <p className="mt-1 text-sm text-neutral-500">
-                  The most important office work is kept here.
+                  The most important academy work is kept here.
                 </p>
               </div>
             </div>

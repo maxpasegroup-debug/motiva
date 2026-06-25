@@ -16,6 +16,11 @@ import {
 } from "lucide-react";
 import { whatsappHref } from "@/components/marketing/whatsapp";
 import {
+  getOffering,
+  getOfferingLabel,
+  getOfferingsByBrand,
+} from "@/lib/academy-offerings";
+import {
   FLOW_TYPE_BADGE_CLASS,
   LEAD_PIPELINE_STEPS,
   STATUS_BADGE_CLASS,
@@ -56,6 +61,7 @@ type Lead = {
 type CreateLeadForm = {
   name: string;
   phone: string;
+  offeringKey: string;
   type: "tuition" | "foundation" | "remedial";
   subjects: string;
   assignedTo: string;
@@ -71,8 +77,9 @@ type ApiResponse = {
 const EMPTY_FORM: CreateLeadForm = {
   name: "",
   phone: "",
+  offeringKey: "motiva_one_to_one_online",
   type: "tuition",
-  subjects: "",
+  subjects: "Motiva Edus - One-to-One Tuition - Online Google Meet",
   assignedTo: "",
   note: "",
 };
@@ -89,7 +96,7 @@ const FILTERS = [
 type FilterKey = (typeof FILTERS)[number]["key"];
 
 function formatProgram(value: string) {
-  return value.replace(/_/g, " ");
+  return getOfferingLabel(value) || value.replace(/_/g, " ");
 }
 
 function formatDate(value: string) {
@@ -104,7 +111,7 @@ function buildWhatsAppMessage(row: Enquiry | Lead) {
       : row.subjects || (row.type === "remedial" ? "Remedial enquiry" : "Tuition enquiry");
 
   return [
-    "Hi, Motiva Edus team here.",
+    "Hi, MOTIVA team here.",
     `${name}, we are following up about your learning support enquiry.`,
     "Can we schedule a quick call to understand the student's requirement?",
     detail ? `Details: ${detail}` : null,
@@ -179,6 +186,7 @@ export default function AdminEnquiriesPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState<CreateLeadForm>(EMPTY_FORM);
   const [createBusy, setCreateBusy] = useState(false);
+  const offeringsByBrand = getOfferingsByBrand();
 
   async function load() {
     setLoading(true);
@@ -306,10 +314,21 @@ export default function AdminEnquiriesPage() {
     event.preventDefault();
     setCreateBusy(true);
     setError(null);
+    const offering = getOffering(createForm.offeringKey);
+    const payload = offering
+      ? {
+          ...createForm,
+          type: offering.leadType,
+          subjects: createForm.subjects.trim() || offering.label,
+          note:
+            createForm.note.trim() ||
+            `${offering.shortNote} Preferred mode: ${offering.mode.replace(/_/g, " ")}.`,
+        }
+      : createForm;
     const res = await fetch("/api/admin/enquiries", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(createForm),
+      body: JSON.stringify(payload),
     });
     const json = (await res.json().catch(() => null)) as
       | { error?: string; lead?: Lead }
@@ -330,12 +349,11 @@ export default function AdminEnquiriesPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-neutral-950">
-            Lead Management
+            Enquiries & Admissions
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
-            Create leads, track enquiry follow-up, move parents through the
-            pipeline, and open the detailed admission workflow when a lead is
-            ready.
+            Add a family enquiry, choose the brand and class type, follow up on
+            call or WhatsApp, then move the student to admission.
           </p>
         </div>
         <button
@@ -344,7 +362,7 @@ export default function AdminEnquiriesPage() {
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-neutral-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-neutral-800"
         >
           <Plus className="h-4 w-4" aria-hidden />
-          New Lead
+          Add Enquiry
         </button>
       </div>
 
@@ -409,21 +427,32 @@ export default function AdminEnquiriesPage() {
             </label>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-neutral-500">
-                Program
+                Brand and program
               </span>
               <select
-                value={createForm.type}
+                value={createForm.offeringKey}
                 onChange={(event) =>
-                  setCreateForm((form) => ({
-                    ...form,
-                    type: event.target.value as CreateLeadForm["type"],
-                  }))
+                  setCreateForm((form) => {
+                    const offering = getOffering(event.target.value);
+                    return {
+                      ...form,
+                      offeringKey: event.target.value,
+                      type: offering?.leadType ?? "tuition",
+                      subjects: offering?.label ?? form.subjects,
+                    };
+                  })
                 }
                 className="min-h-11 w-full rounded-lg border border-neutral-300 px-3 text-sm outline-none ring-blue-600/20 focus:border-blue-600 focus:ring-2"
               >
-                <option value="tuition">Tuition</option>
-                <option value="foundation">Foundation</option>
-                <option value="remedial">Remedial</option>
+                {offeringsByBrand.map((brand) => (
+                  <optgroup key={brand.key} label={brand.name}>
+                    {brand.offerings.map((offering) => (
+                      <option key={offering.key} value={offering.key}>
+                        {offering.programName} - {offering.mode.replace(/_/g, " ")}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
               </select>
             </label>
             <label>
@@ -444,7 +473,7 @@ export default function AdminEnquiriesPage() {
             </label>
             <label>
               <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-neutral-500">
-                Subject
+                Need / subject
               </span>
               <input
                 value={createForm.subjects}
@@ -454,7 +483,7 @@ export default function AdminEnquiriesPage() {
                     subjects: event.target.value,
                   }))
                 }
-                placeholder="Maths, English"
+                placeholder="Maths, English, public speaking..."
                 className="min-h-11 w-full rounded-lg border border-neutral-300 px-3 text-sm outline-none ring-blue-600/20 focus:border-blue-600 focus:ring-2"
               />
             </label>
@@ -474,7 +503,7 @@ export default function AdminEnquiriesPage() {
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 lg:self-start"
             >
               <CheckCircle2 className="h-4 w-4" aria-hidden />
-              Create Lead
+              Save Enquiry
             </button>
           </div>
         </form>
@@ -489,10 +518,10 @@ export default function AdminEnquiriesPage() {
       <section className="rounded-lg border border-neutral-200 bg-white shadow-sm">
         <div className="flex flex-col gap-3 border-b border-neutral-200 p-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-neutral-950">Lead Pipeline</h2>
+            <h2 className="text-lg font-bold text-neutral-950">Follow-up List</h2>
             <p className="mt-1 text-sm text-neutral-500">
-              Move leads forward from the list, or open a lead for payment,
-              admission, account creation, and mentor assignment.
+              Move each family step by step. Open Manage only when admission,
+              payment, or account creation is needed.
             </p>
           </div>
           <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
@@ -501,7 +530,7 @@ export default function AdminEnquiriesPage() {
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search name, phone, owner"
+                placeholder="Search name, phone, program"
                 className="min-h-11 w-full rounded-lg border border-neutral-300 pl-9 pr-3 text-sm outline-none ring-blue-600/20 focus:border-blue-600 focus:ring-2"
               />
             </label>
@@ -529,7 +558,7 @@ export default function AdminEnquiriesPage() {
           <p className="p-4 text-sm text-neutral-500">Loading leads...</p>
         ) : filteredLeads.length === 0 ? (
           <p className="p-8 text-center text-sm text-neutral-500">
-            No leads match this view.
+            No enquiries match this view.
           </p>
         ) : (
           <div className="divide-y divide-neutral-100">
@@ -654,7 +683,7 @@ export default function AdminEnquiriesPage() {
         <div className="border-b border-neutral-200 p-4">
           <h2 className="text-lg font-bold text-neutral-950">Fresh Enquiries</h2>
           <p className="mt-1 text-sm text-neutral-500">
-            New website enquiries that can be contacted or converted into leads.
+            Website enquiries that can be contacted or moved into the follow-up list.
           </p>
         </div>
         {freshEnquiries.length === 0 ? (

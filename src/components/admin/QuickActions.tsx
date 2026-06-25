@@ -21,13 +21,13 @@ const actions: QuickAction[] = [
     title: "Add Enquiry",
     href: "/admin/leads",
     icon: PhoneCall,
-    description: "Enter a new family call or callback.",
+    description: "Save a new family call.",
   },
   {
     title: "Approve Student",
     href: "/admin/admissions",
     icon: GraduationCap,
-    description: "Confirm admission and next step.",
+    description: "Confirm the student.",
   },
   {
     title: "Create Account",
@@ -36,22 +36,22 @@ const actions: QuickAction[] = [
     description: "Make student and parent login.",
   },
   {
-    title: "Mark Payment",
+    title: "Mark Fee",
     href: "/admin/payments",
     icon: BadgeIndianRupee,
-    description: "Update paid or pending fees.",
+    description: "Update paid or pending fee.",
   },
   {
     title: "Schedule Class",
     href: "/admin/batches",
     icon: CalendarPlus,
-    description: "Check batch and class plan.",
+    description: "Check class or batch plan.",
   },
   {
     title: "Parents",
     href: "/admin/parents",
     icon: MessageCircle,
-    description: "View parent accounts and contact.",
+    description: "View parent contact details.",
   },
 ];
 
@@ -61,7 +61,7 @@ export function QuickActions() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-neutral-950">Quick Actions</h2>
-          <p className="mt-1 text-sm text-neutral-500">The usual office work, one tap away.</p>
+          <p className="mt-1 text-sm text-neutral-500">Common office work, one tap away.</p>
         </div>
       </div>
       <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">

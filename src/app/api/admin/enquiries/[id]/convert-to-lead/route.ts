@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { getOffering, getOfferingLabel } from "@/lib/academy-offerings";
 import { appendLeadNote } from "@/lib/leads";
 import { requireAdminApi } from "@/server/auth/require-admin";
 
@@ -13,6 +14,15 @@ function mapProgramToLead(input: string): {
   flowType: "tuition" | "remedial";
   subjects: string;
 } {
+  const offering = getOffering(input);
+  if (offering) {
+    return {
+      type: offering.leadType,
+      flowType: offering.flowType,
+      subjects: offering.label,
+    };
+  }
+
   if (input === "remedial") {
     return {
       type: "remedial",
@@ -41,9 +51,11 @@ function buildLeadNote(input: {
   programInterest: string;
   message: string | null;
 }) {
+  const offering = getOffering(input.programInterest);
   return [
     `Converted from enquiry ${input.enquiryId}.`,
-    `Program interest: ${input.programInterest}.`,
+    `Program interest: ${getOfferingLabel(input.programInterest)}.`,
+    offering ? `Brand: ${offering.brandName}. Mode: ${offering.mode.replace(/_/g, " ")}.` : null,
     input.message?.trim() ? `Learning check details:\n${input.message.trim()}` : null,
   ]
     .filter(Boolean)

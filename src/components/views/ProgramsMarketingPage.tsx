@@ -1,149 +1,88 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { useLanguage } from "@/components/providers/LanguageProvider";
-import { FadeInSection } from "@/components/ui/FadeInSection";
+import { getOfferingModeLabel, getOfferingsByBrand } from "@/lib/academy-offerings";
 import { whatsappHref } from "@/components/marketing/whatsapp";
 
-type Offering = {
-  id: string;
-  titleKey:
-    | "prog_offer_one_to_one_title"
-    | "prog_offer_remedial_title"
-    | "prog_offer_parenting_title"
-    | "prog_offer_happiness_title"
-    | "prog_offer_career_title";
-  descKey:
-    | "prog_offer_one_to_one_desc"
-    | "prog_offer_remedial_desc"
-    | "prog_offer_parenting_desc"
-    | "prog_offer_happiness_desc"
-    | "prog_offer_career_desc";
-  image: string;
+const brandText: Record<string, string> = {
+  hmc: "Public speaking training through offline classes, Google Meet, WhatsApp support, and WPST recorded lessons.",
+  motiva_edus: "Tuition, foundation support, madrassa tuition, and spoken English for students who need clear teaching.",
+  nirvana: "Nirvana training programs with offline, online, and recorded learning options.",
 };
 
-const OFFERINGS: Offering[] = [
-  {
-    id: "one-to-one",
-    titleKey: "prog_offer_one_to_one_title",
-    descKey: "prog_offer_one_to_one_desc",
-    image:
-      "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1200&q=85",
-  },
-  {
-    id: "remedial",
-    titleKey: "prog_offer_remedial_title",
-    descKey: "prog_offer_remedial_desc",
-    image:
-      "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1200&q=85",
-  },
-  {
-    id: "parenting",
-    titleKey: "prog_offer_parenting_title",
-    descKey: "prog_offer_parenting_desc",
-    image:
-      "https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=1200&q=85",
-  },
-  {
-    id: "happiness",
-    titleKey: "prog_offer_happiness_title",
-    descKey: "prog_offer_happiness_desc",
-    image:
-      "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=85",
-  },
-  {
-    id: "career",
-    titleKey: "prog_offer_career_title",
-    descKey: "prog_offer_career_desc",
-    image:
-      "https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1200&q=85",
-  },
-];
-
 export function ProgramsMarketingPage() {
-  const { t } = useLanguage();
+  const groups = getOfferingsByBrand();
 
   return (
-    <div className="w-full bg-gradient-to-b from-slate-50 via-white to-blue-50/40">
-      <section className="relative overflow-hidden border-b border-white/20 bg-gradient-to-br from-[#0B5ED7] via-[#1565C8] to-[#0d47a1] px-4 py-14 sm:py-20">
-        <div
-          className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:40px_40px]"
-          aria-hidden
-        />
-        <div className="relative z-10 mx-auto max-w-3xl text-center">
-          <h1 className="text-balance text-3xl font-extrabold tracking-tight text-white sm:text-4xl md:text-5xl">
-            {t("programs_page_hero_title")}
+    <main className="w-full bg-white">
+      <section className="border-b border-neutral-200 bg-neutral-950 px-4 py-14 text-white sm:px-6">
+        <div className="mx-auto max-w-5xl">
+          <p className="text-sm font-bold uppercase tracking-wide text-blue-200">
+            Programs
+          </p>
+          <h1 className="mt-3 max-w-3xl text-3xl font-bold sm:text-4xl">
+            HMC, Motiva Edus and Nirvana in one simple academy system
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-pretty text-base leading-relaxed text-white/88 sm:text-lg">
-            {t("programs_page_hero_sub")}
+          <p className="mt-4 max-w-3xl text-base leading-7 text-white/80">
+            Select the brand, choose the program, and pick offline, online Google
+            Meet, or recorded learning. The office team can handle enquiry,
+            admission, fee, class, and student access from the same app.
           </p>
           <a
-            href={whatsappHref(t("programs_page_hero_whatsapp_prefill"))}
+            href={whatsappHref("Hi MOTIVA, I want to know about your programs.")}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-8 inline-flex min-h-14 items-center justify-center rounded-2xl bg-[#25D366] px-8 text-base font-bold text-white shadow-lg shadow-black/20 transition-all hover:bg-[#20BD5A] motion-safe:hover:scale-[1.02]"
+            className="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg bg-[#25D366] px-5 text-sm font-bold text-white"
           >
-            {t("programs_page_hero_cta")}
+            Ask on WhatsApp
           </a>
         </div>
       </section>
 
-      <div className="mx-auto max-w-5xl space-y-6 px-4 py-12 sm:space-y-10 sm:px-6 sm:py-16">
-        {OFFERINGS.map((item, i) => (
-          <FadeInSection key={item.id}>
-            <article
-              className={`overflow-hidden rounded-3xl border border-neutral-200/80 bg-white shadow-[0_20px_50px_-24px_rgba(15,23,42,0.15)] transition-shadow duration-300 hover:shadow-[0_28px_60px_-20px_rgba(11,94,215,0.18)] ${
-                i % 2 === 1 ? "md:flex-row-reverse" : ""
-              } flex flex-col md:flex-row`}
-            >
-              <div className="relative aspect-[4/3] w-full shrink-0 md:aspect-auto md:w-1/2 md:min-h-[280px]">
-                <Image
-                  src={item.image}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
-                <div
-                  className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:via-transparent md:to-black/20"
-                  aria-hidden
-                />
-              </div>
-              <div className="flex flex-1 flex-col justify-center p-6 sm:p-10">
-                <h2 className="text-2xl font-bold text-neutral-900 sm:text-3xl">
-                  {t(item.titleKey)}
-                </h2>
-                <p className="mt-4 text-pretty text-base leading-relaxed text-neutral-600 sm:text-lg">
-                  {t(item.descKey)}
-                </p>
-                <a
-                  href={whatsappHref(
-                    t("programs_offer_whatsapp_prefill").replace(
-                      "{program}",
-                      t(item.titleKey),
-                    ),
-                  )}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-8 inline-flex min-h-14 w-full max-w-xs touch-manipulation items-center justify-center rounded-2xl bg-[#25D366] px-6 text-center text-base font-bold text-white shadow-md transition-all hover:bg-[#20BD5A] motion-safe:hover:scale-[1.02] sm:w-auto"
-                >
-                  {t("programs_offer_whatsapp_cta")}
-                </a>
-              </div>
-            </article>
-          </FadeInSection>
-        ))}
-
-        <p className="pt-4 text-center">
-          <Link
-            href="/"
-            className="text-sm font-semibold text-primary underline-offset-4 hover:underline"
+      <section className="mx-auto max-w-5xl space-y-6 px-4 py-10 sm:px-6">
+        {groups.map((group) => (
+          <article
+            key={group.key}
+            className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm"
           >
-            ← {t("back_home")}
-          </Link>
-        </p>
-      </div>
-    </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-neutral-950">
+                  {group.name}
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
+                  {brandText[group.key] ?? "Academy program"}
+                </p>
+              </div>
+              <span className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700">
+                {group.offerings.length} options
+              </span>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              {group.offerings.map((offering) => (
+                <div
+                  key={offering.key}
+                  className="rounded-lg border border-neutral-200 bg-neutral-50 p-4"
+                >
+                  <p className="text-base font-bold text-neutral-950">
+                    {offering.programName}
+                  </p>
+                  <p className="mt-1 text-sm text-neutral-600">
+                    {getOfferingModeLabel(offering.mode)}
+                  </p>
+                  <Link
+                    href={`/#enquiry-form`}
+                    className="mt-3 inline-flex min-h-10 items-center justify-center rounded-lg bg-neutral-950 px-4 text-sm font-bold text-white"
+                  >
+                    Enquire
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </article>
+        ))}
+      </section>
+    </main>
   );
 }

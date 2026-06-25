@@ -1,18 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
+import { ACADEMY_OFFERINGS, getOfferingLabel } from "@/lib/academy-offerings";
 import { publicLimiter, rateLimitRequest } from "@/lib/ratelimit";
+
+const LEGACY_PROGRAM_INTERESTS = [
+  "tuition",
+  "remedial",
+  "recorded_courses",
+  "career_counseling",
+  "other",
+] as const;
+
+const PROGRAM_INTERESTS = [
+  ...LEGACY_PROGRAM_INTERESTS,
+  ...ACADEMY_OFFERINGS.map((item) => item.key),
+] as [string, ...string[]];
 
 const enquirySchema = z.object({
   name: z.string().trim().min(2).max(100),
   mobile: z.string().regex(/^\d{10}$/, "Mobile must be 10 digits"),
-  programInterest: z.enum([
-    "tuition",
-    "remedial",
-    "recorded_courses",
-    "career_counseling",
-    "other",
-  ]),
+  programInterest: z.enum(PROGRAM_INTERESTS),
   childName: z.string().trim().max(100).optional(),
   childClass: z.string().trim().max(50).optional(),
   subjectConcern: z.string().trim().max(160).optional(),
@@ -23,6 +31,7 @@ const enquirySchema = z.object({
 
 function buildStructuredMessage(input: z.infer<typeof enquirySchema>) {
   const lines = [
+    `Selected program: ${getOfferingLabel(input.programInterest)}`,
     input.childName ? `Child: ${input.childName}` : null,
     input.childClass ? `Class: ${input.childClass}` : null,
     input.subjectConcern ? `Concern: ${input.subjectConcern}` : null,

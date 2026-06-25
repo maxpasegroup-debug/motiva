@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
+import { getOfferingsByBrand } from "@/lib/academy-offerings";
 import { whatsappHref } from "@/components/marketing/whatsapp";
 
 type PublicCourse = {
@@ -21,11 +22,24 @@ type Teacher = {
 };
 
 type ProgramInterest =
-  | "tuition"
-  | "remedial"
-  | "recorded_courses"
-  | "career_counseling"
-  | "other";
+  | "hmc_public_speaking_offline"
+  | "hmc_public_speaking_online"
+  | "hmc_wpst_recorded"
+  | "motiva_one_to_one_offline"
+  | "motiva_one_to_one_online"
+  | "motiva_one_to_one_recorded"
+  | "motiva_foundation_remedial_offline"
+  | "motiva_foundation_remedial_online"
+  | "motiva_foundation_remedial_recorded"
+  | "motiva_madrassa_tuition_offline"
+  | "motiva_madrassa_tuition_online"
+  | "motiva_madrassa_tuition_recorded"
+  | "motiva_spoken_english_offline"
+  | "motiva_spoken_english_online"
+  | "motiva_spoken_english_recorded"
+  | "nirvana_offline"
+  | "nirvana_online"
+  | "nirvana_recorded";
 
 type ContactPreference = "call" | "whatsapp" | "either";
 
@@ -50,10 +64,10 @@ const LEARNING_IMAGE_3 =
 
 const copy = {
   en: {
-    eyebrow: "Parent-friendly online tuition for Kerala families",
-    heroTitle: "If your child is weak in basics, Motiva rebuilds confidence step by step",
+    eyebrow: "Simple learning support for Kerala families",
+    heroTitle: "HMC, Motiva Edus and Nirvana programs in one simple academy system",
     heroText:
-      "We first understand the learning gap, then give personal classes, 12/25 day remedial support, daily parent updates, and a clear progress report parents can trust.",
+      "Choose public speaking, tuition, remedial support, madrassa tuition, spoken English, or Nirvana training. Every program can run offline, online through Google Meet, or as recorded learning.",
     primaryCta: "Book Free Learning Check",
     whatsappCta: "Ask on WhatsApp",
     secondaryCta: "See Offers",
@@ -91,7 +105,7 @@ const copy = {
         bestFor: "Regular subject support",
         price: "Monthly fee shared after subject and frequency",
         includes: ["Personal teacher", "Doubt clearing", "Parent follow-up"],
-        interest: "tuition" as ProgramInterest,
+        interest: "motiva_one_to_one_online" as ProgramInterest,
         message: "I want to know about One-to-One Tuition.",
       },
       {
@@ -103,7 +117,7 @@ const copy = {
         bestFor: "Fast foundation repair",
         price: "Starting fee shared after learning check",
         includes: ["Gap check", "Daily practice", "Progress summary"],
-        interest: "remedial" as ProgramInterest,
+        interest: "motiva_foundation_remedial_online" as ProgramInterest,
         message: "I want to know about the 12 Day Remedial Plan.",
       },
       {
@@ -115,7 +129,7 @@ const copy = {
         bestFor: "Deeper learning gaps",
         price: "Plan fee shared after learning check",
         includes: ["Structured classes", "Teacher correction", "Final report"],
-        interest: "remedial" as ProgramInterest,
+        interest: "motiva_foundation_remedial_offline" as ProgramInterest,
         message: "I want to know about the 25 Day Remedial Plan.",
       },
     ],
@@ -194,13 +208,12 @@ const copy = {
       ["whatsapp", "WhatsApp"],
       ["either", "Either"],
     ] as [ContactPreference, string][],
-    programOptions: [
-      ["tuition", "One-to-One Tuition"],
-      ["remedial", "Remedial Classes"],
-      ["recorded_courses", "Recorded Courses"],
-      ["career_counseling", "Career Counseling"],
-      ["other", "Other"],
-    ] as [ProgramInterest, string][],
+    programOptions: getOfferingsByBrand().flatMap((brand) =>
+      brand.offerings.map((offering) => [
+        offering.key,
+        offering.label,
+      ] as [ProgramInterest, string]),
+    ),
     whatsappPrefillIntro: "Hi Motiva Edus, I want a free learning gap check.",
     explainersEyebrow: "60 second parent explainers",
     explainersTitle: "Know the process before you give your number",
@@ -244,7 +257,7 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
   const [contactPreference, setContactPreference] =
     useState<ContactPreference>("whatsapp");
   const [programInterest, setProgramInterest] =
-    useState<ProgramInterest>("remedial");
+    useState<ProgramInterest>("motiva_foundation_remedial_online");
   const [message, setMessage] = useState("");
   const [submittedEnquiryId, setSubmittedEnquiryId] = useState<string | null>(
     null,
@@ -319,7 +332,7 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
     setSubjectConcern("");
     setCallbackSlot("evening");
     setContactPreference("whatsapp");
-    setProgramInterest("remedial");
+    setProgramInterest("motiva_foundation_remedial_online");
     setMessage("");
     setSending(false);
   }
@@ -1053,5 +1066,4 @@ export function LandingPage({ courses }: { courses: PublicCourse[] }) {
     </>
   );
 }
-
 
