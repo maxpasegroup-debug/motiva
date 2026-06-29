@@ -13,12 +13,23 @@ export async function POST(req: NextRequest, context: RouteContext) {
   const pin = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
 
   const pinHash = await hashPin(pin);
+  const current = await prisma.user.findUnique({
+    where: { id },
+    select: { profileData: true },
+  });
+  const profile =
+    current?.profileData &&
+    typeof current.profileData === "object" &&
+    !Array.isArray(current.profileData)
+      ? (current.profileData as Record<string, unknown>)
+      : {};
   await prisma.user.update({
     where: { id },
     data: {
       pin: pinHash,
       passwordHash: null,
       pinResetRequired: true,
+      profileData: { ...profile, visiblePin: pin },
     },
   });
 

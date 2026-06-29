@@ -29,6 +29,10 @@ function publicUser(user: {
   profileData: unknown;
   createdAt: Date;
 }) {
+  const profile =
+    user.profileData && typeof user.profileData === "object" && !Array.isArray(user.profileData)
+      ? (user.profileData as Record<string, unknown>)
+      : {};
   return {
     id: user.id,
     name: user.name,
@@ -38,6 +42,7 @@ function publicUser(user: {
     isActive: user.isActive,
     pinResetRequired: user.pinResetRequired,
     profileData: user.profileData,
+    visiblePin: typeof profile.visiblePin === "string" ? profile.visiblePin : null,
     createdAt: user.createdAt.toISOString(),
   };
 }
@@ -112,6 +117,7 @@ export async function POST(req: NextRequest) {
       role: roleValue,
       isActive: true,
       pinResetRequired: false,
+      profileData: { visiblePin: pin },
       createdBy: auth.payload.userId,
     },
     select: {

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import { requireAdminApi } from "@/server/auth/require-admin";
-import { normalizeMobile } from "@/server/auth/unified-auth";
+import { hashPin, isFourDigitPin, normalizeMobile } from "@/server/auth/unified-auth";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -21,6 +22,10 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     mobile?: string;
     role?: string;
     isActive?: boolean;
+    pin?: string;
+    passwordHash?: null;
+    pinResetRequired?: boolean;
+    profileData?: Prisma.InputJsonValue;
   } = {};
 
   if (typeof body.name === "string") {
@@ -54,6 +59,28 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       );
     }
     data.isActive = body.isActive;
+  }
+
+  if (typeof body.pin === "string" && body.pin.trim()) {
+    const pin = body.pin.trim();
+    if (!isFourDigitPin(pin)) {
+      return NextResponse.json({ error: "PIN must be 4 digits" }, { status: 400 });
+    }
+    data.pin = await hashPin(pin);
+    data.passwordHash = null;
+    data.pinResetRequired = false;
+
+    const currentProfile = await prisma.user.findUnique({
+      where: { id },
+      select: { profileData: true },
+    });
+    const profile =
+      currentProfile?.profileData &&
+      typeof currentProfile.profileData === "object" &&
+      !Array.isArray(currentProfile.profileData)
+        ? (currentProfile.profileData as Record<string, unknown>)
+        : {};
+    data.profileData = { ...profile, visiblePin: pin };
   }
 
   if (data.mobile || data.role) {
@@ -94,10 +121,21 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       role: true,
       isActive: true,
       pinResetRequired: true,
+      profileData: true,
     },
   });
 
-  return NextResponse.json({ user });
+  const profile =
+    user.profileData && typeof user.profileData === "object" && !Array.isArray(user.profileData)
+      ? (user.profileData as Record<string, unknown>)
+      : {};
+
+  return NextResponse.json({
+    user: {
+      ...user,
+      visiblePin: typeof profile.visiblePin === "string" ? profile.visiblePin : null,
+    },
+  });
 }
 
 export async function DELETE(req: NextRequest, context: RouteContext) {

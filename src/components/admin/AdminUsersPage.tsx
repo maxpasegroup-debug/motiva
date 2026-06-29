@@ -10,8 +10,11 @@ type AdminUser = {
   role: Role;
   isActive: boolean;
   pinResetRequired: boolean;
+  visiblePin: string | null;
   createdAt: string;
 };
+
+type UserDraft = Partial<AdminUser> & { pin?: string };
 
 const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: "admin", label: "Admin" },
@@ -41,7 +44,7 @@ export function AdminUsersPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [oneTimePin, setOneTimePin] = useState<{ name: string; pin: string } | null>(null);
   const [busy, setBusy] = useState(false);
-  const [editing, setEditing] = useState<Record<string, Partial<AdminUser>>>({});
+  const [editing, setEditing] = useState<Record<string, UserDraft>>({});
 
   async function loadUsers() {
     const res = await fetch("/api/admin/users", { cache: "no-store" });
@@ -108,7 +111,7 @@ export function AdminUsersPage() {
     return editing[user.id]?.[key] ?? user[key];
   }
 
-  function patchDraft(userId: string, patch: Partial<AdminUser>) {
+  function patchDraft(userId: string, patch: UserDraft) {
     setEditing((current) => ({
       ...current,
       [userId]: {
@@ -126,6 +129,7 @@ export function AdminUsersPage() {
       role: (draft.role ?? user.role) as Role,
       isActive:
         typeof draft.isActive === "boolean" ? draft.isActive : user.isActive,
+      pin: typeof draft.pin === "string" && draft.pin.trim() ? draft.pin.trim() : undefined,
     };
 
     setBusy(true);
@@ -203,12 +207,13 @@ export function AdminUsersPage() {
       {message ? <p className="text-sm font-medium text-accent">{message}</p> : null}
 
       <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white shadow-sm">
-        <table className="w-full min-w-[980px] text-left text-sm">
+        <table className="w-full min-w-[1100px] text-left text-sm">
           <thead className="bg-neutral-50 text-xs uppercase text-neutral-500">
             <tr>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Mobile</th>
               <th className="px-4 py-3">Role</th>
+              <th className="px-4 py-3">PIN</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Created</th>
               <th className="px-4 py-3">Actions</th>
@@ -248,6 +253,25 @@ export function AdminUsersPage() {
                       </option>
                     ))}
                   </select>
+                </td>
+                <td className="px-4 py-3 text-neutral-700">
+                  <div className="space-y-1">
+                    <input
+                      value={editing[user.id]?.pin ?? user.visiblePin ?? ""}
+                      onChange={(e) =>
+                        patchDraft(user.id, {
+                          pin: e.target.value.replace(/\D/g, "").slice(0, 4),
+                        })
+                      }
+                      placeholder="Reset to view"
+                      inputMode="numeric"
+                      maxLength={4}
+                      className="min-h-10 w-28 rounded-lg border border-neutral-200 px-3 font-mono text-sm"
+                    />
+                    {!user.visiblePin ? (
+                      <p className="text-xs text-neutral-400">Old PIN is hashed</p>
+                    ) : null}
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-neutral-700">
                   <select

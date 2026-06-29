@@ -274,6 +274,55 @@ export default function AdminEnquiriesPage() {
     updateEnquiry(json.enquiry);
   }
 
+  async function editFreshEnquiry(row: Enquiry) {
+    const name = window.prompt("Name", row.name);
+    if (name === null) return;
+    const mobile = window.prompt("Mobile", row.mobile);
+    if (mobile === null) return;
+    const programInterest = window.prompt("Program interest", row.programInterest);
+    if (programInterest === null) return;
+    const message = window.prompt("Message / remarks", row.message ?? "");
+    if (message === null) return;
+
+    setBusyId(row.id);
+    setError(null);
+    const res = await fetch(`/api/admin/enquiries/${row.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: name.trim(),
+        mobile: mobile.trim(),
+        programInterest: programInterest.trim(),
+        message: message.trim(),
+      }),
+    });
+    const json = (await res.json().catch(() => null)) as
+      | { error?: string; enquiry?: Enquiry }
+      | null;
+    setBusyId(null);
+    if (!res.ok || !json?.enquiry) {
+      setError(json?.error ?? "Could not edit fresh enquiry");
+      return;
+    }
+    updateEnquiry(json.enquiry);
+  }
+
+  async function deleteFreshEnquiry(row: Enquiry) {
+    if (!window.confirm(`Delete fresh enquiry for ${row.name}?`)) return;
+    setBusyId(row.id);
+    setError(null);
+    const res = await fetch(`/api/admin/enquiries/${row.id}`, {
+      method: "DELETE",
+    });
+    const json = (await res.json().catch(() => null)) as { error?: string } | null;
+    setBusyId(null);
+    if (!res.ok) {
+      setError(json?.error ?? "Could not delete fresh enquiry");
+      return;
+    }
+    setEnquiries((current) => current.filter((item) => item.id !== row.id));
+  }
+
   async function convertToLead(row: Enquiry) {
     setBusyId(row.id);
     setError(null);
@@ -319,6 +368,61 @@ export default function AdminEnquiriesPage() {
       return;
     }
     updateLead(json.lead);
+  }
+
+  async function editLeadDetails(lead: Lead) {
+    const name = window.prompt("Student or parent name", lead.name);
+    if (name === null) return;
+    const phone = window.prompt("Phone", lead.phone);
+    if (phone === null) return;
+    const subjects = window.prompt("Need / subject", lead.subjects ?? "");
+    if (subjects === null) return;
+    const source = window.prompt("Source", lead.assignedTo ?? "");
+    if (source === null) return;
+
+    setBusyId(lead.id);
+    setError(null);
+    const res = await fetch(`/api/admin/leads/${lead.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: name.trim(),
+        phone: phone.trim(),
+        subjects: subjects.trim(),
+        assignedTo: source.trim(),
+      }),
+    });
+    const json = (await res.json().catch(() => null)) as
+      | { error?: string; lead?: Lead }
+      | null;
+    setBusyId(null);
+    if (!res.ok || !json?.lead) {
+      setError(json?.error ?? "Could not edit enquiry");
+      return;
+    }
+    updateLead(json.lead);
+  }
+
+  async function deleteLead(lead: Lead) {
+    if (
+      !window.confirm(
+        `Delete enquiry for ${lead.name}? This is only allowed before admission or fee records exist.`,
+      )
+    ) {
+      return;
+    }
+    setBusyId(lead.id);
+    setError(null);
+    const res = await fetch(`/api/admin/leads/${lead.id}`, {
+      method: "DELETE",
+    });
+    const json = (await res.json().catch(() => null)) as { error?: string } | null;
+    setBusyId(null);
+    if (!res.ok) {
+      setError(json?.error ?? "Could not delete enquiry");
+      return;
+    }
+    setLeads((current) => current.filter((row) => row.id !== lead.id));
   }
 
   async function handleCreateLead(event: FormEvent) {
@@ -714,6 +818,14 @@ export default function AdminEnquiriesPage() {
                       ) : null}
                       <button
                         type="button"
+                        disabled={busy}
+                        onClick={() => editLeadDetails(lead)}
+                        className="inline-flex min-h-10 items-center justify-center rounded-lg border border-neutral-300 px-3 py-2 text-xs font-bold text-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
                         disabled={busy || status === "closed_lost"}
                         onClick={() =>
                           updateLeadStatus(lead, "closed_lost", "Marked lost.")
@@ -722,6 +834,14 @@ export default function AdminEnquiriesPage() {
                       >
                         <XCircle className="h-4 w-4" aria-hidden />
                         Lost
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => deleteLead(lead)}
+                        className="inline-flex min-h-10 items-center justify-center rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Delete
                       </button>
                       <Link
                         href={`/admin/leads/${lead.id}`}
@@ -813,10 +933,26 @@ export default function AdminEnquiriesPage() {
                     <button
                       type="button"
                       disabled={busy}
+                      onClick={() => editFreshEnquiry(row)}
+                      className="inline-flex min-h-10 items-center justify-center rounded-lg border border-neutral-300 px-3 py-2 text-xs font-bold text-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
                       onClick={() => setEnquiryStatus(row, "closed_lost")}
                       className="inline-flex min-h-10 items-center justify-center rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       Lost
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => deleteFreshEnquiry(row)}
+                      className="inline-flex min-h-10 items-center justify-center rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Delete
                     </button>
                   </div>
                 </article>
