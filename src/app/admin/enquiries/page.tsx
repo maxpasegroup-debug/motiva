@@ -27,6 +27,7 @@ import {
   STATUS_LABEL,
   getLeadStepIndex,
   getNextLeadStatus,
+  getPreviousLeadStatus,
   normalizeLeadFlowType,
   normalizeLeadStatus,
   type LeadStatus,
@@ -291,13 +292,23 @@ export default function AdminEnquiriesPage() {
     await load();
   }
 
-  async function updateLeadStatus(lead: Lead, status: LeadStatus, note?: string) {
+  async function updateLeadStatus(
+    lead: Lead,
+    status: LeadStatus,
+    note?: string,
+    admission?: {
+      admissionStudentName?: string;
+      admissionParentName?: string;
+      admissionPhone?: string;
+      admissionFeeAmount?: number;
+    },
+  ) {
     setBusyId(lead.id);
     setError(null);
     const res = await fetch(`/api/admin/leads/${lead.id}/status`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, note }),
+      body: JSON.stringify({ status, note, ...admission }),
     });
     const json = (await res.json().catch(() => null)) as
       | { error?: string; lead?: Lead }
@@ -341,7 +352,8 @@ export default function AdminEnquiriesPage() {
     setLeads((current) => [json.lead as Lead, ...current]);
     setCreateForm(EMPTY_FORM);
     setShowCreate(false);
-    setFilter("active");
+    setFilter("new");
+    await load();
   }
 
   return (
@@ -457,7 +469,7 @@ export default function AdminEnquiriesPage() {
             </label>
             <label className="md:col-span-1">
               <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-neutral-500">
-                Owner
+                Source
               </span>
               <input
                 value={createForm.assignedTo}
@@ -467,7 +479,7 @@ export default function AdminEnquiriesPage() {
                     assignedTo: event.target.value,
                   }))
                 }
-                placeholder="Staff name"
+                placeholder="Website, referral, walk-in, WhatsApp..."
                 className="min-h-11 w-full rounded-lg border border-neutral-300 px-3 text-sm outline-none ring-blue-600/20 focus:border-blue-600 focus:ring-2"
               />
             </label>
@@ -494,7 +506,7 @@ export default function AdminEnquiriesPage() {
               onChange={(event) =>
                 setCreateForm((form) => ({ ...form, note: event.target.value }))
               }
-              placeholder="Call notes, source, preferred timing, fee discussion..."
+              placeholder="Call notes, preferred timing, fee discussion..."
               className="min-h-24 flex-1 rounded-lg border border-neutral-300 px-3 py-3 text-sm leading-6 outline-none ring-blue-600/20 focus:border-blue-600 focus:ring-2"
             />
             <button
@@ -566,6 +578,7 @@ export default function AdminEnquiriesPage() {
               const status = normalizeLeadStatus(lead.status);
               const flowType = normalizeLeadFlowType(lead.flowType);
               const nextStatus = getNextLeadStatus(status, flowType);
+              const previousStatus = getPreviousLeadStatus(status, flowType);
               const progressIndex = getLeadStepIndex(status, flowType);
               const busy = busyId === lead.id;
               return (
@@ -600,7 +613,7 @@ export default function AdminEnquiriesPage() {
                           {lead.phone}
                         </a>
                         <span>{lead.subjects || formatProgram(lead.type)}</span>
-                        <span>Owner: {lead.assignedTo || "Unassigned"}</span>
+                        <span>Source: {lead.assignedTo || "Not recorded"}</span>
                         <span>Updated: {formatDate(lead.updatedAt)}</span>
                       </div>
                     </div>
@@ -641,16 +654,62 @@ export default function AdminEnquiriesPage() {
                           type="button"
                           disabled={busy}
                           onClick={() =>
-                            updateLeadStatus(
-                              lead,
-                              nextStatus,
-                              `Moved to ${STATUS_LABEL[nextStatus]}.`,
-                            )
+                            {
+                              if (nextStatus === "admission") {
+                                const studentName =
+                                  window.prompt("Student name", lead.name) ||
+                                  lead.name;
+                                const parentName =
+                                  window.prompt("Parent name", lead.name) ||
+                                  lead.name;
+                                const feeText =
+                                  window.prompt("Total fee amount", "") || "";
+                                const admissionNote =
+                                  window.prompt(
+                                    "Admission remarks",
+                                    "Admission confirmed.",
+                                  ) || "Admission confirmed.";
+                                updateLeadStatus(
+                                  lead,
+                                  nextStatus,
+                                  admissionNote,
+                                  {
+                                    admissionStudentName: studentName,
+                                    admissionParentName: parentName,
+                                    admissionPhone: lead.phone,
+                                    admissionFeeAmount: Number(feeText) || 0,
+                                  },
+                                );
+                                return;
+                              }
+                              updateLeadStatus(
+                                lead,
+                                nextStatus,
+                                `Moved to ${STATUS_LABEL[nextStatus]}.`,
+                              );
+                            }
                           }
                           className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           <ArrowRight className="h-4 w-4" aria-hidden />
                           Next
+                        </button>
+                      ) : null}
+                      {previousStatus ? (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => {
+                            const note =
+                              window.prompt(
+                                `Reason for moving back to ${STATUS_LABEL[previousStatus]}?`,
+                                `Corrected to ${STATUS_LABEL[previousStatus]}.`,
+                              ) || `Corrected to ${STATUS_LABEL[previousStatus]}.`;
+                            updateLeadStatus(lead, previousStatus, note);
+                          }}
+                          className="inline-flex min-h-10 items-center justify-center rounded-lg border border-neutral-300 px-3 py-2 text-xs font-bold text-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          Back
                         </button>
                       ) : null}
                       <button

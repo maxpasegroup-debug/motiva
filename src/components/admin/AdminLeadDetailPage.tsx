@@ -14,6 +14,7 @@ import {
   getAdvanceButtonLabel,
   getLeadStepIndex,
   getNextLeadStatus,
+  getPreviousLeadStatus,
   isLeadStepDisabledForFlow,
   normalizeLeadFlowType,
   normalizeLeadStatus,
@@ -38,6 +39,17 @@ type LeadView = {
   notes: string | null;
   createdAt: string;
   demos: DemoView[];
+  admissions: {
+    id: string;
+    studentName: string;
+    parentName: string;
+    phone: string;
+    status: string;
+    feeAmountCents: number | null;
+    feeCurrency: string | null;
+    notes: string | null;
+    createdAt: string;
+  }[];
 };
 
 type Props = {
@@ -63,10 +75,18 @@ export function AdminLeadDetailPage({ initialLead }: Props) {
   const notes = useMemo(() => parseLeadNotes(lead.notes), [lead.notes]);
   const currentStepIndex = getLeadStepIndex(status, flowType);
   const nextStatus = getNextLeadStatus(status, flowType);
+  const previousStatus = getPreviousLeadStatus(status, flowType);
   const advanceLabel = getAdvanceButtonLabel(status, flowType);
   const isClosed = status === "closed_lost" || status === "closed_won";
 
-  function runUpdate(payload: { status?: string; note?: string }) {
+  function runUpdate(payload: {
+    status?: string;
+    note?: string;
+    admissionStudentName?: string;
+    admissionParentName?: string;
+    admissionPhone?: string;
+    admissionFeeAmount?: number;
+  }) {
     startTransition(async () => {
       setError(null);
       try {
@@ -89,6 +109,7 @@ export function AdminLeadDetailPage({ initialLead }: Props) {
             ...demo,
             createdAt: demo.createdAt,
           })),
+          admissions: json.lead.admissions ?? lead.admissions,
         });
         setNote("");
         router.refresh();
@@ -220,10 +241,49 @@ export function AdminLeadDetailPage({ initialLead }: Props) {
               type="button"
               disabled={isPending}
               className="min-h-11 sm:w-auto"
-              onClick={() => runUpdate({ status: nextStatus })}
+              onClick={() => {
+                if (nextStatus === "admission") {
+                  const studentName =
+                    window.prompt("Student name", lead.name) || lead.name;
+                  const parentName =
+                    window.prompt("Parent name", lead.name) || lead.name;
+                  const feeText = window.prompt("Total fee amount", "") || "";
+                  const admissionNote =
+                    window.prompt("Admission remarks", "Admission confirmed.") ||
+                    "Admission confirmed.";
+                  runUpdate({
+                    status: nextStatus,
+                    note: admissionNote,
+                    admissionStudentName: studentName,
+                    admissionParentName: parentName,
+                    admissionPhone: lead.phone,
+                    admissionFeeAmount: Number(feeText) || 0,
+                  });
+                  return;
+                }
+                runUpdate({ status: nextStatus });
+              }}
             >
               {advanceLabel}
             </Button>
+          ) : null}
+
+          {previousStatus ? (
+            <button
+              type="button"
+              disabled={isPending}
+              className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-neutral-300 bg-white px-6 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={() => {
+                const correction =
+                  window.prompt(
+                    `Reason for moving back to ${STATUS_LABEL[previousStatus]}?`,
+                    `Corrected to ${STATUS_LABEL[previousStatus]}.`,
+                  ) || `Corrected to ${STATUS_LABEL[previousStatus]}.`;
+                runUpdate({ status: previousStatus, note: correction });
+              }}
+            >
+              Move Back
+            </button>
           ) : null}
 
           {!isClosed ? (
@@ -290,6 +350,55 @@ export function AdminLeadDetailPage({ initialLead }: Props) {
             Add Note
           </Button>
         </div>
+      </Card>
+
+      <Card className="space-y-4 p-5 sm:p-6">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Admissions</h2>
+          <p className="mt-1 text-sm text-neutral-500">
+            Admission records created from this lead tracker.
+          </p>
+        </div>
+
+        {lead.admissions.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-500">
+            No admission record yet. Move the lead to Admission to create one.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {lead.admissions.map((admission) => (
+              <div
+                key={admission.id}
+                className="rounded-2xl border border-neutral-200 bg-white p-4"
+              >
+                <div className="flex flex-col gap-1 text-sm text-neutral-600 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="font-medium text-neutral-800">
+                    {admission.studentName} | {admission.status}
+                  </span>
+                  <span>{formatDate(admission.createdAt)}</span>
+                </div>
+                <p className="mt-2 text-sm text-neutral-700">
+                  Parent: {admission.parentName} | Phone: {admission.phone}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-neutral-800">
+                  Fee:{" "}
+                  {admission.feeAmountCents
+                    ? new Intl.NumberFormat("en-IN", {
+                        style: "currency",
+                        currency: admission.feeCurrency ?? "INR",
+                        maximumFractionDigits: 0,
+                      }).format(admission.feeAmountCents / 100)
+                    : "Not fixed"}
+                </p>
+                {admission.notes ? (
+                  <p className="mt-2 whitespace-pre-line text-sm text-neutral-700">
+                    Remarks: {admission.notes}
+                  </p>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
 
       <Card className="space-y-4 p-5 sm:p-6">

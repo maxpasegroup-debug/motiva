@@ -29,6 +29,9 @@ export async function GET(
         demos: {
           orderBy: { createdAt: "desc" },
         },
+        admissions: {
+          orderBy: { createdAt: "desc" },
+        },
       },
     });
 

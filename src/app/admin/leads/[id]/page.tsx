@@ -15,6 +15,9 @@ export default async function AdminLeadDetailRoute({
       demos: {
         orderBy: { createdAt: "desc" },
       },
+      admissions: {
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 
@@ -39,6 +42,17 @@ export default async function AdminLeadDetailRoute({
           result: demo.result,
           notes: demo.notes,
           createdAt: demo.createdAt.toISOString(),
+        })),
+        admissions: lead.admissions.map((admission) => ({
+          id: admission.id,
+          studentName: admission.studentName,
+          parentName: admission.parentName,
+          phone: admission.phone,
+          status: admission.status,
+          feeAmountCents: admission.feeAmountCents,
+          feeCurrency: admission.feeCurrency,
+          notes: admission.notes,
+          createdAt: admission.createdAt.toISOString(),
         })),
       }}
     />

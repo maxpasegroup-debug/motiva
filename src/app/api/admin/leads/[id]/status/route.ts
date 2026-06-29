@@ -51,6 +51,25 @@ export async function PUT(
     typeof payload.addedBy === "string" && payload.addedBy.trim()
       ? payload.addedBy.trim()
       : auth.payload.name || auth.payload.role;
+  const admissionStudentName =
+    typeof payload.admissionStudentName === "string" &&
+    payload.admissionStudentName.trim()
+      ? payload.admissionStudentName.trim()
+      : null;
+  const admissionParentName =
+    typeof payload.admissionParentName === "string" &&
+    payload.admissionParentName.trim()
+      ? payload.admissionParentName.trim()
+      : null;
+  const admissionPhone =
+    typeof payload.admissionPhone === "string" && payload.admissionPhone.trim()
+      ? payload.admissionPhone.trim()
+      : null;
+  const admissionFeeAmount =
+    typeof payload.admissionFeeAmount === "number" &&
+    Number.isFinite(payload.admissionFeeAmount)
+      ? Math.max(0, Math.round(payload.admissionFeeAmount * 100))
+      : null;
 
   if (!status && !note) {
     return NextResponse.json(
@@ -95,10 +114,47 @@ export async function PUT(
         demos: {
           orderBy: { createdAt: "desc" },
         },
+        admissions: {
+          orderBy: { createdAt: "desc" },
+        },
       },
     });
 
-    return NextResponse.json({ success: true, lead: updated });
+    if (status === "admission") {
+      const alreadyCreated = await prisma.admission.findFirst({
+        where: { leadId: id },
+      });
+      if (!alreadyCreated) {
+        await prisma.admission.create({
+          data: {
+            leadId: id,
+            studentName: admissionStudentName ?? existing.name,
+            parentName: admissionParentName ?? existing.name,
+            phone: admissionPhone ?? existing.phone,
+            type: existing.type === "foundation" ? "foundation" : "tuition",
+            status: "pending",
+            feeAmountCents: admissionFeeAmount,
+            feeCurrency: "INR",
+            notes: appendLeadNote(null, {
+              text:
+                note ||
+                `Admission opened from lead tracker at ${new Date().toLocaleString("en-IN")}.`,
+              addedBy,
+            }),
+          },
+        });
+      }
+    }
+
+    const lead = await prisma.lead.findUnique({
+      where: { id },
+      include: {
+        demos: { orderBy: { createdAt: "desc" } },
+        admissions: { orderBy: { createdAt: "desc" } },
+      },
+    });
+
+    return NextResponse.json({ success: true, lead: lead ?? updated });
   } catch (error) {
     console.error("[PUT /api/admin/leads/[id]/status]", error);
     return NextResponse.json(

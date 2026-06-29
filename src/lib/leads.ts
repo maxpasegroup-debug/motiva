@@ -197,6 +197,29 @@ export function getNextLeadStatus(
   return null;
 }
 
+export function getPreviousLeadStatus(
+  statusInput: string | null | undefined,
+  flowTypeInput: string | null | undefined,
+): LeadStatus | null {
+  const status = normalizeLeadStatus(statusInput);
+  const flowType = normalizeLeadFlowType(flowTypeInput);
+
+  if (status === "closed_lost" || status === "closed") return "contacted";
+  if (status === "closed_won") return "mentor_assigned";
+  if (status === "mentor_assigned") return "account_created";
+  if (status === "account_created") return "payment_confirmed";
+  if (status === "payment_confirmed") return "payment_pending";
+  if (status === "payment_pending") return "admission";
+  if (status === "admission") {
+    return flowType === "remedial" ? "contacted" : "counseling";
+  }
+  if (status === "counseling") return "demo_done";
+  if (status === "demo_done") return "demo_scheduled";
+  if (status === "demo_scheduled" || status === "demo") return "contacted";
+  if (status === "contacted") return "new";
+  return null;
+}
+
 export function getAdvanceButtonLabel(
   statusInput: string | null | undefined,
   flowTypeInput: string | null | undefined,
@@ -262,11 +285,10 @@ export function isAllowedLeadStatusTransition(
   const next = normalizeLeadStatus(nextInput);
 
   if (next === "closed_lost") return current !== "closed_won";
-  if (current === "closed_lost" || current === "closed" || current === "closed_won") {
-    return false;
-  }
+  if (current === "closed_won") return next === "mentor_assigned";
+  if (current === "closed_lost" || current === "closed") return next !== "closed_won";
 
-  return PROGRESS_RANK[next] >= PROGRESS_RANK[current];
+  return next === current || PROGRESS_RANK[next] >= -1;
 }
 
 export function parseLeadNotes(raw: string | null | undefined): LeadNoteEntry[] {

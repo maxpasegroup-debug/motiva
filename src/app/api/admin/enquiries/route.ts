@@ -54,6 +54,13 @@ export async function POST(req: NextRequest) {
     typeof payload.assignedTo === "string" && payload.assignedTo.trim()
       ? payload.assignedTo.trim()
       : null;
+  const sourceLabel = assignedTo ? `Source: ${assignedTo}. ` : "";
+  const enteredBy = [
+    auth.payload.name || auth.payload.role,
+    auth.payload.mobile ? `(${auth.payload.mobile})` : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
   const note =
     typeof payload.note === "string" && payload.note.trim()
       ? payload.note.trim()
@@ -76,7 +83,7 @@ export async function POST(req: NextRequest) {
         assignedTo,
         flowType: type === "remedial" ? "remedial" : "tuition",
         notes: appendLeadNote(null, {
-          text: note,
+          text: `${sourceLabel}${note} Entered by ${enteredBy}.`,
           addedBy: auth.payload.name || auth.payload.role,
         }),
       },
