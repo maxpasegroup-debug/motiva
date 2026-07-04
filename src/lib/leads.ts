@@ -327,6 +327,22 @@ export function parseLeadNotes(raw: string | null | undefined): LeadNoteEntry[] 
   }
 }
 
+export function leadNotesBelongToUser(
+  raw: string | null | undefined,
+  user: { userId?: string | null; sub?: string | null; name?: string | null; mobile?: string | null },
+): boolean {
+  const notes = parseLeadNotes(raw);
+  return notes.some((note) => {
+    const haystack = `${note.addedBy} ${note.text}`;
+    return (
+      Boolean(user.userId && haystack.includes(`Telecaller ID: ${user.userId}`)) ||
+      Boolean(user.sub && haystack.includes(`Telecaller ID: ${user.sub}`)) ||
+      Boolean(user.mobile && haystack.includes(user.mobile)) ||
+      Boolean(user.name && note.addedBy === user.name)
+    );
+  });
+}
+
 export function appendLeadNote(
   raw: string | null | undefined,
   note: { text: string; addedBy: string; timestamp?: string },

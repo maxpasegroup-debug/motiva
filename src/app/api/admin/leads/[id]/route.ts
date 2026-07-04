@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { leadNotesBelongToUser } from "@/lib/leads";
 import prisma from "@/lib/prisma";
 import { requireRolesApi } from "@/server/auth/require-roles";
 
@@ -9,6 +10,14 @@ const ROLES = ["admin", "telecounselor"] as const;
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function canAccessLead(
+  role: string,
+  notes: string | null,
+  user: { userId?: string | null; sub?: string | null; name?: string | null; mobile?: string | null },
+) {
+  return role !== "telecounselor" || leadNotesBelongToUser(notes, user);
+}
 
 export async function GET(
   req: NextRequest,
@@ -36,6 +45,9 @@ export async function GET(
     });
 
     if (!lead) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    if (!canAccessLead(auth.payload.role, lead.notes, auth.payload)) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
@@ -93,6 +105,17 @@ export async function PATCH(
   }
 
   try {
+    const existing = await prisma.lead.findUnique({
+      where: { id },
+      select: { notes: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    if (!canAccessLead(auth.payload.role, existing.notes, auth.payload)) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
     const lead = await prisma.lead.update({
       where: { id },
       data: {
@@ -133,6 +156,17 @@ export async function DELETE(
   }
 
   try {
+    const existing = await prisma.lead.findUnique({
+      where: { id },
+      select: { notes: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    if (!canAccessLead(auth.payload.role, existing.notes, auth.payload)) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
     const [admissions, payments] = await Promise.all([
       prisma.admission.count({ where: { leadId: id } }),
       prisma.paymentTransaction.count({ where: { leadId: id } }),

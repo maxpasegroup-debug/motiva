@@ -50,12 +50,15 @@ function buildLeadNote(input: {
   enquiryId: string;
   programInterest: string;
   message: string | null;
+  ownerLabel: string;
+  ownerId: string;
 }) {
   const offering = getOffering(input.programInterest);
   return [
     `Converted from enquiry ${input.enquiryId}.`,
     `Program interest: ${getOfferingLabel(input.programInterest)}.`,
     offering ? `Brand: ${offering.brandName}. Mode: ${offering.mode.replace(/_/g, " ")}.` : null,
+    `Converted by ${input.ownerLabel}. Telecaller ID: ${input.ownerId}.`,
     input.message?.trim() ? `Learning check details:\n${input.message.trim()}` : null,
   ]
     .filter(Boolean)
@@ -84,6 +87,8 @@ export async function POST(
         enquiryId: enquiry.id,
         programInterest: enquiry.programInterest,
         message: enquiry.message,
+        ownerLabel: auth.payload.name || auth.payload.role,
+        ownerId: auth.payload.userId,
       });
 
       const existingLead = await tx.lead.findFirst({

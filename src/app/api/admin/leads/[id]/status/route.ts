@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import {
   appendLeadNote,
   isAllowedLeadStatusTransition,
+  leadNotesBelongToUser,
   normalizeLeadStatus,
 } from "@/lib/leads";
 import { requireRolesApi } from "@/server/auth/require-roles";
@@ -89,6 +90,13 @@ export async function PUT(
     });
 
     if (!existing) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    if (
+      auth.payload.role === "telecounselor" &&
+      !leadNotesBelongToUser(existing.notes, auth.payload)
+    ) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 

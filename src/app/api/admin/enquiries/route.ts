@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { appendLeadNote } from "@/lib/leads";
+import { appendLeadNote, leadNotesBelongToUser } from "@/lib/leads";
 import prisma from "@/lib/prisma";
 import { requireAdminApi } from "@/server/auth/require-admin";
 
@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const enquiries = await prisma.enquiry.findMany({
     orderBy: { createdAt: "desc" },
   });
-  const leads = await prisma.lead.findMany({
+  const allLeads = await prisma.lead.findMany({
     orderBy: { updatedAt: "desc" },
     include: {
       demos: {
@@ -21,6 +21,10 @@ export async function GET(req: NextRequest) {
       },
     },
   });
+  const leads =
+    auth.payload.role === "telecounselor"
+      ? allLeads.filter((lead) => leadNotesBelongToUser(lead.notes, auth.payload))
+      : allLeads;
   return NextResponse.json({ enquiries, leads });
 }
 
@@ -83,7 +87,7 @@ export async function POST(req: NextRequest) {
         assignedTo,
         flowType: type === "remedial" ? "remedial" : "tuition",
         notes: appendLeadNote(null, {
-          text: `${sourceLabel}${note} Entered by ${enteredBy}.`,
+          text: `${sourceLabel}${note} Entered by ${enteredBy}. Telecaller ID: ${auth.payload.userId}.`,
           addedBy: auth.payload.name || auth.payload.role,
         }),
       },
