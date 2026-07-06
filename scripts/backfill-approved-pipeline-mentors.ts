@@ -15,6 +15,20 @@ function usernameFromMobile(prefix: string, mobile: string) {
   return `${prefix}_${mobile}`;
 }
 
+function getDatabaseTarget(): string {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) return "DATABASE_URL is not set";
+
+  try {
+    const url = new URL(databaseUrl);
+    const user = url.username || "unknown";
+    const db = url.pathname.replace(/^\//, "") || "unknown";
+    return `${url.hostname}:${url.port || "default"}/${db} as ${user}`;
+  } catch {
+    return "DATABASE_URL is set but could not be parsed";
+  }
+}
+
 async function pickRoundRobinMentor(category: MentorCategory) {
   const allMentors = await prisma.user.findMany({
     where: { role: "mentor", isActive: true },
@@ -196,7 +210,19 @@ async function main() {
 
 main()
   .catch((error) => {
-    console.error(error);
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("Authentication failed against database server")) {
+      console.error(
+        [
+          "Database authentication failed while running the admission mentor backfill.",
+          `Configured database: ${getDatabaseTarget()}`,
+          "Refresh DATABASE_URL in .env with the current Railway/Postgres connection string, then rerun:",
+          "npx tsx scripts/backfill-approved-pipeline-mentors.ts",
+        ].join("\n"),
+      );
+    } else {
+      console.error(error);
+    }
     process.exitCode = 1;
   })
   .finally(async () => {
