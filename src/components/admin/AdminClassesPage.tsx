@@ -276,7 +276,8 @@ export function AdminClassesPage() {
       }),
     });
     if (!res.ok) {
-      setCreateError(t("admin_batches_create_error"));
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      setCreateError(json.error ?? t("admin_batches_create_error"));
       return;
     }
     setBatchName("");
