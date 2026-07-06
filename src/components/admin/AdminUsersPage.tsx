@@ -2,6 +2,11 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import type { Role } from "@/lib/roles";
+import {
+  MENTOR_CATEGORIES,
+  MENTOR_CATEGORY_LABEL,
+  type MentorCategory,
+} from "@/lib/mentor-categories";
 
 type AdminUser = {
   id: string;
@@ -11,6 +16,7 @@ type AdminUser = {
   isActive: boolean;
   pinResetRequired: boolean;
   visiblePin: string | null;
+  mentorCategory: MentorCategory | null;
   createdAt: string;
 };
 
@@ -40,6 +46,8 @@ export function AdminUsersPage() {
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [role, setRole] = useState<Role>("student");
+  const [mentorCategory, setMentorCategory] =
+    useState<MentorCategory>("tuition");
   const [pin, setPin] = useState(generatePin);
   const [message, setMessage] = useState<string | null>(null);
   const [oneTimePin, setOneTimePin] = useState<{ name: string; pin: string } | null>(null);
@@ -68,7 +76,7 @@ export function AdminUsersPage() {
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, mobile, role, pin }),
+        body: JSON.stringify({ name, mobile, role, pin, mentorCategory }),
       });
       const body = (await res.json().catch(() => null)) as
         | { error?: string; user?: AdminUser }
@@ -78,6 +86,7 @@ export function AdminUsersPage() {
       setName("");
       setMobile("");
       setRole("student");
+      setMentorCategory("tuition");
       setPin(generatePin());
       await loadUsers();
     } catch (err) {
@@ -130,6 +139,10 @@ export function AdminUsersPage() {
       isActive:
         typeof draft.isActive === "boolean" ? draft.isActive : user.isActive,
       pin: typeof draft.pin === "string" && draft.pin.trim() ? draft.pin.trim() : undefined,
+      mentorCategory:
+        (draft.role ?? user.role) === "mentor"
+          ? draft.mentorCategory ?? user.mentorCategory ?? "tuition"
+          : undefined,
     };
 
     setBusy(true);
@@ -162,7 +175,7 @@ export function AdminUsersPage() {
         <p className="mt-1 text-sm text-neutral-600">Unified login accounts</p>
       </div>
 
-      <form onSubmit={createUser} className="grid gap-3 rounded-lg border border-neutral-200 bg-white p-4 shadow-sm md:grid-cols-5">
+      <form onSubmit={createUser} className="grid gap-3 rounded-lg border border-neutral-200 bg-white p-4 shadow-sm md:grid-cols-6">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -187,6 +200,18 @@ export function AdminUsersPage() {
             </option>
           ))}
         </select>
+        <select
+          value={mentorCategory}
+          onChange={(e) => setMentorCategory(e.target.value as MentorCategory)}
+          disabled={role !== "mentor"}
+          className="min-h-11 rounded-lg border border-neutral-300 px-3 text-sm disabled:bg-neutral-100 disabled:text-neutral-400"
+        >
+          {MENTOR_CATEGORIES.map((item) => (
+            <option key={item} value={item}>
+              {MENTOR_CATEGORY_LABEL[item]}
+            </option>
+          ))}
+        </select>
         <input
           value={pin}
           onChange={(e) => setPin(e.target.value)}
@@ -207,12 +232,13 @@ export function AdminUsersPage() {
       {message ? <p className="text-sm font-medium text-accent">{message}</p> : null}
 
       <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white shadow-sm">
-        <table className="w-full min-w-[1100px] text-left text-sm">
+        <table className="w-full min-w-[1240px] text-left text-sm">
           <thead className="bg-neutral-50 text-xs uppercase text-neutral-500">
             <tr>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Mobile</th>
               <th className="px-4 py-3">Role</th>
+              <th className="px-4 py-3">Mentor Category</th>
               <th className="px-4 py-3">PIN</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Created</th>
@@ -250,6 +276,28 @@ export function AdminUsersPage() {
                     {ROLE_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
                         {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td className="px-4 py-3">
+                  <select
+                    value={
+                      editing[user.id]?.mentorCategory ??
+                      user.mentorCategory ??
+                      "tuition"
+                    }
+                    onChange={(e) =>
+                      patchDraft(user.id, {
+                        mentorCategory: e.target.value as MentorCategory,
+                      })
+                    }
+                    disabled={String(editValue(user, "role")) !== "mentor"}
+                    className="min-h-10 w-44 rounded-lg border border-neutral-200 px-3 text-sm disabled:bg-neutral-100 disabled:text-neutral-400"
+                  >
+                    {MENTOR_CATEGORIES.map((item) => (
+                      <option key={item} value={item}>
+                        {MENTOR_CATEGORY_LABEL[item]}
                       </option>
                     ))}
                   </select>

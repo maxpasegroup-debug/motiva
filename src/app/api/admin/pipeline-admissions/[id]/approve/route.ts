@@ -30,7 +30,7 @@ export async function POST(
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
 
-  const result = await approvePipelineAdmissionInDatabase(id);
+  const result = await approvePipelineAdmissionInDatabase(id, auth.payload.sub);
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
@@ -38,5 +38,7 @@ export async function POST(
   return NextResponse.json({
     student: result.data.student,
     parent: result.data.parent,
+    studentAccount: result.data.studentAccount,
+    mentor: result.data.mentor,
   });
 }

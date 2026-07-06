@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { isRole, type Role } from "@/lib/roles";
+import { normalizeMentorCategory } from "@/lib/mentor-categories";
 import { requireAdminApi } from "@/server/auth/require-admin";
 import { hashPin, isFourDigitPin, normalizeMobile } from "@/server/auth/unified-auth";
 
@@ -43,6 +44,7 @@ function publicUser(user: {
     pinResetRequired: user.pinResetRequired,
     profileData: user.profileData,
     visiblePin: typeof profile.visiblePin === "string" ? profile.visiblePin : null,
+    mentorCategory: normalizeMentorCategory(profile.mentorCategory),
     createdAt: user.createdAt.toISOString(),
   };
 }
@@ -85,6 +87,7 @@ export async function POST(req: NextRequest) {
   const mobile = normalizeMobile(typeof body.mobile === "string" ? body.mobile : "");
   const pin = typeof body.pin === "string" ? body.pin : "";
   const roleValue = body.role;
+  const mentorCategory = normalizeMentorCategory(body.mentorCategory);
 
   if (name.length < 2 || !mobile || !isFourDigitPin(pin) || !isRole(roleValue)) {
     return NextResponse.json(
@@ -109,6 +112,10 @@ export async function POST(req: NextRequest) {
   }
 
   const pinHash = await hashPin(pin);
+  const profileData =
+    roleValue === "mentor"
+      ? { visiblePin: pin, mentorCategory: mentorCategory ?? "tuition" }
+      : { visiblePin: pin };
   const user = await prisma.user.create({
     data: {
       name,
@@ -117,7 +124,7 @@ export async function POST(req: NextRequest) {
       role: roleValue,
       isActive: true,
       pinResetRequired: false,
-      profileData: { visiblePin: pin },
+      profileData,
       createdBy: auth.payload.userId,
     },
     select: {

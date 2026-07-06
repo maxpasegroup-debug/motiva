@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
+import { normalizeMentorCategory } from "@/lib/mentor-categories";
 import { requireAdminApi } from "@/server/auth/require-admin";
 import { hashPin, isFourDigitPin, normalizeMobile } from "@/server/auth/unified-auth";
 
@@ -27,6 +28,16 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     pinResetRequired?: boolean;
     profileData?: Prisma.InputJsonValue;
   } = {};
+  const currentProfile = await prisma.user.findUnique({
+    where: { id },
+    select: { profileData: true },
+  });
+  const profile =
+    currentProfile?.profileData &&
+    typeof currentProfile.profileData === "object" &&
+    !Array.isArray(currentProfile.profileData)
+      ? (currentProfile.profileData as Record<string, unknown>)
+      : {};
 
   if (typeof body.name === "string") {
     const name = body.name.trim();
@@ -70,17 +81,25 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     data.passwordHash = null;
     data.pinResetRequired = false;
 
-    const currentProfile = await prisma.user.findUnique({
-      where: { id },
-      select: { profileData: true },
-    });
-    const profile =
-      currentProfile?.profileData &&
-      typeof currentProfile.profileData === "object" &&
-      !Array.isArray(currentProfile.profileData)
-        ? (currentProfile.profileData as Record<string, unknown>)
-        : {};
     data.profileData = { ...profile, visiblePin: pin };
+  }
+
+  if (body.mentorCategory !== undefined) {
+    const mentorCategory = normalizeMentorCategory(body.mentorCategory);
+    if (!mentorCategory) {
+      return NextResponse.json(
+        { error: "Invalid mentor category" },
+        { status: 400 },
+      );
+    }
+    data.profileData = {
+      ...(data.profileData &&
+      typeof data.profileData === "object" &&
+      !Array.isArray(data.profileData)
+        ? data.profileData
+        : profile),
+      mentorCategory,
+    };
   }
 
   if (data.mobile || data.role) {
@@ -134,6 +153,8 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     user: {
       ...user,
       visiblePin: typeof profile.visiblePin === "string" ? profile.visiblePin : null,
+      mentorCategory:
+        typeof profile.mentorCategory === "string" ? profile.mentorCategory : null,
     },
   });
 }
