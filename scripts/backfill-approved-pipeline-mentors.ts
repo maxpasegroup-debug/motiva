@@ -1,5 +1,10 @@
 import prisma from "@/lib/prisma";
 import { appendLeadNote, determineProgramTypeFromLead } from "@/lib/leads";
+import {
+  determineMentorCategory,
+  normalizeMentorCategory,
+  type MentorCategory,
+} from "@/lib/mentor-categories";
 import { hashPin, normalizeMobile } from "@/server/auth/unified-auth";
 
 function randomPin(): string {
@@ -10,11 +15,21 @@ function usernameFromMobile(prefix: string, mobile: string) {
   return `${prefix}_${mobile}`;
 }
 
-async function pickRoundRobinMentor() {
-  const mentors = await prisma.user.findMany({
+async function pickRoundRobinMentor(category: MentorCategory) {
+  const allMentors = await prisma.user.findMany({
     where: { role: "mentor", isActive: true },
-    select: { id: true, name: true, createdAt: true },
+    select: { id: true, name: true, createdAt: true, profileData: true },
     orderBy: { createdAt: "asc" },
+  });
+  const mentors = allMentors.filter((mentor) => {
+    const profile =
+      mentor.profileData &&
+      typeof mentor.profileData === "object" &&
+      !Array.isArray(mentor.profileData)
+        ? (mentor.profileData as Record<string, unknown>)
+        : {};
+
+    return normalizeMentorCategory(profile.mentorCategory) === category;
   });
 
   if (mentors.length === 0) return null;
@@ -76,7 +91,6 @@ async function main() {
       continue;
     }
 
-    const mentor = await pickRoundRobinMentor();
     const studentPin = randomPin();
     let parentPin = randomPin();
     if (parentPin === studentPin) parentPin = randomPin();
@@ -86,6 +100,13 @@ async function main() {
       type: admission.type,
       notes: admission.notes,
     });
+    const mentorCategory = determineMentorCategory({
+      type: admission.lead.type ?? admission.type,
+      flowType: admission.lead.flowType,
+      subjects: admission.lead.subjects,
+      notes: [admission.lead.notes, admission.notes].filter(Boolean).join("\n"),
+    });
+    const mentor = await pickRoundRobinMentor(mentorCategory);
 
     await prisma.$transaction(async (tx) => {
       const studentUser =
@@ -154,8 +175,8 @@ async function main() {
           assignedMentorId: mentor?.id ?? null,
           notes: appendLeadNote(admission.lead.notes, {
             text: mentor
-              ? `Backfilled approved admission and assigned mentor ${mentor.name} by round robin.`
-              : "Backfilled approved admission, but no active mentor was available.",
+              ? `Backfilled approved admission and assigned ${mentorCategory} mentor ${mentor.name} by round robin.`
+              : `Backfilled approved admission, but no active ${mentorCategory} mentor was available.`,
             addedBy: "backfill-approved-pipeline-mentors",
           }),
         },

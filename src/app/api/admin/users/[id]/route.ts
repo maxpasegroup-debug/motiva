@@ -32,7 +32,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     where: { id },
     select: { profileData: true },
   });
-  const profile =
+  const existingProfile =
     currentProfile?.profileData &&
     typeof currentProfile.profileData === "object" &&
     !Array.isArray(currentProfile.profileData)
@@ -81,7 +81,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     data.passwordHash = null;
     data.pinResetRequired = false;
 
-    data.profileData = { ...profile, visiblePin: pin };
+    data.profileData = { ...existingProfile, visiblePin: pin };
   }
 
   if (body.mentorCategory !== undefined) {
@@ -97,7 +97,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       typeof data.profileData === "object" &&
       !Array.isArray(data.profileData)
         ? data.profileData
-        : profile),
+        : existingProfile),
       mentorCategory,
     };
   }
@@ -144,7 +144,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     },
   });
 
-  const profile =
+  const responseProfile =
     user.profileData && typeof user.profileData === "object" && !Array.isArray(user.profileData)
       ? (user.profileData as Record<string, unknown>)
       : {};
@@ -152,9 +152,11 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
   return NextResponse.json({
     user: {
       ...user,
-      visiblePin: typeof profile.visiblePin === "string" ? profile.visiblePin : null,
-      mentorCategory:
-        typeof profile.mentorCategory === "string" ? profile.mentorCategory : null,
+      visiblePin:
+        typeof responseProfile.visiblePin === "string"
+          ? responseProfile.visiblePin
+          : null,
+      mentorCategory: normalizeMentorCategory(responseProfile.mentorCategory),
     },
   });
 }
