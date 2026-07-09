@@ -16,8 +16,8 @@ async function ensureCrmTables(): Promise<void> {
       status VARCHAR(32) NOT NULL DEFAULT 'new'
         CHECK (status IN (
           'new', 'contacted', 'demo_scheduled', 'demo_done', 'counseling',
-          'admission', 'payment_pending', 'payment_confirmed', 'mentor_assigned',
-          'closed_won', 'closed_lost', 'demo', 'closed'
+          'admission', 'payment_pending', 'payment_confirmed', 'account_created',
+          'mentor_assigned', 'closed_won', 'closed_lost', 'demo', 'closed'
         )),
       flow_type VARCHAR(32) NOT NULL DEFAULT 'tuition'
         CHECK (flow_type IN ('tuition', 'remedial')),
@@ -31,6 +31,18 @@ async function ensureCrmTables(): Promise<void> {
   await pool.query(
     `CREATE INDEX IF NOT EXISTS idx_leads_status ON leads (status)`,
   );
+  await pool.query(
+    `ALTER TABLE IF EXISTS leads DROP CONSTRAINT IF EXISTS leads_status_check`,
+  );
+  await pool.query(`
+    ALTER TABLE IF EXISTS leads
+    ADD CONSTRAINT leads_status_check
+    CHECK (status IN (
+      'new', 'contacted', 'demo_scheduled', 'demo_done', 'counseling',
+      'admission', 'payment_pending', 'payment_confirmed', 'account_created',
+      'mentor_assigned', 'closed_won', 'closed_lost', 'demo', 'closed'
+    ))
+  `);
   await pool.query(
     `CREATE INDEX IF NOT EXISTS idx_leads_assigned ON leads (assigned_to)`,
   );

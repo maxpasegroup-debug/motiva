@@ -93,11 +93,27 @@ export function AdminPaymentsPage() {
         notes: remarks.trim(),
       }),
     });
-    const json = (await res.json().catch(() => ({}))) as { error?: string };
+    const json = (await res.json().catch(() => ({}))) as {
+      error?: string;
+      onboarding?: { ok: boolean; error?: string; warnings?: string[] } | null;
+    };
     setBusy(false);
     if (!res.ok) {
       setError(json.error ?? "Could not record payment");
       return;
+    }
+    if (json.onboarding && !json.onboarding.ok) {
+      setError(
+        `Payment saved, but onboarding needs admin action: ${
+          json.onboarding.error ?? "Could not complete onboarding"
+        }`,
+      );
+    } else if (json.onboarding?.warnings?.length) {
+      setError(
+        `Payment saved. Onboarding needs admin action: ${json.onboarding.warnings.join(
+          " ",
+        )}`,
+      );
     }
     setActiveId(null);
     setAmount("");

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { appendLeadNote } from "@/lib/leads";
+import { onboardPaidLead } from "@/server/admissions/onboard-paid-lead";
 import { requireAdminApi } from "@/server/auth/require-admin";
 
 export const runtime = "nodejs";
@@ -151,7 +152,33 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
-    return NextResponse.json({ success: true });
+    let onboarding:
+      | Awaited<ReturnType<typeof onboardPaidLead>>
+      | null = null;
+    if (isFullyPaid) {
+      onboarding = await onboardPaidLead(admission.leadId, {
+        id: auth.payload.sub,
+        name: auth.payload.name,
+        role: auth.payload.role,
+      });
+      if (onboarding && !onboarding.ok) {
+        const freshLead = await prisma.lead.findUnique({
+          where: { id: admission.leadId },
+          select: { notes: true },
+        });
+        await prisma.lead.update({
+          where: { id: admission.leadId },
+          data: {
+            notes: appendLeadNote(freshLead?.notes ?? admission.lead.notes, {
+              text: `Payment is fully recorded, but onboarding needs admin action: ${onboarding.error}`,
+              addedBy: auth.payload.name || auth.payload.role,
+            }),
+          },
+        });
+      }
+    }
+
+    return NextResponse.json({ success: true, onboarding });
   } catch (error) {
     console.error("[POST /api/admin/payments]", error);
     return NextResponse.json(

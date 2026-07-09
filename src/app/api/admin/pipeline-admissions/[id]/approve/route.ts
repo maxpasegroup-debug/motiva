@@ -40,5 +40,8 @@ export async function POST(
     parent: result.data.parent,
     studentAccount: result.data.studentAccount,
     mentor: result.data.mentor,
+    teacher: result.data.teacher,
+    batch: result.data.batch,
+    warnings: result.data.warnings,
   });
 }

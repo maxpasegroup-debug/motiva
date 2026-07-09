@@ -103,6 +103,20 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      await tx.admission.create({
+        data: {
+          leadId: createdLead.id,
+          studentName,
+          parentName,
+          phone: mobile,
+          type: "foundation",
+          status: "pending",
+          feeAmountCents: Math.round(feeAmount * 100),
+          feeCurrency: "INR",
+          notes: initialNoteText,
+        },
+      });
+
       // studentId remains required in the current payments table, so we use the lead id
       // until the student account is created later in the flow.
       await tx.paymentTransaction.create({

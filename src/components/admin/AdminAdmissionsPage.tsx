@@ -20,8 +20,12 @@ type PipelineAdmission = {
 };
 
 type CreatedCreds = {
-  student: { email: string; password: string };
-  parent: { email: string; password: string };
+  student: { email: string; password: string | null };
+  parent: { email: string; password: string | null };
+  mentor?: { id: string; name: string } | null;
+  teacher?: { id: string; name: string } | null;
+  batch?: { id: string; name: string } | null;
+  warnings?: string[];
 };
 
 function formatMoney(cents: number | null, currency = "INR") {
@@ -79,7 +83,14 @@ export function AdminAdmissionsPage() {
       setError(json.error ?? "Could not approve admission");
       return;
     }
-    setCreated({ student: json.student, parent: json.parent });
+    setCreated({
+      student: json.student,
+      parent: json.parent,
+      mentor: json.mentor,
+      teacher: json.teacher,
+      batch: json.batch,
+      warnings: json.warnings ?? [],
+    });
     await refresh();
   }
 
@@ -174,13 +185,33 @@ export function AdminAdmissionsPage() {
               <div>
                 <p className="font-bold">Student</p>
                 <p>Email/mobile: {created.student.email}</p>
-                <p>Password/PIN: {created.student.password}</p>
+                <p>
+                  Password/PIN:{" "}
+                  {created.student.password ?? "Already existed - unchanged"}
+                </p>
               </div>
               <div>
                 <p className="font-bold">Parent</p>
                 <p>Email/mobile: {created.parent.email}</p>
-                <p>Password/PIN: {created.parent.password}</p>
+                <p>
+                  Password/PIN:{" "}
+                  {created.parent.password ?? "Already existed - unchanged"}
+                </p>
               </div>
+              <div>
+                <p className="font-bold">Assignment</p>
+                <p>Mentor: {created.mentor?.name ?? "Not assigned"}</p>
+                <p>Teacher: {created.teacher?.name ?? "Not assigned"}</p>
+                <p>Batch: {created.batch?.name ?? "Not assigned"}</p>
+              </div>
+              {created.warnings?.length ? (
+                <div className="rounded-lg bg-yellow-50 p-3 text-yellow-800">
+                  <p className="font-bold">Needs admin action</p>
+                  {created.warnings.map((warning) => (
+                    <p key={warning}>{warning}</p>
+                  ))}
+                </div>
+              ) : null}
             </div>
             <Button
               type="button"

@@ -6,6 +6,7 @@ import {
   leadNotesBelongToUser,
   normalizeLeadStatus,
 } from "@/lib/leads";
+import { onboardPaidLead } from "@/server/admissions/onboard-paid-lead";
 import { requireRolesApi } from "@/server/auth/require-roles";
 
 export const runtime = "nodejs";
@@ -107,6 +108,71 @@ export async function PUT(
       );
     }
 
+    if (status === "payment_confirmed") {
+      const onboarding = await onboardPaidLead(
+        id,
+        {
+          id: auth.payload.sub,
+          name: auth.payload.name || addedBy,
+          role: auth.payload.role,
+        },
+        {
+          recordPayment: true,
+          paymentNote: note ?? "Payment confirmed from lead tracker.",
+        },
+      );
+
+      if (!onboarding.ok) {
+        return NextResponse.json(
+          { error: onboarding.error },
+          { status: 400 },
+        );
+      }
+
+      const lead = await prisma.lead.findUnique({
+        where: { id },
+        include: {
+          demos: { orderBy: { createdAt: "desc" } },
+          admissions: { orderBy: { createdAt: "desc" } },
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        lead,
+        onboarding,
+      });
+    }
+
+    if (status === "mentor_assigned") {
+      const onboarding = await onboardPaidLead(id, {
+        id: auth.payload.sub,
+        name: auth.payload.name || addedBy,
+        role: auth.payload.role,
+      });
+
+      if (!onboarding.ok) {
+        return NextResponse.json(
+          { error: onboarding.error },
+          { status: 400 },
+        );
+      }
+
+      const lead = await prisma.lead.findUnique({
+        where: { id },
+        include: {
+          demos: { orderBy: { createdAt: "desc" } },
+          admissions: { orderBy: { createdAt: "desc" } },
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        lead,
+        onboarding,
+      });
+    }
+
     const updated = await prisma.lead.update({
       where: { id },
       data: {
@@ -139,7 +205,7 @@ export async function PUT(
             studentName: admissionStudentName ?? existing.name,
             parentName: admissionParentName ?? existing.name,
             phone: admissionPhone ?? existing.phone,
-            type: existing.type === "foundation" ? "foundation" : "tuition",
+            type: existing.type === "tuition" ? "tuition" : "foundation",
             status: "pending",
             feeAmountCents: admissionFeeAmount,
             feeCurrency: "INR",
