@@ -685,6 +685,18 @@ export default function AdminEnquiriesPage() {
               const previousStatus = getPreviousLeadStatus(status, flowType);
               const progressIndex = getLeadStepIndex(status, flowType);
               const busy = busyId === lead.id;
+              const currentStageLabel = STATUS_LABEL[status];
+              const currentStepNumber =
+                status === "closed_lost" || status === "closed"
+                  ? 0
+                  : Math.min(
+                      LEAD_PIPELINE_STEPS.length,
+                      Math.max(1, progressIndex + 1),
+                    );
+              const progressSummary =
+                status === "closed_lost" || status === "closed"
+                  ? "Pipeline stopped"
+                  : `Step ${currentStepNumber} of ${LEAD_PIPELINE_STEPS.length}`;
               return (
                 <article key={lead.id} className="p-4">
                   <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)_auto] xl:items-start">
@@ -723,6 +735,19 @@ export default function AdminEnquiriesPage() {
                     </div>
 
                     <div className="min-w-0">
+                      <div className="mb-2 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-neutral-500">
+                            Current stage
+                          </p>
+                          <p className="text-sm font-black text-neutral-950">
+                            {currentStageLabel}
+                          </p>
+                        </div>
+                        <p className="text-xs font-bold text-neutral-500">
+                          {progressSummary}
+                        </p>
+                      </div>
                       <div className="grid grid-cols-3 gap-1 sm:grid-cols-9">
                         {LEAD_PIPELINE_STEPS.map((step, index) => {
                           const reached = progressIndex >= index;
@@ -737,10 +762,17 @@ export default function AdminEnquiriesPage() {
                           );
                         })}
                       </div>
-                      <p className="mt-2 text-xs text-neutral-500">
-                        {lead.demos?.length ?? 0} demos,{" "}
-                        {lead.admissions?.length ?? 0} admissions
-                      </p>
+                      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-neutral-500">
+                        <span>
+                          {lead.demos?.length ?? 0} demos,{" "}
+                          {lead.admissions?.length ?? 0} admissions
+                        </span>
+                        {nextStatus ? (
+                          <span>Next: {STATUS_LABEL[nextStatus]}</span>
+                        ) : status === "mentor_assigned" ? (
+                          <span>Next: Mentor dashboard follow-up</span>
+                        ) : null}
+                      </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2 xl:justify-end">
