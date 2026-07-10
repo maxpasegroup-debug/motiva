@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { LandingPage } from "@/components/views/LandingPage";
+import { VisualLandingPage } from "@/components/views/VisualLandingPage";
 import { courseIsVisibleToAudience } from "@/lib/recorded-courses";
 
 export const dynamic = "force-dynamic";
@@ -48,5 +48,5 @@ async function getPublicCourses(): Promise<PublicCourse[]> {
 export default async function Page() {
   const courses = await getPublicCourses();
 
-  return <LandingPage courses={courses} />;
+  return <VisualLandingPage courses={courses} />;
 }
