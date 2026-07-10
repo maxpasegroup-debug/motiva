@@ -252,7 +252,13 @@ async function ensurePaidPaymentRecord(
 export async function onboardPaidLead(
   leadId: string,
   actor: { id: string; name?: string | null; role?: string | null },
-  options: { recordPayment?: boolean; paymentNote?: string } = {},
+  options: {
+    recordPayment?: boolean;
+    paymentNote?: string;
+    preferredMentorId?: string | null;
+    preferredTeacherId?: string | null;
+    preferredBatchId?: string | null;
+  } = {},
 ): Promise<OnboardPaidLeadResult> {
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -295,14 +301,48 @@ export async function onboardPaidLead(
         notes,
       });
 
-      const mentor = await pickRoundRobinMentor(tx, mentorCategory);
-      const teacher = await pickRoundRobinTeacher(tx, {
-        category: mentorCategory,
-        subjects: lead.subjects,
-        notes,
-        type: lead.type,
-      });
-      const batch = await pickBatchForTeacher(tx, teacher?.id ?? null, programType);
+      const preferredMentor = options.preferredMentorId
+        ? await tx.user.findFirst({
+            where: {
+              id: options.preferredMentorId,
+              role: "mentor",
+              isActive: true,
+            },
+            select: { id: true, name: true },
+          })
+        : null;
+      const mentor =
+        preferredMentor ?? (await pickRoundRobinMentor(tx, mentorCategory));
+      const preferredTeacher = options.preferredTeacherId
+        ? await tx.user.findFirst({
+            where: {
+              id: options.preferredTeacherId,
+              role: "teacher",
+              isActive: true,
+            },
+            select: { id: true, name: true },
+          })
+        : null;
+      const teacher =
+        preferredTeacher ??
+        (await pickRoundRobinTeacher(tx, {
+          category: mentorCategory,
+          subjects: lead.subjects,
+          notes,
+          type: lead.type,
+        }));
+      const preferredBatch = options.preferredBatchId
+        ? await tx.batch.findFirst({
+            where: {
+              id: options.preferredBatchId,
+              ...(teacher?.id ? { teacherId: teacher.id } : {}),
+            },
+            select: { id: true, name: true },
+          })
+        : null;
+      const batch =
+        preferredBatch ??
+        (await pickBatchForTeacher(tx, teacher?.id ?? null, programType));
 
       const existingStudentAccount = await tx.studentAccount.findUnique({
         where: { mobile },
@@ -442,6 +482,15 @@ export async function onboardPaidLead(
         mentor ? null : `No active ${mentorCategory} mentor was available.`,
         teacher ? null : "No active teacher was available.",
         batch ? null : "No matching batch was available.",
+        options.preferredMentorId && !preferredMentor
+          ? "Selected mentor was not available."
+          : null,
+        options.preferredTeacherId && !preferredTeacher
+          ? "Selected teacher was not available."
+          : null,
+        options.preferredBatchId && !preferredBatch
+          ? "Selected batch was not available for the teacher."
+          : null,
       ].filter((item): item is string => Boolean(item));
       const finalStatus: "mentor_assigned" | "account_created" =
         mentor && teacher && batch ? "mentor_assigned" : "account_created";

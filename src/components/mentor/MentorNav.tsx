@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/mentor", label: "Home" },
   { href: "/mentor/students", label: "Students" },
+  { href: "/mentor/admissions/new", label: "Admission" },
   { href: "/mentor/issues", label: "Issues" },
   { href: "/mentor/schedule", label: "Schedule" },
 ];
@@ -15,7 +16,7 @@ export function MentorNav() {
 
   return (
     <nav className="rounded-lg border border-neutral-200 bg-white p-2 shadow-sm">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         {LINKS.map((link) => {
           const isActive =
             pathname === link.href || pathname?.startsWith(`${link.href}/`);

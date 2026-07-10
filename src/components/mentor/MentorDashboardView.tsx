@@ -69,16 +69,16 @@ export function MentorDashboardView({
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Link
-              href="/admin/students/new"
+              href="/mentor/admissions/new"
               className="inline-flex min-h-11 items-center justify-center rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800"
             >
-              Add Student
+              Create Admission
             </Link>
             <Link
-              href="/admin/teachers/new"
+              href="/mentor/students"
               className="inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50"
             >
-              Add Teacher
+              Allocate Batch
             </Link>
           </div>
         </div>
