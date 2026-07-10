@@ -136,35 +136,44 @@ export function VisualLandingPage({ courses }: { courses: PublicCourse[] }) {
         </div>
       </header>
 
-      <section className="relative min-h-[92vh] overflow-hidden bg-neutral-950 pt-16 text-white">
-        <Image src={HERO_IMAGE} alt="" fill priority className="object-cover opacity-60" sizes="100vw" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_25%,rgba(37,211,102,0.34),transparent_28%),linear-gradient(90deg,rgba(10,10,10,0.96),rgba(10,10,10,0.70),rgba(10,10,10,0.35))]" />
+      <section className="relative overflow-hidden bg-neutral-950 pt-16 text-white lg:min-h-[92vh]">
+        <Image
+          src={HERO_IMAGE}
+          alt=""
+          fill
+          priority
+          className="object-cover object-center opacity-48 sm:opacity-56"
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(37,211,102,0.28),transparent_24%),linear-gradient(180deg,rgba(10,10,10,0.92),rgba(10,10,10,0.80)),linear-gradient(90deg,rgba(10,10,10,0.95),rgba(10,10,10,0.58))] lg:bg-[radial-gradient(circle_at_20%_25%,rgba(37,211,102,0.34),transparent_28%),linear-gradient(90deg,rgba(10,10,10,0.96),rgba(10,10,10,0.70),rgba(10,10,10,0.35))]" />
 
-        <div className="relative z-10 mx-auto grid min-h-[calc(92vh-4rem)] w-full max-w-6xl items-center gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_420px]">
+        <div className="relative z-10 mx-auto grid w-full max-w-6xl items-start gap-6 px-4 pb-24 pt-8 sm:gap-8 sm:px-6 sm:pb-12 sm:pt-10 md:grid-cols-[minmax(0,1fr)_minmax(320px,380px)] md:items-center lg:min-h-[calc(92vh-4rem)] lg:grid-cols-[minmax(0,1fr)_420px] lg:py-10">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/12 px-3 py-2 text-sm font-bold backdrop-blur">
-              <Sparkles className="h-4 w-4 text-[#25D366]" aria-hidden />
-              Tuition, remedial support, spoken English, madrassa
+            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/20 bg-white/12 px-3 py-2 text-xs font-bold backdrop-blur sm:text-sm">
+              <Sparkles className="h-4 w-4 shrink-0 text-[#25D366]" aria-hidden />
+              <span className="min-w-0 truncate sm:whitespace-normal">
+                Tuition, remedial, spoken English, madrassa
+              </span>
             </div>
-            <h1 className="mt-5 max-w-3xl text-5xl font-black leading-[0.98] tracking-normal text-white sm:text-6xl lg:text-7xl">
+            <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[1.02] tracking-normal text-white min-[390px]:text-5xl sm:text-6xl lg:text-7xl">
               See the right class. Start faster.
             </h1>
-            <p className="mt-5 max-w-xl text-lg font-medium leading-8 text-white/82">
+            <p className="mt-4 max-w-xl text-base font-medium leading-7 text-white/82 sm:mt-5 sm:text-lg sm:leading-8">
               Less confusion for parents. Clear service pages, quick WhatsApp enquiry, and simple login for students, parents, mentors, and staff.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row md:flex-col lg:flex-row">
               <a
                 href={whatsappHref("Hi Motiva Edus, I want to know the best course for my child.")}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-14 items-center justify-center gap-2 rounded-lg bg-[#25D366] px-6 py-3 text-base font-black text-white shadow-xl shadow-emerald-950/25"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#25D366] px-5 py-3 text-sm font-black text-white shadow-xl shadow-emerald-950/25 sm:min-h-14 sm:px-6 sm:text-base"
               >
                 <MessageCircle className="h-5 w-5" aria-hidden />
                 WhatsApp Enquiry
               </a>
               <Link
                 href="/services"
-                className="inline-flex min-h-14 items-center justify-center gap-2 rounded-lg bg-white px-6 py-3 text-base font-black text-neutral-950"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-5 py-3 text-sm font-black text-neutral-950 sm:min-h-14 sm:px-6 sm:text-base"
               >
                 View Services
                 <ArrowRight className="h-5 w-5" aria-hidden />
@@ -172,7 +181,10 @@ export function VisualLandingPage({ courses }: { courses: PublicCourse[] }) {
             </div>
           </div>
 
-          <form onSubmit={submitEnquiry} className="rounded-xl border border-white/20 bg-white/14 p-4 shadow-2xl backdrop-blur-xl sm:p-5">
+          <form
+            onSubmit={submitEnquiry}
+            className="w-full rounded-xl border border-white/20 bg-white/14 p-4 shadow-2xl backdrop-blur-xl sm:p-5"
+          >
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#A7F3D0]">
               Quick enquiry
             </p>
