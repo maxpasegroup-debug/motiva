@@ -23,7 +23,14 @@ import { listTeachers } from "@/lib/teachers-store";
 
 type LeadRow = {
   id: string;
+  name?: string;
+  phone?: string;
   status: string;
+  assigned_to?: string | null;
+  assignedTo?: string | null;
+  notes?: string | null;
+  updated_at?: string;
+  updatedAt?: string;
   created_at?: string;
   createdAt?: string;
 };
@@ -68,6 +75,65 @@ function isThisMonth(dateString: string) {
   const date = new Date(dateString);
   const now = new Date();
   return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+}
+
+function formatDateTime(value?: string) {
+  if (!value) return "Not updated";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not updated";
+  return date.toLocaleString("en-IN", {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function getLeadStatusLabel(status: string) {
+  switch (status) {
+    case "demo":
+    case "demo_scheduled":
+    case "demo_done":
+      return "Demo";
+    case "admission":
+    case "payment_pending":
+    case "payment_confirmed":
+    case "account_created":
+    case "mentor_assigned":
+    case "closed_won":
+      return "Admission";
+    case "closed":
+    case "closed_lost":
+      return "Lost";
+    case "contacted":
+      return "Contacted";
+    default:
+      return "New";
+  }
+}
+
+function getLeadOwner(lead: LeadRow) {
+  const noteOwner = (() => {
+    if (!lead.notes?.trim()) return null;
+    try {
+      const entries = JSON.parse(lead.notes) as unknown;
+      if (!Array.isArray(entries)) return null;
+      const latestOwner = [...entries]
+        .reverse()
+        .map((entry) => {
+          if (!entry || typeof entry !== "object") return "";
+          const addedBy = (entry as { addedBy?: unknown }).addedBy;
+          return typeof addedBy === "string" ? addedBy.trim() : "";
+        })
+        .find(Boolean);
+      return latestOwner || null;
+    } catch {
+      const match = lead.notes.match(/(?:Converted by|Entered by)\s+([^.(]+)(?:\s*\(|\.|$)/i);
+      return match?.[1]?.trim() || null;
+    }
+  })();
+
+  return noteOwner || lead.assignedTo?.trim() || lead.assigned_to?.trim() || "Unassigned";
 }
 
 async function fetchJson<T>(url: string, token: string): Promise<T | null> {
@@ -147,6 +213,18 @@ export function AdminDashboardPage() {
 
   const newLeads = useMemo(
     () => leads.filter((lead) => ["new", "contacted", "demo_scheduled"].includes(lead.status)).length,
+    [leads],
+  );
+  const activeLeadTrackers = useMemo(
+    () =>
+      leads
+        .filter((lead) => !["closed", "closed_lost"].includes(lead.status))
+        .sort((a, b) => {
+          const aTime = new Date(a.updatedAt ?? a.updated_at ?? a.createdAt ?? a.created_at ?? 0).getTime();
+          const bTime = new Date(b.updatedAt ?? b.updated_at ?? b.createdAt ?? b.created_at ?? 0).getTime();
+          return bTime - aTime;
+        })
+        .slice(0, 6),
     [leads],
   );
 
@@ -310,6 +388,63 @@ export function AdminDashboardPage() {
                   </span>
                 </Link>
               ))}
+            </div>
+          </section>
+
+          <section
+            id="lead-trackers"
+            className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm"
+          >
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-neutral-950">Lead Tracker</h2>
+                <p className="mt-1 text-sm text-neutral-500">
+                  Latest active leads with the telecaller or owner responsible.
+                </p>
+              </div>
+              <Link
+                href="/admin/leads"
+                className="mt-2 inline-flex h-9 items-center justify-center rounded-lg border border-neutral-200 px-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50 sm:mt-0"
+              >
+                View All
+              </Link>
+            </div>
+            <div className="mt-4 overflow-hidden rounded-lg border border-neutral-200">
+              {activeLeadTrackers.length === 0 ? (
+                <div className="px-4 py-10 text-center text-sm text-neutral-500">
+                  No active leads are waiting in the tracker.
+                </div>
+              ) : (
+                <table className="w-full min-w-[620px] text-left text-sm">
+                  <thead className="bg-neutral-50 text-xs uppercase text-neutral-500">
+                    <tr>
+                      <th className="px-4 py-3">Lead</th>
+                      <th className="px-4 py-3">Owner</th>
+                      <th className="px-4 py-3">Stage</th>
+                      <th className="px-4 py-3">Updated</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100 bg-white">
+                    {activeLeadTrackers.map((lead) => (
+                      <tr key={lead.id}>
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-neutral-950">{lead.name ?? "Unnamed lead"}</p>
+                          <p className="mt-0.5 text-xs text-neutral-500">{lead.phone ?? "No phone"}</p>
+                        </td>
+                        <td className="px-4 py-3 font-medium text-neutral-700">{getLeadOwner(lead)}</td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-100">
+                            {getLeadStatusLabel(lead.status)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-neutral-600">
+                          {formatDateTime(lead.updatedAt ?? lead.updated_at ?? lead.createdAt ?? lead.created_at)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </section>
 
