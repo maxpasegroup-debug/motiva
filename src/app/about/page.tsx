@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   description: "Learn about Motiva Edus, our mission, vision, and leadership.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function Page() {
   return <AboutPage />;
 }

@@ -5,6 +5,8 @@ export const metadata: Metadata = {
   title: "New course — Motiva Edus",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function Page() {
   return <RecordedCourseForm mode="new" />;
 }

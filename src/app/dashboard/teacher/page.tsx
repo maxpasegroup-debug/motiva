@@ -5,6 +5,8 @@ export const metadata: Metadata = {
   title: "My Teacher — Motiva Edus",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function Page() {
   return <DashboardSubPage titleKey="my_teacher" emoji="👨‍🏫" />;
 }

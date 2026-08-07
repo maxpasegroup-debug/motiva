@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   title: "Course sections — Motiva Edus",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function Page({ params }: Props) {
   return <RecordedCourseSectionsManager courseId={params.id} />;
 }
